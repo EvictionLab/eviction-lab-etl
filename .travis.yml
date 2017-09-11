@@ -1,0 +1,18 @@
+sudo: required
+os: osx
+before_install:
+- brew install tippecanoe make
+- npm install -g csvtojson mapshaper geojson-polygon-labels
+script:
+- make deploy
+# deploy:
+#   skip_cleanup: true
+#   provider: s3
+#   access_key_id: $AWS_KEY
+#   secret_access_key: $AWS_SECRET
+#   bucket: eviction-lab-tilesets
+#   acl: public_read
+#   detect_encoding: true
+#   local_dir: tilesets
+#   on:
+#     repo: EvictionLab/eviction-lab-etl
