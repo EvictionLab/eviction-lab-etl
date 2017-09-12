@@ -33,7 +33,7 @@ clean:
 
 deploy: $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 	mkdir -p tilesets
-	for f in $(geo_types); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./data_tiles/$$f.mbtiles; done
+	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./data_tiles/$$f.mbtiles; done
 
 # Join polygon tiles to data
 data_tiles/%.mbtiles: data/%.csv tiles/%.mbtiles
