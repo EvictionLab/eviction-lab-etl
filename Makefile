@@ -1,12 +1,4 @@
-census_ftp_base = ftp://ftp2.census.gov/geo/tiger/GENZ2016/shp/
-
-block-groups-pattern = cb_2016_*_bg_500k.zip
-tracts-pattern = cb_2016_*_tract_500k.zip
-cities-pattern = cb_2016_*_place_500k.zip
-counties-pattern = cb_2016_us_county_500k.zip
-states-pattern = cb_2016_us_state_500k.zip
-zip-codes-pattern = cb_2016_us_zcta510_500k.zip
-
+s3_base = https://s3.amazonaws.com/eviction-lab-data/census/
 tippecanoe_opts = --detect-shared-borders --no-tile-size-limit --simplification=10 -B 2 --force --maximum-zoom=10
 
 document_id = "1sXrLIcB-AhIftHIIksmHNvzAuXwpWuIBzSIcBhP0YNA"
@@ -74,11 +66,8 @@ centers/%.geojson: census/%.geojson
 	mkdir -p centers
 	geojson-polygon-labels --by-feature $< > $@
 
-## Census GeoJSON
-census/%.geojson: 
-	mkdir -p census/$*
-	wget -np -nd -r -P census/$* -A '$($*-pattern)' $(census_ftp_base)
-	for f in ./census/$*/*.zip; do unzip -d ./census/$* $$f; done
-	mapshaper ./census/$*/*.shp combine-files \
-		-each "this.properties.GEOID = '000' + this.properties.GEOID10" where="this.properties.GEOID10" \
-		-o $@ combine-layers format=geojson
+## Census GeoJSON from S3 bucket
+census/%.geojson:
+	mkdir -p census
+	wget -P census $(s3_base)$*.geojson.gz
+	gunzip $@.gz
