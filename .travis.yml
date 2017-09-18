@@ -2,7 +2,8 @@ sudo: required
 os: osx
 before_install:
 - brew install tippecanoe make
-- npm install -g csvtojson mapshaper geojson-polygon-labels
+- sudo pip install csvkit pandas
+- npm install -g mapshaper geojson-polygon-labels
 script:
 - make deploy
 deploy:
