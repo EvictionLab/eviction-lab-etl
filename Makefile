@@ -18,7 +18,7 @@ counties-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr(
 states-row = print "\"" $$2 "\"," $$1 "," $$3 "," $$4 ",USA," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
 zip-codes-row = print "\"000" substr($$2, 4) "\"," $$1 "," $$3 ",Zip Code " substr($$2, 4) ",Parent Unknown," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
 
-years = 2010
+years = 2000 2010
 geo_types = states counties zip-codes cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
@@ -30,8 +30,9 @@ geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 all: json/united-states-geo-names.json $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 
 clean:
-	rm -r centers data year_data census_year_data data_tiles json tiles tilesets
+	rm -rf centers data year_data census_year_data data_tiles json tiles tilesets
 
+## Create directories with .pbf file tiles for deployment to S3
 deploy: $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 	mkdir -p tilesets
 	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./data_tiles/$$f.mbtiles; done
@@ -55,7 +56,6 @@ census_year_data/%.csv: year_data/%.csv
 ## Secondary expansion allows processing of source so that states-2010.csv comes from states.csv
 .SECONDEXPANSION:
 year_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
-	echo "$<"
 	$(eval census_year=$(lastword $(subst -, ,$*)))
 	$(eval geo=$(subst -$(census_year),,$*))
 	mkdir -p year_data
