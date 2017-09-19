@@ -59,7 +59,7 @@ year_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	$(eval census_year=$(lastword $(subst -, ,$*)))
 	$(eval geo=$(subst -$(census_year),,$*))
 	mkdir -p year_data
-	csvsql --query  \
+	csvsql --no-inference --query  \
 		"select * from \"$(geo)\" where year >= $(census_year) and year < ($(census_year)+10)" \
 		$< > $@
 

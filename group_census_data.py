@@ -8,7 +8,7 @@ DATA_COLS = [
 ]
 
 if __name__ == '__main__':
-    input_df = pd.read_csv(sys.argv[1])
+    input_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object'})
     year_data_cols = []
     # Append -YEAR to each data column name
     for year in input_df['year'].unique():
