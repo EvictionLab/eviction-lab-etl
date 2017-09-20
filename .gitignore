@@ -5,4 +5,7 @@ data_tiles
 json
 tiles
 tilesets
+year_data
+census_year_data
+.vscode
 .DS_Store
