@@ -32,10 +32,15 @@ all: json/united-states-geo-names.json $(foreach t, $(geo_years), data_tiles/$(t
 clean:
 	rm -rf centers data year_data census_year_data data_tiles json tiles tilesets
 
+## Submit job to AWS Batch
+submit_job:
+	aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue
+
 ## Create directories with .pbf file tiles for deployment to S3
 deploy: $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 	mkdir -p tilesets
 	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./data_tiles/$$f.mbtiles; done
+	aws cp s3 ./tilesets s3://eviction-lab-tilesets --recursive
 
 ## Join polygon tiles to data
 data_tiles/%.mbtiles: census_year_data/%.csv tiles/%.mbtiles

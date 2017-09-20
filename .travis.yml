@@ -1,0 +1,11 @@
+sudo: required
+os: osx
+before_install:
+- brew install make
+- sudo pip install awscli
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: make submit_job
+  on:
+    branch: master
