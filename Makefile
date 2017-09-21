@@ -40,7 +40,7 @@ submit_job:
 deploy: $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 	mkdir -p tilesets
 	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./data_tiles/$$f.mbtiles; done
-	aws cp s3 ./tilesets s3://eviction-lab-tilesets --recursive
+	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ## Join polygon tiles to data
 data_tiles/%.mbtiles: census_year_data/%.csv tiles/%.mbtiles
@@ -84,7 +84,9 @@ data/%.csv:
 ## Create tiles from all geographies
 tiles/%.mbtiles: census/%.geojson centers/%.geojson
 	mkdir -p tiles
-	tippecanoe -L $*:$< -L $*-centers:$(word 2,$^) $(tippecanoe_opts) -o $@
+	$(eval year=$(lastword $(subst -, ,$*)))
+	$(eval geo=$(subst -$(year),,$*))
+	tippecanoe -L $(geo):$< -L $(geo)-centers:$(word 2,$^) $(tippecanoe_opts) -o $@
 
 ## GeoJSON centers
 centers/%.geojson: census/%.geojson
