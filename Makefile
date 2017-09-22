@@ -23,14 +23,14 @@ geo_types = states counties zip-codes cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles json/united-states-geo-names.json data/united-states.csv data/%.csv census_year_data/%.csv year_data/%.csv tiles/%.mbtiles centers/%.geojson census/%.geojson
+.PRECIOUS: tilesets/%.mbtiles json/united-states-geo-names.json grouped_data/united-states.csv data_tiles/%.mbtiles grouped_data/%.csv data/%.csv tiles/%.mbtiles centers/%.geojson census/%.geojson
 
 .PHONY: all clean deploy testing
 
 all: json/united-states-geo-names.json $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 
 clean:
-	rm -rf centers data year_data census_year_data data_tiles json tiles tilesets
+	rm -rf centers data grouped_data data_tiles json tiles tilesets
 
 ## Submit job to AWS Batch
 submit_job:
@@ -43,36 +43,27 @@ deploy: $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ## Join polygon tiles to data
-data_tiles/%.mbtiles: census_year_data/%.csv tiles/%.mbtiles
+## Secondary expansion allows processing of source so that states-2010.csv comes from states.csv
+.SECONDEXPANSION:
+data_tiles/%.mbtiles: grouped_data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv tiles/%.mbtiles
 	mkdir -p data_tiles
 	tile-join --if-matched --no-tile-size-limit --force -x GEOID -o $@ -c $^
 
 ## JSON for autocomplete
-json/united-states-geo-names.json: data/united-states.csv
+json/united-states-geo-names.json: grouped_data/united-states.csv
 	mkdir -p json
 	csvcut -c name,parent-location,population $< | csvjson > $@
 
-## Create census data grouped by decennial year
-census_year_data/%.csv: year_data/%.csv
-	mkdir -p census_year_data
-	python group_census_data.py $< $@
-
-## Get data for a census decennial year
-## Secondary expansion allows processing of source so that states-2010.csv comes from states.csv
-.SECONDEXPANSION:
-year_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
-	$(eval census_year=$(lastword $(subst -, ,$*)))
-	$(eval geo=$(subst -$(census_year),,$*))
-	mkdir -p year_data
-	csvsql --no-inference --query  \
-		"select * from \"$(geo)\" where year >= $(census_year) and year < ($(census_year)+10)" \
-		$< > $@
-
 ## Combined CSV data
-data/united-states.csv: $(foreach g, $(geo_types), data/$(g).csv)
-	mkdir -p data
-	echo "$(column-headers)" > $@
+grouped_data/united-states.csv: $(foreach g, $(geo_types), grouped_data/$(g).csv)
+	mkdir -p grouped_data
+	head -n 1 $< > $@
 	for f in $^; do perl -ne 'print if $$. != 1' $$f >> $@; done
+
+## Group data by FIPS code with columns for {ATTR}-{YEAR}
+grouped_data/%.csv: data/%.csv
+	mkdir -p grouped_data
+	python group_census_data.py $< $@
 
 ## Fetch Google Sheets data, combine into CSV files
 data/%.csv:
