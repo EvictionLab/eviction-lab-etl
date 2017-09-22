@@ -1,27 +1,40 @@
 ## Makefile for creating Census geography data for 1990, 2000, 2010 from source rather than S3
 census_ftp_base = ftp://ftp2.census.gov/geo/tiger/GENZ
-census_ftp_base_2010 = $(census_ftp_base)2010/shp/
+census_ftp_base_2010 = $(census_ftp_base)2010/
 census_ftp_base_2016 = $(census_ftp_base)2016/shp/
 # File layout for 1990, 2000 described here https://www.census.gov/geo/maps-data/data/prev_cartbndry_names.html
 census_ftp_base_pre = ftp://ftp2.census.gov/geo/tiger/PREVGENZ/
 census_ftp_base_1990 = $(census_ftp_base_pre)
 census_ftp_base_2000 = $(census_ftp_base_pre)
 
-recent-each-func = "this.properties.GEOID = '000' + this.properties.GEOID10" where="this.properties.GEOID10"
-recent-years = 2010 2016
+base-each-func = "this.properties.GEOID = this.properties.GEOID"
 
-block-groups-1990-each-func = "this.properties.GEOID = this.properties.ST + this.properties.CO + this.properties.TRACT + this.properties.BG"
+block-groups-each-2016-func = $(base-each-func)
+tracts-each-2016-func =  $(base-each-func)
+cities-each-2016-func =  $(base-each-func)
+counties-each-2016-func =  $(base-each-func)
+states-each-2016-func =  $(base-each-func)
+zip-codes-each-2016-func = "this.properties.GEOID = this.properties.GEOID10"
+
+block-groups-each-2010-func = $(base-each-func)
+tracts-each-2010-func =  $(base-each-func)
+cities-each-2010-func =  $(base-each-func)
+counties-each-2010-func =  $(base-each-func)
+states-each-2010-func =  $(base-each-func)
+zip-codes-each-2010-func = "this.properties.GEOID = this.properties.ZCTA5"
+
+block-groups-each-1990-func = "this.properties.GEOID = this.properties.ST + this.properties.CO + this.properties.TRACT + this.properties.BG"
 tracts-each-1990-func = "if (this.properties.TRACTSUF) { this.properties.GEOID = this.properties.ST + this.properties.CO + this.properties.TRACTBASE + this.properties.TRACTSUF; } else { this.properties.GEOID = this.properties.ST + this.properties.CO + this.properties.TRACTBASE + '00'; }"
-cities-each-1990-func = "this.properties.GEOID = this.properties.GEOID"
+cities-each-1990-func = $(base-each-func)
 counties-each-1990-func = "this.properties.GEOID = this.properties.ST + this.properties.CO"
 states-each-1990-func = "this.properties.GEOID = this.properties.ST"
 
-block-groups-2000-each-func = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY + this.properties.TRACT + this.properties.BLKGROUP"
+block-groups-each-2000-func = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY + this.properties.TRACT + this.properties.BLKGROUP"
 tracts-each-2000-func = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY + this.properties.TRACT"
 cities-each-2000-func = "this.properties.GEOID = this.properties.STATE + this.properties.PLACEFP"
 counties-each-2000-func = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY"
 states-each-2000-func = "this.properties.GEOID = this.properties.STATE"
-zip-codes-each-2000-func = "this.properties.GEOID = '000' + this.properties.ZCTA"
+zip-codes-each-2000-func = "this.properties.GEOID = this.properties.ZCTA"
 
 block-groups-1990-pattern = bg*_d90_shp.zip
 tracts-1990-pattern = tr*_d90_shp.zip
@@ -71,6 +84,6 @@ census/%.geojson:
 	wget -np -nd -r -P census/$* -A '$($*-pattern)' $(census_ftp_base_$(year))
 	for f in ./census/$*/*.zip; do unzip -d ./census/$* $$f; done
 	mapshaper ./census/$*/*.shp combine-files \
-		-each $(if $(findstring $(year),$(recent-years)),$(recent-each-func),$($(geo)-each-$(year)-func)) \
+		-each $($(geo)-each-$(year)-func) \
 		-filter-fields GEOID \
 		-o $@ combine-layers format=geojson

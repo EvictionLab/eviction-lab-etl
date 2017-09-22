@@ -16,7 +16,7 @@ tracts-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr($$
 cities-row = print "\"" $$2 "\"," $$1 "," $$3 "," $$4 ", ," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
 counties-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr($$5, 2) "," $$6 "," $$7 "," $$8 "," $$9 "," $$10 "," $$11
 states-row = print "\"" $$2 "\"," $$1 "," $$3 "," $$4 ",USA," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
-zip-codes-row = print "\"000" substr($$2, 4) "\"," $$1 "," $$3 ",Zip Code " substr($$2, 4) ",Parent Unknown," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
+zip-codes-row = print "\"" substr($$2, 4) "\"," $$1 "," $$3 ",Zip Code " substr($$2, 4) ",Parent Unknown," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
 
 years = 2000 2010
 geo_types = states counties zip-codes cities tracts block-groups
