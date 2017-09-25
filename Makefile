@@ -23,8 +23,9 @@ geo_types = states counties zip-codes cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles json/united-states-geo-names.json grouped_data/united-states.csv data_tiles/%.mbtiles grouped_data/%.csv data/%.csv tiles/%.mbtiles centers/%.geojson census/%.geojson
-
+.PRECIOUS: tilesets/%.mbtiles json/united-states-geo-names.json grouped_data/united-states.csv data_tiles/%.mbtiles census/%.geojson
+# Delete files that are intermediate dependencies, not final products
+.INTERMEDIATE: data/%.csv tiles/%.mbtiles centers/%.geojson grouped_data/%.csv
 .PHONY: all clean deploy testing
 
 all: json/united-states-geo-names.json $(foreach t, $(geo_years), data_tiles/$(t).mbtiles)
@@ -63,7 +64,7 @@ grouped_data/united-states.csv: $(foreach g, $(geo_types), grouped_data/$(g).csv
 ## Group data by FIPS code with columns for {ATTR}-{YEAR}
 grouped_data/%.csv: data/%.csv
 	mkdir -p grouped_data
-	python group_census_data.py $< $@
+	python scripts/group_census_data.py $< $@
 
 ## Fetch Google Sheets data, combine into CSV files
 data/%.csv:

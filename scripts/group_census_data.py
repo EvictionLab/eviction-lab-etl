@@ -15,7 +15,7 @@ if __name__ == '__main__':
         year_cols = ['{}-{}'.format(col, year) for col in DATA_COLS]
         year_data_cols.extend(['{}-{}'.format(col, year) for col in DATA_COLS])
         input_df[year_cols] = input_df.loc[input_df['year'] == year, DATA_COLS]
-    
+
     # Group the dataframe by GEOID, and take the max (not-null in this case) value
     # for each newly-created data column
     output_df = input_df.groupby('GEOID')[CONTEXT_COLS[1:] + year_data_cols].max()
