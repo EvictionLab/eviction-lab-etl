@@ -8,7 +8,7 @@ DATA_COLS = [
 ]
 
 if __name__ == '__main__':
-    input_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object'})
+    input_df = pd.read_csv(sys.stdin, dtype={'GEOID': 'object'})
     year_data_cols = []
     # Append -YEAR to each data column name
     for year in input_df['year'].unique():
@@ -20,4 +20,4 @@ if __name__ == '__main__':
     # for each newly-created data column
     output_df = input_df.groupby('GEOID')[CONTEXT_COLS[1:] + year_data_cols].max()
     output_df = pd.DataFrame(output_df).reset_index()
-    output_df.to_csv(sys.argv[2], index=False)
+    output_df.to_csv(sys.stdout, index=False)
