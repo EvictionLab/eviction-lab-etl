@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/census/
-tippecanoe_opts = --detect-shared-borders --no-tile-size-limit --simplification=10 -B 2 --force --maximum-zoom=10
+tippecanoe_opts = --detect-shared-borders --no-feature-limit --no-tile-size-limit --no-tiny-polygon-reduction --simplification=10 -B 2 --minimum-zoom=2 --maximum-zoom=10 --force
 
 document_id = "1sXrLIcB-AhIftHIIksmHNvzAuXwpWuIBzSIcBhP0YNA"
 column-headers = GEOID,year,evictions,name,parent-location,population,area,average-household-size,renting-occupied-households,poverty-rate,eviction-rate
