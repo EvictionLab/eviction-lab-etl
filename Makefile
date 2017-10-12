@@ -1,29 +1,11 @@
-s3_base = https://s3.amazonaws.com/eviction-lab-data/census/
+s3_base = https://s3.amazonaws.com/eviction-lab-data/
 tippecanoe_opts = --detect-shared-borders --no-feature-limit --no-tile-size-limit --no-tiny-polygon-reduction --simplification=10 -B 2 --minimum-zoom=2 --maximum-zoom=10 --force
-
-document_id = "1sXrLIcB-AhIftHIIksmHNvzAuXwpWuIBzSIcBhP0YNA"
-column-headers = GEOID,year,evictions,name,parent-location,population,area,average-household-size,renting-occupied-households,poverty-rate,eviction-rate
-
-block-groups-sheet = 1649065693
-tracts-sheet = 43684946
-cities-sheet = 256916247
-counties-sheet = 1698481076
-states-sheet = 1452248278
-zip-codes-sheet = 708732124
-
-block-groups-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr($$5, 2) "," $$6 "," $$7 "," $$8 "," $$9 "," $$10 "," $$11 "," $$12 "," $$13
-tracts-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr($$5, 2) "," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10 "," $$11 "," $$12
-cities-row = print "\"" $$2 "\"," $$1 "," $$3 "," $$4 ", ," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
-counties-row = print "\"" $$2 "\"," $$1 "," $$3 "," substr($$4, 2) ",\"" substr($$5, 2) "," $$6 "," $$7 "," $$8 "," $$9 "," $$10 "," $$11
-states-row = print "\"" $$2 "\"," $$1 "," $$3 "," $$4 ",USA," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
-zip-codes-row = print "\"" substr($$2, 4) "\"," $$1 "," $$3 ",Zip Code " substr($$2, 4) ",Parent Unknown," $$5 "," $$6 "," $$7 "," $$8 "," $$9 "," $$10
-
 geo_types = states counties zip-codes cities tracts block-groups
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles json/united-states-geo-names.json grouped_data/united-states.csv data_tiles/%.mbtiles census/%.geojson
 # Delete files that are intermediate dependencies, not final products
-.INTERMEDIATE: data/%.csv tiles/%.mbtiles centers/%.geojson grouped_data/%.csv
+.INTERMEDIATE: data/%.xlsx data/%.csv tiles/%.mbtiles centers/%.geojson grouped_data/%.csv
 .PHONY: all clean deploy
 
 all: json/united-states-geo-names.json $(foreach t, $(geo_types), data_tiles/$(t).mbtiles)
@@ -63,11 +45,13 @@ grouped_data/%.csv: data/%.csv
 	cat $< | python scripts/group_census_data.py > $@
 
 ## Fetch Google Sheets data, combine into CSV files
-data/%.csv:
+data/%.csv: data/%.xlsx
+	in2csv $< > $@
+
+## Get source data from S3 bucket Excel files
+data/%.xlsx:
 	mkdir -p data
-	echo "$(column-headers)" > $@
-	curl "https://docs.google.com/spreadsheets/d/$(document_id)/export?gid=$($*-sheet)&format=csv" | \
-	awk 'BEGIN { FS = "," } (substr($$1,1,1) ~ /^[0-9]/ ) { $($*-row) }' >> $@
+	wget -P data $(s3_base)$@
 
 ## Create tiles from all geographies
 tiles/%.mbtiles: census/%.geojson centers/%.geojson
@@ -82,5 +66,5 @@ centers/%.geojson: census/%.geojson
 ## Census GeoJSON from S3 bucket
 census/%.geojson:
 	mkdir -p census
-	wget -P census $(s3_base)$*.geojson.gz
+	wget -P census $(s3_base)$@.gz
 	gunzip $@.gz

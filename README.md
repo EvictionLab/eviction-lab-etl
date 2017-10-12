@@ -4,7 +4,7 @@ Makefile for running ETL on Eviction Lab data.
 
 ## Setup
 
-You'll need Node, Python, GNU Make, `curl`, and `wget` installed. You'll also need the Python packages `pandas` and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper) and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas` and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper) and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
