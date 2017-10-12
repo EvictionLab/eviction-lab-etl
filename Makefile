@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-tippecanoe_opts = --detect-shared-borders --no-tile-size-limit --simplification=10 -B 2 --force --maximum-zoom=10
+tippecanoe_opts = --detect-shared-borders --no-feature-limit --no-tile-size-limit --no-tiny-polygon-reduction --simplification=10 -B 2 --minimum-zoom=2 --maximum-zoom=10 --force
 geo_types = states counties zip-codes cities tracts block-groups
 
 # Don't delete files created throughout on completion
