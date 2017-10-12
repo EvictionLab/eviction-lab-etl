@@ -1,7 +1,8 @@
 census
 centers
 data
-data_tiles
+census_data
+centers_data
 json
 tiles
 tilesets
