@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 
-CONTEXT_COLS = ['GEOID', 'name', 'parent-location']
+CONTEXT_COLS = ['GEOID', 'name', 'parent-location', 'layer']
 DATA_COLS = [
     'evictions', 'population', 'area', 'average-household-size',
     'renting-occupied-households', 'poverty-rate', 'eviction-rate'
