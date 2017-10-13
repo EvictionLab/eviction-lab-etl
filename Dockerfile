@@ -4,10 +4,11 @@ FROM laneolson/tippecanoe
 RUN apt-get update \
   && apt-get -y upgrade \
   && apt-get -y install build-essential libssl-dev \
-    python-pip git gzip curl wget
+    python3-dev python3-pip git gzip curl wget
 
-# Install Python packages
-RUN pip install pandas csvkit awscli
+# Link Python path, install Python packages
+RUN ln -s /usr/bin/python3 /usr/bin/python && \
+    pip3 install pandas csvkit awscli
 # Symlink NodeJS and install NPM packages
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
     ln -s /usr/bin/nodejs /usr/bin/node && \
