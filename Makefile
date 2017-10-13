@@ -28,6 +28,7 @@ deploy: json/united-states-search.json $(foreach t, $(geo_types), tiles/$(t).mbt
 	for f in $(geo_types); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 	aws s3 cp $< s3://eviction-lab-tilesets/$(notdir $<) --acl=public-read --region=us-east-2
+	aws s3 cp search s3://eviction-lab-tilesets/search --acl=public-read --region=us-east-2
 
 ## Convert geography GeoJSON to .mbtiles
 tiles/%.mbtiles: census_data/%.geojson centers_data/%.geojson
@@ -51,13 +52,10 @@ census_data/%.geojson: grouped_data/%.csv census/%.geojson
 		-each "this.properties.west = this.bounds[0]; this.properties.south = this.bounds[1]; this.properties.east = this.bounds[2]; this.properties.north = this.bounds[3];" \
 		-o $@
 
-## JSON for autocomplete, pulls latest population data
+## General search file, and search index files from first or first two characters of name
 json/united-states-search.json: grouped_data/united-states.csv grouped_data/united-states-centers.csv
-	$(eval pop_col=$(lastword $(sort $(filter population-%,$(subst $(comma),$(space),$(shell head -n 1 $<))))))
-	csvjoin -I -c GEOID $^ | \
-		csvcut -c GEOID,name,parent-location,$(pop_col),layer,longitude,latitude | \
-		csvgrep -c layer -r "(states|counties|zip-codes|cities)" | \
-		csvtojson --colParser='{"GEOID":"string", "$(pop_col)": "number", "longitude": "number", "latitude": "number"}' > $@
+	mkdir -p search
+	python scripts/create_search_index.py $^ $@ search
 
 ## Convert the united-states-centers.geojson to CSV for merge later
 grouped_data/united-states-centers.csv: json/united-states-centers.geojson
