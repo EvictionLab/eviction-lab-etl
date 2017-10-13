@@ -12,7 +12,7 @@ RUN pip install pandas csvkit awscli
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
     ln -s /usr/bin/nodejs /usr/bin/node && \
     apt-get -y install nodejs && \
-    npm install -g mapshaper geojson-polygon-labels
+    npm install -g mapshaper geojson-polygon-labels csvtojson
 
 WORKDIR /
 RUN git clone https://github.com/EvictionLab/eviction-lab-etl.git

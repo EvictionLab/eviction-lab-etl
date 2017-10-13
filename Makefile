@@ -54,10 +54,10 @@ census_data/%.geojson: grouped_data/%.csv census/%.geojson
 ## JSON for autocomplete, pulls latest population data
 json/united-states-search.json: grouped_data/united-states.csv grouped_data/united-states-centers.csv
 	$(eval pop_col=$(lastword $(sort $(filter population-%,$(subst $(comma),$(space),$(shell head -n 1 $<))))))
-	csvjoin -c GEOID $^ | \
+	csvjoin -I -c GEOID $^ | \
 		csvcut -c GEOID,name,parent-location,$(pop_col),layer,longitude,latitude | \
 		csvgrep -c layer -r "(states|counties|zip-codes|cities)" | \
-		csvjson > $@
+		csvtojson --colParser='{"GEOID":"string", "$(pop_col)": "number", "longitude": "number", "latitude": "number"}' > $@
 
 ## Convert the united-states-centers.geojson to CSV for merge later
 grouped_data/united-states-centers.csv: json/united-states-centers.geojson
