@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 from functools import reduce
 
-CONTEXT_COLS = ['GEOID', 'name', 'parent-location']
+CONTEXT_COLS = ['GEOID', 'name', 'parent-location', 'layer']
 
 if __name__ == '__main__':
     input_df = pd.read_csv(sys.stdin, dtype={'GEOID': 'object'})
