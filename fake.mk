@@ -5,7 +5,8 @@ geo_types = states counties zip-codes cities tracts block-groups
 
 all: $(foreach g, $(geo_types), data/$(g).csv)
 
-clean: rm -rf data fixtures
+clean:
+	rm -rf data fixtures
 
 data/%.csv: fixtures/context/%.csv fixtures/sample/%.csv
 	mkdir -p data

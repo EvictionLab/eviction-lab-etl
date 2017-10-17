@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-tippecanoe_opts = --simplification=10 --maximum-zoom=10 --maximum-tile-bytes=1000000 --low-detail=10 --force
+tippecanoe_opts = --simplification=10 --maximum-zoom=10 --maximum-tile-bytes=1000000 --force
 tile_join_opts = --no-tile-size-limit --force
 
 geo_types = states counties zip-codes cities tracts block-groups
@@ -13,8 +13,9 @@ block-groups_min_zoom = 9
 
 census_opts = --detect-shared-borders --coalesce-smallest-as-needed
 # Assign layer properties based on minimum zoom
-$(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) $(census_opts)))
+$(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --low-detail=10 $(census_opts)))
 $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom)))
+states_census_opts = --minimum-zoom=$(states_min_zoom) $(census_opts)
 
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
@@ -24,7 +25,7 @@ space := $(null) $(null)
 comma := ,
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles json/united-states-search.json tiles/%.mbtiles census/%.geojson
+.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson
 # Delete files that are intermediate dependencies, not final products
 .INTERMEDIATE: data/%.xlsx data/%.csv centers/%.geojson grouped_data/%.csv
 .PHONY: all clean deploy
@@ -43,8 +44,6 @@ deploy: all
 	mkdir -p tilesets
 	for f in $(geo_types); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
-	aws s3 cp $< s3://eviction-lab-tilesets/$(notdir $<) --acl=public-read --region=us-east-2
-	aws s3 cp search s3://eviction-lab-tilesets/search --acl=public-read --region=us-east-2
 
 ### MERGE TILES
 
@@ -66,29 +65,6 @@ centers_data/%.csv: grouped_data/%.csv
 census_data/%.mbtiles: grouped_data/%.csv census/%.mbtiles
 	mkdir -p census_data
 	tile-join -l $* --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^
-
-### SEARCH - currently disabled, reenable with json/united-states-search.json target
-
-## General search file, and search index files from first or first two characters of name
-json/united-states-search.json: grouped_data/united-states.csv grouped_data/united-states-centers.csv
-	mkdir -p search
-	python scripts/create_search_index.py $^ $@ search
-
-## Convert the united-states-centers.geojson to CSV for merge later
-grouped_data/united-states-centers.csv: json/united-states-centers.geojson
-	in2csv --format geojson $< | csvcut -c GEOID,layer,longitude,latitude > $@
-
-## Create combined GeoJSON file with all center points, layer added as property
-json/united-states-centers.geojson: $(foreach g, $(geo_types), centers/$(g).geojson)
-	mkdir -p json
-	for g in $(geo_types); do mapshaper -i centers/$$g.geojson -each "this.properties.layer = \"$$g\"" -o centers/$$g.geojson format=geojson force; done
-	mapshaper -i $^ combine-files -merge-layers -o $@ format=geojson
-
-## Combined CSV data
-grouped_data/united-states.csv: $(foreach g, $(geo_types), grouped_data/$(g).csv)
-	mkdir -p grouped_data
-	head -n 1 $< | perl -ne 'print "layer," . $$_' > $@
-	for g in $(geo_types); do perl -ne 'print "$$g," . $$_ if $$. != 1' grouped_data/$$g.csv >> $@; done
 
 ### GEOGRAPHY 
 

@@ -5,7 +5,6 @@ import pandas as pd
 from functools import reduce
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-# CONTEXT_COLS = ['GEOID', 'name', 'parent-location', 'layer']
 CONTEXT_COLS = ['GEOID', 'n', 'pl']
 
 if __name__ == '__main__':
