@@ -4,7 +4,7 @@ Makefile for running ETL on Eviction Lab data.
 
 ## Setup
 
-You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas` and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), `csvtojson`, and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas` and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
@@ -21,6 +21,10 @@ Deployment is managed by an AWS Batch job. If you have an AWS account and a Batc
 ## Build Census Data from Source
 
 Currently the Census GeoJSON is getting pulled from an S3 bucket where it has been pre-processed and gzipped. If you want to build this from the original Census files, run `make -f census.mk all` before running `make all`. It will create the initial GeoJSON files, and because Make uses file existence to determine dependencies you can then run `make all` and any other steps as normal.
+
+## Create Fixture Data
+
+To create fixture data (used in our workflow to test load times), run `make -f fake.mk all` similarly to building census data from source.
 
 ## View Tiles Locally
 
