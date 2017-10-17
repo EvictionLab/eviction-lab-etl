@@ -1,23 +1,24 @@
 import os
+import re
 import sys
 import pandas as pd
 
-DATA_COLS = ['GEOID', 'name', 'parent-location', 'layer', 'longitude', 'latitude']
+DATA_COLS = ['GEOID', 'n', 'pl', 'layer', 'longitude', 'latitude']
 
 if __name__ == '__main__':
-    us_data_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object'})
-    us_center_df = pd.read_csv(sys.argv[2], dtype={'GEOID': 'object'})
+    us_data_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object', 'n': 'object'})
+    us_data_df.rename(columns={'l': 'layer'}, inplace=True)
+    us_center_df = pd.read_csv(sys.argv[2], dtype={'GEOID': 'object', 'n': 'object'})
     us_df = us_data_df.merge(us_center_df, on=['GEOID', 'layer'])
 
-    pop_col = sorted([c for c in us_df.columns.values.tolist() if c.startswith('population-')])[-1]
+    pop_col = sorted([c for c in us_df.columns.values.tolist() if c.startswith('p-')])[-1]
     DATA_COLS.append(pop_col)
 
     us_df = us_df.loc[
         us_df['layer'].isin(['states', 'counties', 'zip-codes', 'cities']),
-        ['GEOID', 'name', 'parent-location', pop_col, 'layer', 'longitude', 'latitude']
+        ['GEOID', 'n', 'pl', pop_col, 'layer', 'longitude', 'latitude']
     ].copy()
-    us_df['name'] = us_df['name'].str.replace('Zip Code ', '')
-    us_df['lower_name'] = us_df['name'].str.lower()
+    us_df['lower_name'] = us_df['n'].str.lower()
 
     # Write full JSON file
     us_df.to_json(sys.argv[3], orient='records')
