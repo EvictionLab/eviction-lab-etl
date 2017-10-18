@@ -2,7 +2,7 @@ import sys
 import random
 import pandas as pd
 
-YEARS = list(range(1999, 2010))
+YEARS = list(range(2001, 2010))
 
 DATA_COLS = {
     'evictions-per-day': (0, 1000),
@@ -43,5 +43,5 @@ if __name__ == '__main__':
         year_df['year'] = year
         year_df_list.append(year_df)
 
-    output_df = pd.concat(year_df_list)
+    output_df = pd.concat(year_df_list).round(2)
     output_df.to_csv(sys.stdout, index=False)
