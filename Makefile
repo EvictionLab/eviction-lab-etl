@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-tippecanoe_opts = --simplification=10 --maximum-zoom=10 --no-tile-stats --force
+tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 geo_types = states counties zip-codes cities tracts block-groups
@@ -25,6 +25,7 @@ small_tile_census_opts = --low-detail=10 --grid-low-zooms $(census_opts)
 $(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --maximum-tile-bytes=$($g_bytes) $(small_tile_census_opts)))
 $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom) --maximum-tile-bytes=1000000))
 states_census_opts = --minimum-zoom=$(states_min_zoom) $(census_opts)
+counties_census_opts = --minimum-zoom=$(counties_min_zoom) $(census_opts) --maximum-tile-bytes=$(counties_bytes)
 
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
