@@ -1,0 +1,23 @@
+{
+    "name": "n",
+    "parent-location": "pl",
+    "population": "p",
+    "evictions-per-day": "epd",
+    "pct-renter-occupied": "pro",
+    "median-gross-rent": "mgr",
+    "median-household-income": "mhi",
+    "median-property-value": "mpv",
+    "placeholder": "pla",
+    "pct-white": "pw",
+    "pct-af-am": "paa",
+    "pct-hispanic": "ph",
+    "pct-am-ind": "pai",
+    "pct-nh-pi": "pnp",
+    "pct-multiple": "pm",
+    "pct-other": "po",
+    "evictions": "e",
+    "average-household-size": "ahs",
+    "renting-occupied-households": "roh",
+    "poverty-rate": "pr",
+    "eviction-rate": "er"
+}

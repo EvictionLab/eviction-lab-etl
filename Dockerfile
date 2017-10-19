@@ -1,4 +1,4 @@
-FROM laneolson/tippecanoe
+FROM klokantech/tippecanoe
 
 # Update repos and install dependencies
 RUN apt-get update \
