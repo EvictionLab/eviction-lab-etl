@@ -69,7 +69,7 @@ centers_data/%.mbtiles: centers_data/%.csv centers/%.mbtiles
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
-	csvcut -c GEOID,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) $< > $@
+	csvcut -c GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) $< > $@
 
 # Create census shape tiles from joining data and geography tiles
 census_data/%.mbtiles: grouped_data/%.csv census/%.mbtiles
