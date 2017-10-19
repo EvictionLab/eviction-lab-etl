@@ -96,7 +96,7 @@ census/%.geojson:
 	mkdir -p census
 	wget -P census $(s3_base)$@.gz
 	gunzip $@.gz
-	$(mapshaper_cmd) -i - field-types=GEOID:str \
+	$(mapshaper_cmd) -i $@ field-types=GEOID:str \
 		-each "this.properties.west = this.bounds[0]; this.properties.south = this.bounds[1]; this.properties.east = this.bounds[2]; this.properties.north = this.bounds[3];" \
 		-o $@ force
 
