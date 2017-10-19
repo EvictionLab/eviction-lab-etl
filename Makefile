@@ -53,7 +53,7 @@ submit_job:
 deploy: all
 	mkdir -p tilesets
 	for f in $(geo_types); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
-	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+	aws s3 cp ./tilesets s3://eviction-lab-tilesets/fixtures --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ### MERGE TILES
 
