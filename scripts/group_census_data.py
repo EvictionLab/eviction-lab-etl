@@ -31,4 +31,4 @@ if __name__ == '__main__':
 
     # Join all year dataframes together with context on GEOID index
     output_df = reduce(lambda x, y: x.join(y, how='left'), [context_df] + year_df_list)
-    output_df.to_csv(sys.stdout)
+    output_df[~output_df.index.duplicated()].to_csv(sys.stdout)

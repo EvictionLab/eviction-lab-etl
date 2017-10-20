@@ -10,7 +10,7 @@ geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 states_min_zoom = 2
 counties_min_zoom = 2
 cities_min_zoom = 4
-zip-codes_min_zoom = 5
+zip-codes_min_zoom = 6
 tracts_min_zoom = 6
 block-groups_min_zoom = 7
 
