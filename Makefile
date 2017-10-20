@@ -2,7 +2,10 @@ s3_base = https://s3.amazonaws.com/eviction-lab-data/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
+years = 90 00 10
+year_ints = 0 1 2 3 4 5 6 7 8 9
 geo_types = states counties zip-codes cities tracts block-groups
+geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -40,7 +43,7 @@ comma := ,
 .INTERMEDIATE: data/%.xlsx data/%.csv centers/%.geojson grouped_data/%.csv
 .PHONY: all clean deploy
 
-all: $(foreach t, $(geo_types), tiles/$(t).mbtiles)
+all: $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 
 clean:
 	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
@@ -52,7 +55,7 @@ submit_job:
 ## Create directories with .pbf file tiles for deployment to S3
 deploy: all
 	mkdir -p tilesets
-	for f in $(geo_types); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
+	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/fixtures --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ### MERGE TILES
@@ -63,18 +66,20 @@ tiles/%.mbtiles: census_data/%.mbtiles centers_data/%.mbtiles
 	tile-join $(tile_join_opts) -o $@ $^
 
 # Join centers tiles to data for eviction rates
-centers_data/%.mbtiles: centers_data/%.csv centers/%.mbtiles
-	tile-join -l $*-centers --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^ 
+.SECONDEXPANSION:
+centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^ 
 
 # Get eviction rate properties and GEOID for centers
-centers_data/%.csv: grouped_data/%.csv
+centers_data/%.csv: year_data/%.csv
 	mkdir -p centers_data
 	csvcut -c GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) $< > $@
 
 # Create census shape tiles from joining data and geography tiles
-census_data/%.mbtiles: grouped_data/%.csv census/%.mbtiles
+.SECONDEXPANSION:
+census_data/%.mbtiles: year_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
-	tile-join -l $* --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^
 
 ### GEOGRAPHY 
 
@@ -101,6 +106,16 @@ census/%.geojson:
 		-o $@ force
 
 ### DATA
+
+## Get data for a given year by the last two digits
+## Secondary expansion allows processing of source so that states-10.csv comes from states.csv
+.SECONDEXPANSION:
+year_data/%.csv: grouped_data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
+	mkdir -p year_data
+	$(eval year_str=$(shell echo $(lastword $(subst -, ,$*)) | head -c 1))
+	$(eval cols=$(subst $(comma),$(space),$(shell head -n 1 $<)))
+	$(eval year_patterns=$(foreach i,$(year_ints),%-$(year_str)$(i)))
+	csvcut -c GEOID,n,pl,$(subst $(space),$(comma),$(filter $(year_patterns),$(cols))) $< > $@
 
 ## Group data by FIPS code with columns for {ATTR}-{YEAR}
 grouped_data/%.csv: data/%.csv
