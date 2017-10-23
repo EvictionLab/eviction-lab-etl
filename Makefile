@@ -120,7 +120,7 @@ year_data/%.csv: grouped_data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 ## Group data by FIPS code with columns for {ATTR}-{YEAR}
 grouped_data/%.csv: data/%.csv
 	mkdir -p grouped_data
-	cat $< | python scripts/group_census_data.py > $@
+	cat $< | python3 scripts/group_census_data.py > $@
 
 ## Fetch Excel data, combine into CSV files
 data/%.csv: data/%.xlsx
