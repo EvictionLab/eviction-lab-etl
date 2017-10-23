@@ -73,7 +73,8 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: year_data/%.csv
 	mkdir -p centers_data
-	csvcut -c GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) $< > $@
+	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 # Create census shape tiles from joining data and geography tiles
 .SECONDEXPANSION:
@@ -115,12 +116,13 @@ year_data/%.csv: grouped_data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	$(eval year_str=$(shell echo $(lastword $(subst -, ,$*)) | head -c 1))
 	$(eval cols=$(subst $(comma),$(space),$(shell head -n 1 $<)))
 	$(eval year_patterns=$(foreach i,$(year_ints),%-$(year_str)$(i)))
-	csvcut -c GEOID,n,pl,$(subst $(space),$(comma),$(filter $(year_patterns),$(cols))) $< > $@
+	cat $< | python3 scripts/subset_cols.py GEOID,n,pl,$(subst $(space),$(comma),$(filter $(year_patterns),$(cols))) | \
+		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Group data by FIPS code with columns for {ATTR}-{YEAR}
 grouped_data/%.csv: data/%.csv
 	mkdir -p grouped_data
-	cat $< | python3 scripts/group_census_data.py > $@
+	cat $< | python3 scripts/group_census_data.py | perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Fetch Excel data, combine into CSV files
 data/%.csv: data/%.xlsx
