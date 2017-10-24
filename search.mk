@@ -9,7 +9,7 @@ clean_search: rm -rf json search grouped_data/united-states*.csv
 ## General search file, and search index files from first or first two characters of name
 json/united-states-search.json: grouped_data/united-states.csv grouped_data/united-states-centers.csv
 	mkdir -p search
-	python scripts/create_search_index.py $^ $@ search
+	python3 scripts/create_search_index.py $^ $@ search
 
 ## Convert the united-states-centers.geojson to CSV for merge later
 grouped_data/united-states-centers.csv: json/united-states-centers.geojson

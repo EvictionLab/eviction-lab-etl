@@ -1,8 +1,9 @@
 import sys
 import random
+import numpy as np
 import pandas as pd
 
-YEARS = list(range(2001, 2010))
+YEARS = list(range(1990, 2018))
 
 DATA_COLS = {
     'evictions-per-day': (0, 1000),
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         context_df[col] = context_df['GEOID'].apply(lambda x: random.randrange(*value))
     for col, value in sample_dict.items():
         context_df[col] = context_df['GEOID'].apply(lambda x: random.choice(value))
-    context_df['eviction-rate'] = context_df['evictions'] / context_df['renting-occupied-households']
+    context_df['eviction-rate'] = context_df['evictions'] / (context_df['renting-occupied-households'] / 100)
     context_df['eviction-rate'] = context_df['eviction-rate'].round(2)
 
     year_df_list = [context_df]
@@ -44,4 +45,5 @@ if __name__ == '__main__':
         year_df_list.append(year_df)
 
     output_df = pd.concat(year_df_list).round(2)
+    output_df.replace(np.inf, 0, inplace=True)
     output_df.to_csv(sys.stdout, index=False)
