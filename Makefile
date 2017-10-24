@@ -122,11 +122,16 @@ grouped_data/%.csv: data/%.csv
 	mkdir -p grouped_data
 	cat $< | python3 scripts/group_census_data.py | perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
+## Pulls fixture data, uncomment below targets for real data
+data/%.csv:
+	wget -O $@.gz $(s3_base)fixture-$@.gz
+	gunzip $@.gz
+
 ## Fetch Excel data, combine into CSV files
-data/%.csv: data/%.xlsx
-	in2csv $< > $@
+# data/%.csv: data/%.xlsx
+# 	in2csv $< > $@
 
 ## Get source data from S3 bucket Excel files
-data/%.xlsx:
-	mkdir -p data
-	wget -P data $(s3_base)$@
+# data/%.xlsx:
+# 	mkdir -p data
+# 	wget -P data $(s3_base)$@
