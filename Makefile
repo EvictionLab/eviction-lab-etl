@@ -16,10 +16,10 @@ block-groups_min_zoom = 7
 
 states_bytes = 1000000
 counties_bytes = 5000000
-cities_bytes = 75000
-zip-codes_bytes = 75000
-tracts_bytes = 75000
-block-groups_bytes = 75000
+cities_bytes = 200000
+zip-codes_bytes = 200000
+tracts_bytes = 200000
+block-groups_bytes = 200000
 
 census_opts = --detect-shared-borders --coalesce-smallest-as-needed
 small_tile_census_opts = --low-detail=10 --grid-low-zooms $(census_opts)
@@ -38,9 +38,7 @@ space := $(null) $(null)
 comma := ,
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson
-# Delete files that are intermediate dependencies, not final products
-.INTERMEDIATE: data/%.xlsx data/%.csv centers/%.geojson grouped_data/%.csv
+.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
 .PHONY: all clean deploy
 
 all: $(foreach t, $(geo_years), tiles/$(t).mbtiles)
