@@ -6,7 +6,7 @@ RUN apt-get update \
   && apt-get -y upgrade \
   && apt-get -y install git build-essential \
     libsqlite3-dev zlib1g-dev libssl-dev \
-    python3-dev python3-pip gzip curl wget nodejs
+    python3-dev python3-pip gzip curl wget
 
 # Create a directory and copy in all files
 RUN mkdir -p /tmp/tippecanoe-src
@@ -29,6 +29,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
 # Symlink NodeJS and install NPM packages
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
     ln -s /usr/bin/nodejs /usr/bin/node && \
+    apt-get -y install nodejs && \
     npm install -g mapshaper geojson-polygon-labels
 
 WORKDIR /
