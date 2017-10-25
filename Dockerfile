@@ -17,10 +17,9 @@ WORKDIR /tmp/tippecanoe-src
 RUN make \
   && make install
 
-# Remove the temp directory and unneeded packages
+# Remove the temp directory
 WORKDIR /
-RUN rm -rf /tmp/tippecanoe-src \
-  && apt-get -y remove --purge build-essential && apt-get -y autoremove
+RUN rm -rf /tmp/tippecanoe-src
 
 # Link Python path, install Python packages
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
