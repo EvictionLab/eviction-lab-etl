@@ -1,19 +1,35 @@
-FROM klokantech/tippecanoe
+# Start from ubuntu
+FROM ubuntu:17.04
 
 # Update repos and install dependencies
 RUN apt-get update \
   && apt-get -y upgrade \
-  && apt-get -y install build-essential libssl-dev \
-    python3-dev python3-pip git gzip curl wget
+  && apt-get -y install git build-essential \
+    libsqlite3-dev zlib1g-dev libssl-dev \
+    python3-dev python3-pip gzip curl wget nodejs
+
+# Create a directory and copy in all files
+RUN mkdir -p /tmp/tippecanoe-src
+RUN git clone https://github.com/mapbox/tippecanoe.git /tmp/tippecanoe-src
+WORKDIR /tmp/tippecanoe-src
+
+# Build tippecanoe
+RUN make \
+  && make install
+
+# Remove the temp directory and unneeded packages
+WORKDIR /
+RUN rm -rf /tmp/tippecanoe-src \
+  && apt-get -y remove --purge build-essential && apt-get -y autoremove
 
 # Link Python path, install Python packages
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
     pip3 install pandas csvkit awscli
+
 # Symlink NodeJS and install NPM packages
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
     ln -s /usr/bin/nodejs /usr/bin/node && \
-    apt-get -y install nodejs && \
-    npm install -g mapshaper geojson-polygon-labels csvtojson
+    npm install -g mapshaper geojson-polygon-labels
 
 WORKDIR /
 RUN git clone https://github.com/EvictionLab/eviction-lab-etl.git
