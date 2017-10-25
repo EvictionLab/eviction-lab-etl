@@ -124,6 +124,7 @@ grouped_data/%.csv: data/%.csv
 
 ## Pulls fixture data, uncomment below targets for real data
 data/%.csv:
+	mkdir -p data
 	wget -O $@.gz $(s3_base)fixture-$@.gz
 	gunzip $@.gz
 

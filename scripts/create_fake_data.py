@@ -26,22 +26,18 @@ if __name__ == '__main__':
     sample_df = pd.read_csv(sys.argv[2])
 
     sample_dict = {c: sample_df[c].tolist() for c in sample_df.columns.values}
+    year_df_list = []
 
-    # Add columns from random data and sample of semi-real data
-    for col, value in DATA_COLS.items():
-        context_df[col] = context_df['GEOID'].apply(lambda x: random.randrange(*value))
-    for col, value in sample_dict.items():
-        context_df[col] = context_df['GEOID'].apply(lambda x: random.choice(value))
-    context_df['eviction-rate'] = context_df['evictions'] / (context_df['renting-occupied-households'] / 100)
-    context_df['eviction-rate'] = context_df['eviction-rate'].round(2)
-
-    year_df_list = [context_df]
-
-    # Just copies year data across rather than generating each time
-    # More to test volume of data than variation
     for year in YEARS:
         year_df = context_df.copy()
         year_df['year'] = year
+        # Add columns from random data and sample of semi-real data
+        for col, value in DATA_COLS.items():
+            year_df[col] = year_df['GEOID'].apply(lambda x: random.randrange(*value))
+        for col, value in sample_dict.items():
+            year_df[col] = year_df['GEOID'].apply(lambda x: random.choice(value))
+        year_df['eviction-rate'] = year_df['evictions'] / (year_df['renting-occupied-households'] / 100)
+        year_df['eviction-rate'] = year_df['eviction-rate'].round(2)
         year_df_list.append(year_df)
 
     output_df = pd.concat(year_df_list).round(2)
