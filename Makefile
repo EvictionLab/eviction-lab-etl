@@ -2,7 +2,7 @@ s3_base = https://s3.amazonaws.com/eviction-lab-data/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
-years = 90 00 10
+years = 00 10
 year_ints = 0 1 2 3 4 5 6 7 8 9
 geo_types = states counties zip-codes cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
