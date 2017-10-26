@@ -1,4 +1,4 @@
 #!/bin/bash
 git pull origin master
-exec "$@"
+make $1
 make deploy
