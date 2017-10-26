@@ -2,7 +2,7 @@ s3_base = https://s3.amazonaws.com/eviction-lab-data/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
-years = 00 10
+years = 90 00 10
 year_ints = 0 1 2 3 4 5 6 7 8 9
 geo_types = states counties zip-codes cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
@@ -47,13 +47,13 @@ clean:
 	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
 
 ## Submit job to AWS Batch
-submit_job:
-	aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue
+submit_jobs:
+	for g in $(geo_years); do aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue --container-overrides command="make tiles/$(g).mbtiles && make deploy"; done
 
 ## Create directories with .pbf file tiles for deployment to S3
-deploy: all
+deploy:
 	mkdir -p tilesets
-	for f in $(geo_years); do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$f ./tiles/$$f.mbtiles; done
+	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/fixtures --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ### MERGE TILES

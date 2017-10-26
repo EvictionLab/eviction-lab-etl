@@ -34,4 +34,4 @@ RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
 WORKDIR /
 RUN git clone https://github.com/EvictionLab/eviction-lab-etl.git
 WORKDIR /eviction-lab-etl/
-ENTRYPOINT git pull origin master && make deploy
+ENTRYPOINT ["/eviction-lab-etl/docker-entrypoint.sh"]

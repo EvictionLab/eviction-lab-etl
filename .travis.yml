@@ -4,4 +4,4 @@ branches:
 sudo: required
 before_install:
 - sudo pip install awscli
-script: 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make submit_job; fi'
+script: 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make submit_jobs; fi'
