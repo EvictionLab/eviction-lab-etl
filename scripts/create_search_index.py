@@ -6,9 +6,17 @@ import pandas as pd
 DATA_COLS = ['GEOID', 'n', 'pl', 'layer', 'longitude', 'latitude']
 
 if __name__ == '__main__':
-    us_data_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object', 'n': 'object'})
+    us_data_df = pd.read_csv(
+        sys.argv[1],
+        engine='python',
+        dtype={'GEOID': 'object', 'n': 'object'}
+    )
     us_data_df.rename(columns={'l': 'layer'}, inplace=True)
-    us_center_df = pd.read_csv(sys.argv[2], dtype={'GEOID': 'object', 'n': 'object'})
+    us_center_df = pd.read_csv(
+        sys.argv[2],
+        engine='python',
+        dtype={'GEOID': 'object', 'n': 'object'}
+    )
     us_df = us_data_df.merge(us_center_df, on=['GEOID', 'layer'])
 
     pop_col = sorted([c for c in us_df.columns.values.tolist() if c.startswith('p-')])[-1]

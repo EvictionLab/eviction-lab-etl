@@ -48,7 +48,7 @@ clean:
 
 ## Submit job to AWS Batch
 submit_jobs:
-	for g in $(geo_years); do aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue --container-overrides command="make tiles/$(g).mbtiles && make deploy"; done
+	for g in $(geo_years); do aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue --parameters filename=tiles/$$g.mbtiles; done
 
 ## Create directories with .pbf file tiles for deployment to S3
 deploy:

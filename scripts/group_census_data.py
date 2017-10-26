@@ -11,7 +11,11 @@ CONTEXT_COLS = ['GEOID', 'n', 'pl']
 if __name__ == '__main__':
     with open(os.path.join(BASE_DIR, 'col_map.json'), 'r') as col_f:
         col_map = json.load(col_f)
-    input_df = pd.read_csv(sys.stdin, dtype={'GEOID': 'object', 'name': 'object'}).round(2)
+    input_df = pd.read_csv(
+        sys.stdin,
+        engine='python',
+        dtype={'GEOID': 'object', 'name': 'object'}
+    ).round(2)
     input_df.rename(columns=col_map, inplace=True)
     # Get non-context or year columns
     data_cols = [c for c in input_df.columns.values if c not in CONTEXT_COLS + ['year']]
