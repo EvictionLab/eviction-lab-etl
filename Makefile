@@ -66,7 +66,7 @@ tiles/%.mbtiles: census_data/%.mbtiles centers_data/%.mbtiles
 # Join centers tiles to data for eviction rates
 .SECONDEXPANSION:
 centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
-	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^ 
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched $(tile_join_opts) -o $@ -c $^ 
 
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: year_data/%.csv
@@ -78,7 +78,7 @@ centers_data/%.csv: year_data/%.csv
 .SECONDEXPANSION:
 census_data/%.mbtiles: year_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
-	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched $(tile_join_opts) -o $@ -c $^
 
 ### GEOGRAPHY 
 
