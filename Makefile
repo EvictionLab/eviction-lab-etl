@@ -44,7 +44,7 @@ comma := ,
 all: $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 
 clean:
-	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
+	rm -rf centers data grouped_data year_data census_data centers_data json tiles tilesets
 
 ## Submit job to AWS Batch
 submit_jobs:
