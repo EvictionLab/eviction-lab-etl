@@ -16,8 +16,10 @@
     "pct-multiple": "pm",
     "pct-other": "po",
     "evictions": "e",
+    "eviction-filings": "ef",
     "average-household-size": "ahs",
     "renting-occupied-households": "roh",
     "poverty-rate": "pr",
-    "eviction-rate": "er"
+    "eviction-rate": "er",
+    "eviction-filing-rate": "efr"
 }

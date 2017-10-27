@@ -71,7 +71,7 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: year_data/%.csv
 	mkdir -p centers_data
-	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 # Create census shape tiles from joining data and geography tiles
