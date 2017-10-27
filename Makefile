@@ -44,7 +44,7 @@ comma := ,
 all: $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 
 clean:
-	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
+	rm -rf centers data grouped_data year_data census_data centers_data json tiles tilesets
 
 ## Submit job to AWS Batch
 submit_jobs:
@@ -66,19 +66,19 @@ tiles/%.mbtiles: census_data/%.mbtiles centers_data/%.mbtiles
 # Join centers tiles to data for eviction rates
 .SECONDEXPANSION:
 centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
-	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^ 
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched $(tile_join_opts) -o $@ -c $^ 
 
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: year_data/%.csv
 	mkdir -p centers_data
-	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter er-%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 # Create census shape tiles from joining data and geography tiles
 .SECONDEXPANSION:
 census_data/%.mbtiles: year_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
-	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched -x GEOID $(tile_join_opts) -o $@ -c $^
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched $(tile_join_opts) -o $@ -c $^
 
 ### GEOGRAPHY 
 

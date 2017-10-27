@@ -7,6 +7,7 @@ YEARS = list(range(1990, 2018))
 
 DATA_COLS = {
     'evictions-per-day': (0, 1000),
+    'eviction-filings': (0, 100),
     'pct-renter-occupied': (0, 100),
     'median-gross-rent': (500, 1800),
     'median-household-income': (10000, 100000),
@@ -38,6 +39,8 @@ if __name__ == '__main__':
             year_df[col] = year_df['GEOID'].apply(lambda x: random.choice(value))
         year_df['eviction-rate'] = year_df['evictions'] / (year_df['renting-occupied-households'] / 100)
         year_df['eviction-rate'] = year_df['eviction-rate'].round(2)
+        year_df['eviction-filing-rate'] = year_df['eviction-filings'] / (year_df['renting-occupied-households'] / 100)
+        year_df['eviction-filing-rate'] = year_df['eviction-filing-rate'].round(2)
         year_df_list.append(year_df)
 
     output_df = pd.concat(year_df_list).round(2)
