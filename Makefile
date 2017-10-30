@@ -41,7 +41,7 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy
+.PHONY: all clean deploy submit_jobs
 
 all: $(output_tiles)
 
