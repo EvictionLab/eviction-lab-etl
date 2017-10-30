@@ -32,6 +32,8 @@ counties_census_opts = --minimum-zoom=$(counties_min_zoom) $(census_opts) --maxi
 
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
+output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
+
 # For comma-delimited list
 null :=
 space := $(null) $(null)
@@ -39,16 +41,16 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy
+.PHONY: all clean deploy submit_jobs
 
-all: $(foreach t, $(geo_years), tiles/$(t).mbtiles)
+all: $(output_tiles)
 
 clean:
 	rm -rf centers data grouped_data year_data census_data centers_data json tiles tilesets
 
-## Submit job to AWS Batch
+## Submit jobs to AWS Batch
 submit_jobs:
-	for g in $(geo_years); do aws batch submit-job --job-name etl-job --job-definition eviction-lab-etl-job --job-queue eviction-lab-etl-job-queue --parameters filename=tiles/$$g.mbtiles; done
+	python3 scripts/submit_jobs.py $(output_tiles)
 
 ## Create directories with .pbf file tiles for deployment to S3
 deploy:
