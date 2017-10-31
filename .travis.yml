@@ -1,7 +1,10 @@
+language: python
+python:
+  - "3.6"
 branches:
   only:
   - master
 sudo: required
-before_install:
-- sudo pip install awscli boto3
+install:
+- pip install boto3
 script: 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make submit_jobs; fi'
