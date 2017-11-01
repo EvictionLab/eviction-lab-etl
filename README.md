@@ -12,7 +12,7 @@ sudo pip install csvkit pandas
 brew install tippecanoe
 ```
 
-To create any individual file (described in the `Makefile`) enter `make` and its name. Otherwise, to generate the full set of files, run `make all`.
+To create any individual file (described in the `Makefile`) enter `make` and its name. Otherwise, to generate the full set of files, run `make`.
 
 ## Deployment
 
@@ -20,11 +20,11 @@ Deployment is managed by an AWS Batch job. If you have an AWS account and a Batc
 
 ## Build Census Data from Source
 
-Currently the Census GeoJSON is getting pulled from an S3 bucket where it has been pre-processed and gzipped. If you want to build this from the original Census files, run `make -f census.mk all` before running `make all`. It will create the initial GeoJSON files, and because Make uses file existence to determine dependencies you can then run `make all` and any other steps as normal.
+Currently the Census GeoJSON is getting pulled from an S3 bucket where it has been pre-processed and gzipped. If you want to build this from the original Census files, run `make -f census.mk` before running `make`. It will create the initial GeoJSON files, and because Make uses file existence to determine dependencies you can then run `make` and any other steps as normal.
 
 ## Create Fixture Data
 
-To create fixture data (used in our workflow to test load times), run `make -f fake.mk all` similarly to building census data from source.
+To create fixture data (used in our workflow to test load times), run `make -f fake.mk` similarly to building census data from source.
 
 ## View Tiles Locally
 
