@@ -16,7 +16,7 @@ To create any individual file (described in the `Makefile`) enter `make` and its
 
 ## Deployment
 
-Deployment is managed by an AWS Batch job. If you have an AWS account and a Batch job set up based on the Dockerfile, you can  run `make deploy` to schedule a job.
+Deployment is managed by an AWS Batch job. If you have an AWS account, you can use the `batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make deploy` to schedule a job.
 
 ## Build Census Data from Source
 

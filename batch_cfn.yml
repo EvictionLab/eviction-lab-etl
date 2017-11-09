@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select a VPC that allows instances access to the Internet.
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Select at two subnets in your selected VPC.
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Select security group.
+  BatchServiceRole:
+    Type: String
+    Default: eviction-lab-etl-batch
+    Description: Name of the IAM role that the batch service will use.
+  CloudfrontId:
+    Type: String
+    Default: ELMVCLYHTM582
+    Description: Select a Cloudfront distribution for cache invalidation.
+Mappings:
+  AWSRegionToAMI:
+    us-east-1:
+      AMIID: ami-20ff515a
+    us-east-2:
+      AMIID: ami-b0527dd5
+    us-west-1:
+      AMIID: ami-b388b4d3
+    us-west-2:
+      AMIID: ami-3702ca4f
+    eu-west-1:
+      AMIID: ami-d65dfbaf
+    eu-central-1:
+      AMIID: ami-ebfb7e84
+    ap-northeast-1:
+      AMIID: ami-95903df3
+    ap-southeast-1:
+      AMIID: ami-c8c98bab
+    ap-southeast-2:
+      AMIID: ami-e3b75981
+Resources:
+  # BatchServiceRole:
+  #     Type: AWS::IAM::Role
+  #     Properties:
+  #       AssumeRolePolicyDocument:
+  #         Version: "2012-10-17"
+  #         Statement:
+  #           - Effect: Allow
+  #             Principal:
+  #               Service: batch.amazonaws.com
+  #             Action: sts:AssumeRole
+  #       ManagedPolicyArns:
+  #         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+  #       Path: /service-role/
+  BatchInstanceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: ec2.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        Path: /
+        Policies:
+        - PolicyName: S3ServicePolicy
+          PolicyDocument:
+            Statement:
+            - Effect: Allow
+              Action: ['s3:*', 'cloudfront:*']
+              Resource: '*'
+  ComputeEnvironment:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole: !Ref 'BatchServiceRole'
+      ComputeEnvironmentName: eviction-lab-etl-compute-env2
+      ComputeResources:
+        MaxvCpus: 128
+        SecurityGroupIds: [!Ref 'SecurityGroup']
+        Type: EC2
+        Subnets: !Ref 'SubnetIds'
+        MinvCpus: 0
+        ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
+        InstanceRole: !Ref 'BatchInstanceRole'
+        InstanceTypes:
+          - m4.large
+        Ec2KeyPair: !Ref 'KeyName'
+        Tags: {"Service": "ETL Tile Deployment"}
+        DesiredvCpus: 2
+      State: ENABLED
+  JobDefinition:
+    Type: 'AWS::Batch::JobDefinition'
+    DependsOn: BatchInstanceRole
+    Properties:
+      Type: container
+      JobDefinitionName: eviction-lab-etl-job2
+      Parameters: {'filename': 'tiles/states-10.mbtiles'}
+      RetryStrategy:
+        Attempts: 2
+      ContainerProperties:
+        Command:
+          - Ref::filename
+        Environment:
+          - Name: 'CLOUDFRONT_DIST'
+            Value: !Ref 'CloudfrontId'
+        Memory: 7000
+        Privileged: false
+        JobRoleArn: !Ref 'BatchInstanceRole'
+        ReadonlyRootFilesystem: false
+        Vcpus: 2
+        Image: evictionlab/eviction-lab-etl
+  JobQueue:
+    Type: AWS::Batch::JobQueue
+    DependsOn: ComputeEnvironment
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref 'ComputeEnvironment'
+      State: ENABLED
+      Priority: 1
+      JobQueueName: eviction-lab-etl-job-queue2
