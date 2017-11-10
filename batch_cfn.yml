@@ -20,27 +20,8 @@ Parameters:
     Type: String
     Default: ELMVCLYHTM582
     Description: Select a Cloudfront distribution for cache invalidation.
-Mappings:
-  AWSRegionToAMI:
-    us-east-1:
-      AMIID: ami-20ff515a
-    us-east-2:
-      AMIID: ami-b0527dd5
-    us-west-1:
-      AMIID: ami-b388b4d3
-    us-west-2:
-      AMIID: ami-3702ca4f
-    eu-west-1:
-      AMIID: ami-d65dfbaf
-    eu-central-1:
-      AMIID: ami-ebfb7e84
-    ap-northeast-1:
-      AMIID: ami-95903df3
-    ap-southeast-1:
-      AMIID: ami-c8c98bab
-    ap-southeast-2:
-      AMIID: ami-e3b75981
 Resources:
+  # Needs to be created, but issues with creating through CloudFormation and then deleting
   # BatchServiceRole:
   #     Type: AWS::IAM::Role
   #     Properties:
@@ -55,66 +36,101 @@ Resources:
   #         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
   #       Path: /service-role/
   BatchInstanceRole:
-      Type: AWS::IAM::Role
-      Properties:
-        AssumeRolePolicyDocument:
-          Version: "2012-10-17"
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+  BatchJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+      - PolicyName: S3ServicePolicy
+        PolicyDocument:
           Statement:
-            - Effect: Allow
-              Principal:
-                Service: ec2.amazonaws.com
-              Action: sts:AssumeRole
-        ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-        Path: /
-        Policies:
-        - PolicyName: S3ServicePolicy
-          PolicyDocument:
-            Statement:
-            - Effect: Allow
-              Action: ['s3:*', 'cloudfront:*']
-              Resource: '*'
+          - Effect: Allow
+            Action: ['s3:*', 'cloudfront:*']
+            Resource: '*'
+  BatchInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: 
+        - !Ref BatchInstanceRole
   ComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
+    DependsOn: BatchInstanceProfile
     Properties:
       Type: MANAGED
       ServiceRole: !Ref 'BatchServiceRole'
-      ComputeEnvironmentName: eviction-lab-etl-compute-env2
+      ComputeEnvironmentName: eviction-lab-etl-compute-env
       ComputeResources:
-        MaxvCpus: 128
+        MaxvCpus: 256
+        MinvCpus: 0
+        DesiredvCpus: 0
         SecurityGroupIds: [!Ref 'SecurityGroup']
         Type: EC2
         Subnets: !Ref 'SubnetIds'
-        MinvCpus: 0
-        ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
-        InstanceRole: !Ref 'BatchInstanceRole'
+        InstanceRole: !Ref 'BatchInstanceProfile'
         InstanceTypes:
           - m4.large
         Ec2KeyPair: !Ref 'KeyName'
         Tags: {"Service": "ETL Tile Deployment"}
-        DesiredvCpus: 2
       State: ENABLED
   JobDefinition:
-    Type: 'AWS::Batch::JobDefinition'
-    DependsOn: BatchInstanceRole
+    Type: AWS::Batch::JobDefinition
+    DependsOn: BatchJobRole
     Properties:
       Type: container
-      JobDefinitionName: eviction-lab-etl-job2
+      JobDefinitionName: eviction-lab-etl-job
       Parameters: {'filename': 'tiles/states-10.mbtiles'}
       RetryStrategy:
         Attempts: 2
       ContainerProperties:
         Command:
           - Ref::filename
-        Environment:
-          - Name: 'CLOUDFRONT_DIST'
-            Value: !Ref 'CloudfrontId'
         Memory: 7000
         Privileged: false
-        JobRoleArn: !Ref 'BatchInstanceRole'
+        JobRoleArn: !Ref 'BatchJobRole'
         ReadonlyRootFilesystem: false
         Vcpus: 2
         Image: evictionlab/eviction-lab-etl
+  CacheJobDefinition:
+    Type: AWS::Batch::JobDefinition
+    DependsOn: BatchJobRole
+    Properties:
+      Type: container
+      JobDefinitionName: etl-cache-invalidation-job
+      Parameters: {'cloudfront_dist': !Ref 'CloudfrontId'}
+      RetryStrategy:
+        Attempts: 1
+      ContainerProperties:
+        Command:
+          - ["aws", "cloudfront", "create-invalidation", "--distribution-id", "Ref::cloudfront_dist", "--paths", "/*"]
+        Memory: 300
+        Privileged: false
+        JobRoleArn: !Ref 'BatchInstanceRole'
+        ReadonlyRootFilesystem: false
+        Vcpus: 1
+        Image: xueshanf/awscli
   JobQueue:
     Type: AWS::Batch::JobQueue
     DependsOn: ComputeEnvironment
@@ -124,4 +140,4 @@ Resources:
           ComputeEnvironment: !Ref 'ComputeEnvironment'
       State: ENABLED
       Priority: 1
-      JobQueueName: eviction-lab-etl-job-queue2
+      JobQueueName: eviction-lab-etl-job-queue
