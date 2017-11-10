@@ -124,10 +124,16 @@ Resources:
         Attempts: 1
       ContainerProperties:
         Command:
-          - ["aws", "cloudfront", "create-invalidation", "--distribution-id", "Ref::cloudfront_dist", "--paths", "/*"]
+          - aws
+          - cloudfront
+          - create-invalidation 
+          - --distribution-id 
+          - Ref::cloudfront_dist 
+          - --paths 
+          - /*
         Memory: 300
         Privileged: false
-        JobRoleArn: !Ref 'BatchInstanceRole'
+        JobRoleArn: !Ref 'BatchJobRole'
         ReadonlyRootFilesystem: false
         Vcpus: 1
         Image: xueshanf/awscli

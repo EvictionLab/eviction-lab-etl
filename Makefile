@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=11 --no-tile-stats --force
+tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 years = 90 00 10
