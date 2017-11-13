@@ -92,6 +92,7 @@ Resources:
         InstanceRole: !Ref 'BatchInstanceProfile'
         InstanceTypes:
           - m4.large
+          - m4.xlarge
         Ec2KeyPair: !Ref 'KeyName'
         Tags: {"Service": "ETL Tile Deployment"}
       State: ENABLED
