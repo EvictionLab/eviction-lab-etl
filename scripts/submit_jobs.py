@@ -19,8 +19,6 @@ if __name__ == '__main__':
                 'filename': filename
             }
         }
-        if len(batch_jobs):
-            job_kwargs['dependsOn'] = [{'jobId': batch_jobs[-1]['jobId']}]
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)
 
@@ -29,5 +27,5 @@ if __name__ == '__main__':
         jobQueue='eviction-lab-etl-job-queue',
         jobDefinition='etl-cache-invalidation-job',
         retryStrategy={'attempts': 1},
-        dependsOn=[{'jobId': batch_jobs[-1]['jobId']}]
+        dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
     )
