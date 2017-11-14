@@ -109,6 +109,7 @@ REMOVE_COLS = [
     'block group'
 ]
 
+# TODO: Add int cols to compress size
 NUMERIC_COLS = [
     'population',
     'poverty-pop',
@@ -160,7 +161,7 @@ DATA_CLEANUP_FUNCS = {
     },
     'tracts': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6),
-        'parent-location': lambda x: COUNTY_FIPS_MAP[str(x).zfill(2) + str(x).zfill(3)]
+        'parent-location': lambda x: COUNTY_FIPS_MAP[str(x['state']).zfill(2) + str(x['county']).zfill(3)]
     },
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
@@ -172,12 +173,6 @@ DATA_CLEANUP_FUNCS = {
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
     for sc in STATE_COUNTY_FIPS:
-        # print(census_obj.get(
-        #     census_vars,
-        #     {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1]),
-        #      'in': 'county:{} state:{}'.format(sc['county'], sc['state'])},
-        #     year=year
-        # ))
         geo_df_list.append(pd.DataFrame(census_obj.get(
             census_vars,
             {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1]),
@@ -199,11 +194,13 @@ def generated_cols(df):
             df['pct-{}'.format(dem)] = df.apply(lambda x: x['{}-pop'.format(dem)] / x['population'] if x['population'] > 0 else 0, axis=1)
     return df
 
+# TODO: Restrict name col on Tract and Block group
 
 def clean_data_df(df, geo_str):
     df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
-    df[NUMERIC_COLS] = df[NUMERIC_COLS].apply(pd.to_numeric)
+    df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
+    df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
     df = generated_cols(df)
     return df[['GEOID'] + [c for c in df.columns.values if c not in REMOVE_COLS]].copy()
 
