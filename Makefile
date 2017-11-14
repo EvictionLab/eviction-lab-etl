@@ -130,6 +130,9 @@ data/%.csv:
 	wget -O $@.gz $(s3_base)fixture-$@.gz
 	gunzip $@.gz
 
+
+## TODO: Split into demographics/ evictions/ and then data/ is joined data
+
 ## Fetch Excel data, combine into CSV files
 # data/%.csv: data/%.xlsx
 # 	in2csv $< > $@
