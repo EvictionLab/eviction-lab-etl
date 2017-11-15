@@ -190,7 +190,7 @@ def generated_cols(df):
         # Should nulls be handled this way here?
         df['poverty-rate'] = np.nan
     for dem in ['hispanic', 'white', 'af-am', 'am-ind', 'asian', 'nh-pi', 'other', 'multiple']:
-        if dem in df.columns.values:
+        if dem + '-pop' in df.columns.values:
             df['pct-{}'.format(dem)] = df.apply(lambda x: x['{}-pop'.format(dem)] / x['population'] if x['population'] > 0 else 0, axis=1)
     return df
 
