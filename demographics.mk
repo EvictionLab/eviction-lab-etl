@@ -9,9 +9,13 @@ output_files = $(foreach f, $(geo_years), demographics/$(f).csv)
 
 all: $(output_files)
 
+clean:
+	rm -r demographics
+
 deploy:
 	for f in demographics/*.csv; do gzip $$f; done 
 	aws s3 cp ./demographics s3://eviction-lab-data/demographics --recursive --acl=public-read
 
 demographics/%.csv:
+	mkdir -p demographics
 	python3 scripts/demographic_data.py $* > $@

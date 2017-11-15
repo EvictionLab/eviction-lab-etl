@@ -194,9 +194,12 @@ def generated_cols(df):
             df['pct-{}'.format(dem)] = df.apply(lambda x: x['{}-pop'.format(dem)] / x['population'] if x['population'] > 0 else 0, axis=1)
     return df
 
-# TODO: Restrict name col on Tract and Block group
 
 def clean_data_df(df, geo_str):
+    if geo_str == 'tracts':
+        df['name'] = df['name'].apply(lambda x: x[13:])
+    elif geo_str == 'block-groups':
+        df['name'] = df.apply(lambda x: df['tract'] + '.' + df['block group'], axis=1)
     df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
     df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
