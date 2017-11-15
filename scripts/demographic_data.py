@@ -5,13 +5,6 @@ import numpy as np
 import pandas as pd
 from census import Census
 
-"""
-TODO: 
-- Custom block groups 90 process to pull from https://www2.cdc.gov/nceh/lead/census90/house11/download.htm
-  - in2csv with the unzipped .dbf file, then join together
-- Switch to SF3 for 1990, 2000 and pull in missing variables
-"""
-
 
 ACS_VAR_MAP = {
     'NAME': 'name',
@@ -42,6 +35,8 @@ ACS_12_VAR_MAP = {
     'B25077_001E': 'median-property-value'
 }
 
+BG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census_90')
+
 CENSUS_90_BG_VAR_MAP = {
     'P0010001': 'population',
     'H0010001': 'housing-units',
@@ -62,40 +57,46 @@ CENSUS_90_BG_VAR_MAP = {
 CENSUS_90_VAR_MAP = {
     'ANPSADPI': 'name',
     'P0010001': 'population',
+    # Can't find one single summary stat for overall poverty
+    'H043A001': 'median-gross-rent'
     'H0010001': 'housing-units',
-    'H0020002': 'vacant-housing-units',
-    'H0020001': 'occupied-housing-units',
-    'H0030002': 'renter-occupied-households',
+    'H0040002': 'vacant-housing-units',
+    'H0040001': 'occupied-housing-units',
+    'H0080002': 'renter-occupied-households',
+    'P080A001': 'median-household-income',
+    'H061A001': 'median-property-value',
     # Average household size?
-    'P0080001': 'hispanic-pop',
-    'P0100001': 'white-pop',
-    'P0100002': 'af-am-pop',
-    'P0100003': 'am-ind-pop',
+    'P0100001': 'hispanic-pop',
+    'P0120001': 'white-pop',
+    'P0120002': 'af-am-pop',
+    'P0120003': 'am-ind-pop',
     # Combines Asian and Native Hawaiian, treating as nh-pi-pop
-    'P0100004': 'nh-pi-pop',
-    'P0100005': 'other-pop'
-}
-
-CENSUS_90_SF3_VAR_MAP = {
-
+    'P0120004': 'asian-pop',
+    'P0120005': 'other-pop'
 }
 
 CENSUS_00_VAR_MAP = {
     'NAME': 'name',
     'P001001': 'population',
-    'H001001': 'housing-units',
-    'H003003': 'vacant-housing-units',
-    'H004001': 'occupied-housing-units',
-    'H004003': 'renter-occupied-households',
+    # total-poverty-pop is "Population for whom poverty status is determined"
+    'P087001': 'total-poverty-pop',
+    'P087002': 'poverty-pop',
     'P017001': 'average-household-size',
-    'P004002': 'hispanic-pop',
-    'P004005': 'white-pop',
-    'P004006': 'af-am-pop',
-    'P004007': 'am-ind-pop',
-    'P004008': 'asian-pop',
-    'P004009': 'nh-pi-pop',
-    'P004010': 'other-pop',
-    'P004011': 'multiple-pop'
+    'H063001': 'median-gross-rent',
+    'H001001': 'housing-units',
+    'H002003': 'vacant-housing-units',
+    'H002002': 'occupied-housing-units',
+    'H007003': 'renter-occupied-households',
+    'P053001': 'median-household-income',
+    'H076001': 'median-property-value',
+    'P007010': 'hispanic-pop',
+    'P007011': 'white-pop',
+    'P007012': 'af-am-pop',
+    'P007013': 'am-ind-pop',
+    'P007014': 'asian-pop',
+    'P007015': 'nh-pi-pop',
+    'P007016': 'other-pop',
+    'P007017': 'multiple-pop'
 }
 
 CENSUS_10_VAR_MAP = {
@@ -221,7 +222,8 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
 def generated_cols(df):
     df['pct-renter-occupied'] = df.apply(lambda x: x['renter-occupied-households'] / x['occupied-housing-units'] if x['occupied-housing-units'] > 0 else 0, axis=1)
     if 'poverty-pop' in df.columns.values:
-        df['poverty-rate'] = df.apply(lambda x: x['poverty-pop'] / x['population'] if x['population'] > 0 else 0, axis=1)
+        pop_col = 'total-poverty-pop' if 'total-poverty-pop' in df.columns.values else 'population'
+        df['poverty-rate'] = df.apply(lambda x: x['poverty-pop'] / x[pop_col] if x[pop_col] > 0 else 0, axis=1)
     else:
         # Should nulls be handled this way here?
         df['poverty-rate'] = np.nan
@@ -244,21 +246,27 @@ def clean_data_df(df, geo_str):
     return df[['GEOID'] + [c for c in df.columns.values if c not in REMOVE_COLS]].copy()
 
 
+def get_block_groups_90_data():
+    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'))
+    df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
+    return df
+
+
 def get_90_data(geo_str):
     if geo_str == 'states':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_90_VARS, {'for': 'state:*'}, year=1990
         ))
     elif geo_str == 'counties':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_90_VARS, {'for': 'county:*', 'in': 'state:*'}, year=1990
         ))
     elif geo_str == 'cities':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_90_VARS, {'for': 'place:*', 'in': 'state:*'}, year=1990
         ))
     else:
-        census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_90_VARS, 1990)
+        census_df = state_county_sub_data(c.sf3, geo_str, CENSUS_90_VARS, 1990)
 
     census_df.rename(columns=CENSUS_90_VAR_MAP, inplace=True)
     census_df_list = []
@@ -271,28 +279,28 @@ def get_90_data(geo_str):
 
 def get_00_data(geo_str):
     if geo_str == 'states':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_00_VARS, {'for': 'state:*'}, year=2000
         ))
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'state:*'}, year=2009
         ))
     elif geo_str == 'counties':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_00_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
         ))
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2009
         ))
     elif geo_str == 'cities':
-        census_df = pd.DataFrame(c.sf1.get(
+        census_df = pd.DataFrame(c.sf3.get(
             CENSUS_00_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
         ))
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))
     else:
-        census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_00_VARS, 2000)
+        census_df = state_county_sub_data(c.sf3, geo_str, CENSUS_00_VARS, 2000)
         acs_df = state_county_sub_data(c.acs5, geo_str, ACS_VARS, 2009)
 
     census_df.rename(columns=CENSUS_00_VAR_MAP, inplace=True)
@@ -383,7 +391,10 @@ if __name__ == '__main__':
     year_str = data_str.split('-')[-1]
 
     if year_str == '90':
-        data_df = get_90_data(geo_str)
+        if geo_str == 'block-groups':
+            data_df = get_block_groups_90_data()
+        else:
+            data_df = get_90_data(geo_str)
     elif year_str == '00':
         data_df = get_00_data(geo_str)
     elif year_str == '10':
