@@ -1,6 +1,6 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
 years = 90 00 10
-geo_types = states counties zip-codes cities tracts block-groups
+geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 output_files = $(foreach f, $(geo_years), demographics/$(f).csv)

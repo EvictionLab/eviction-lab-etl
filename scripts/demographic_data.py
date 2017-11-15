@@ -5,6 +5,13 @@ import numpy as np
 import pandas as pd
 from census import Census
 
+"""
+TODO: 
+- Custom block groups 90 process to pull from https://www2.cdc.gov/nceh/lead/census90/house11/download.htm
+  - in2csv with the unzipped .dbf file, then join together
+- Switch to SF3 for 1990, 2000 and pull in missing variables
+"""
+
 
 ACS_VAR_MAP = {
     'NAME': 'name',
@@ -35,6 +42,23 @@ ACS_12_VAR_MAP = {
     'B25077_001E': 'median-property-value'
 }
 
+CENSUS_90_BG_VAR_MAP = {
+    'P0010001': 'population',
+    'H0010001': 'housing-units',
+    'H0040002': 'vacant-housing-units',
+    'H0040001': 'occupied-housing-units',
+    'H0080002': 'renter-occupied-households',
+    'H061A001': 'median-property-value',
+    # Average household size?
+    'P0080001': 'hispanic-pop',
+    'P0100001': 'white-pop',
+    'P0100002': 'af-am-pop',
+    'P0100003': 'am-ind-pop',
+    # Combines Asian and Native Hawaiian, treating as nh-pi-pop
+    'P0100004': 'nh-pi-pop',
+    'P0100005': 'other-pop'
+}
+
 CENSUS_90_VAR_MAP = {
     'ANPSADPI': 'name',
     'P0010001': 'population',
@@ -50,6 +74,10 @@ CENSUS_90_VAR_MAP = {
     # Combines Asian and Native Hawaiian, treating as nh-pi-pop
     'P0100004': 'nh-pi-pop',
     'P0100005': 'other-pop'
+}
+
+CENSUS_90_SF3_VAR_MAP = {
+
 }
 
 CENSUS_00_VAR_MAP = {
@@ -145,6 +173,12 @@ STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 STATE_COUNTY_FIPS = c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
 COUNTY_FIPS_MAP = {str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS}
 
+GEO_HIERARCHY = {
+    'states': {'for': 'state:*'},
+    'counties': {'for': 'county:*', 'in': 'state:*'},
+    'cities': {'for': 'place:*', 'in': 'state:*'}
+}
+
 
 DATA_CLEANUP_FUNCS = {
     'states': {
@@ -173,11 +207,13 @@ DATA_CLEANUP_FUNCS = {
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
     for sc in STATE_COUNTY_FIPS:
+        lookup_dict = {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1])}
+        if geo_str == 'tracts':
+            lookup_dict['in'] = 'state:{}'.format(sc['state'])
+        elif geo_str == 'block-groups':
+            lookup_dict['in'] = 'county:{} state:{}'.format(sc['county'], sc['state'])
         geo_df_list.append(pd.DataFrame(census_obj.get(
-            census_vars,
-            {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1]),
-             'in': 'county:{} state:{}'.format(sc['county'], sc['state'])},
-            year=year
+            census_vars, lookup_dict, year=year
         )))
     return pd.concat(geo_df_list)
 
