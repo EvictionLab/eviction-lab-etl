@@ -39,7 +39,7 @@ ACS_12_VAR_MAP = {
     'B25077_001E': 'median-property-value'
 }
 
-BG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census_90')
+BG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census', '90')
 
 CENSUS_90_BG_VAR_MAP = {
     'p0010001': 'population',
@@ -202,7 +202,7 @@ DATA_CLEANUP_FUNCS = {
     },
     'tracts': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6),
-        'parent-location': lambda x: COUNTY_FIPS_MAP[str(x['state']).zfill(2) + str(x['county']).zfill(3)]
+        'parent-location': lambda x: COUNTY_FIPS_MAP.get(str(x['state']).zfill(2) + str(x['county']).zfill(3), STATE_FIPS_MAP[str(x['state']).zfill(2)])
     },
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
@@ -227,21 +227,21 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
 
 
 def generated_cols(df):
-    df['pct-renter-occupied'] = df.apply(lambda x: x['renter-occupied-households'] / x['occupied-housing-units'] if x['occupied-housing-units'] > 0 else 0, axis=1)
+    df['pct-renter-occupied'] = df.apply(lambda x: (x['renter-occupied-households'] / x['occupied-housing-units']) * 100 if x['occupied-housing-units'] > 0 else 0, axis=1)
     if 'poverty-pop' in df.columns.values:
         df[['population', 'poverty-pop']] = df[['population', 'poverty-pop']].apply(pd.to_numeric)
         pop_col = 'population'
         if 'total-poverty-pop' in df.columns.values:
             pop_col = 'total-poverty-pop'
             df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
-        df['poverty-rate'] = df.apply(lambda x: x['poverty-pop'] / x[pop_col] if x[pop_col] > 0 else 0, axis=1)
+        df['poverty-rate'] = df.apply(lambda x: (x['poverty-pop'] / x[pop_col]) * 100 if x[pop_col] > 0 else 0, axis=1)
     else:
         # Should nulls be handled this way here?
         df['poverty-rate'] = np.nan
     for dem in ['hispanic', 'white', 'af-am', 'am-ind', 'asian', 'nh-pi', 'other', 'multiple']:
         if dem + '-pop' in df.columns.values:
             df[[dem + '-pop']] = df[[dem + '-pop']].apply(pd.to_numeric)
-            df['pct-{}'.format(dem)] = df.apply(lambda x: x['{}-pop'.format(dem)] / x['population'] if x['population'] > 0 else 0, axis=1)
+            df['pct-{}'.format(dem)] = df.apply(lambda x: (x['{}-pop'.format(dem)] / x['population']) * 100 if x['population'] > 0 else 0, axis=1)
     return df
 
 
@@ -249,9 +249,15 @@ def clean_data_df(df, geo_str):
     if geo_str == 'tracts':
         df['name'] = df['name'].apply(lambda x: x[13:])
     elif geo_str == 'block-groups':
-        df['name'] = df.apply(lambda x: df['tract'] + '.' + df['block group'], axis=1)
-    df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
-    df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        if df['year'].max() < 2000:
+            df['name'] = df['GEOID'].apply(lambda x: x[5:11] + '.' + x[11])
+            df['parent-location'] = df['GEOID'].apply(lambda x: x[5:11])
+        else:
+            df['name'] = df.apply(lambda x: df['tract'] + '.' + df['block group'], axis=1)
+    if 'GEOID' not in df.columns.values:
+        df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
+    if 'parent-location' not in df.columns.values:
+        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
     df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
     df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
     df = generated_cols(df)
@@ -262,7 +268,7 @@ def clean_data_df(df, geo_str):
 
 
 def get_block_groups_90_data():
-    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'))
+    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'), dtype={'GEOID': 'object'})
     df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
     census_df_list = []
     for year in range(1990, 2000):

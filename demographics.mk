@@ -18,9 +18,10 @@ all: $(output_files)
 clean:
 	rm -rf data/demographics
 
+# Deploy using for loop rather than recursive because of files below
 deploy:
-	for f in demographics/*.csv; do gzip $$f; done
-	aws s3 cp ./data/demographics/*.csv s3://eviction-lab-data/demographics --recursive --acl=public-read
+	for f in data/demographics/*.csv; do gzip $$f; done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://eviction-lab-data/demographics/$$(basename $$f) --acl=public-read; done
 
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ > $@

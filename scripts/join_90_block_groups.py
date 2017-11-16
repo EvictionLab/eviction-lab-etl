@@ -15,4 +15,6 @@ if __name__ == '__main__':
             bg_df = df
         else:
             bg_df = bg_df.join(df, how='left')
+    # Handling weird type error
+    bg_df.loc[bg_df['p0110005'] == 'False', 'p0110005'] = 0
     bg_df.to_csv(sys.stdout)
