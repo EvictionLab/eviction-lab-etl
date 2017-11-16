@@ -10,7 +10,7 @@ cols_301 = p0010001,p0080001,p0110001,p0110002,p0110003,p0110004,p0110005
 cols_327 = h0010001,h0040002,h0040001,h0080002
 cols_333 = h061a001
 
-.PRECIOUS: census/90/stf%.csv
+.SECONDARY: census/90/stf%.csv
 .PHONY: all clean deploy
 
 all: $(output_files)
