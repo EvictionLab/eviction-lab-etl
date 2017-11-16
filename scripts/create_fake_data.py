@@ -7,21 +7,22 @@ YEARS = list(range(1990, 2018))
 
 DATA_COLS = {
     'evictions-per-day': (0, 1000),
+    'eviction-rate': (0, 80),
     'eviction-filings': (0, 1000),
     'eviction-filing-rate': (0.0, 20.0),
-    'pct-renter-occupied': (0.0, 1.0),
-    'median-gross-rent': (500, 1800),
-    'median-household-income': (10000, 100000),
-    'median-property-value': (10000, 1000000),
-    'placeholder': (0.0, 1.0),
-    'pct-white': (0.0, 1.0),
-    'pct-af-am': (0.0, 1.0),
-    'pct-hispanic': (0.0, 1.0),
-    'pct-am-ind': (0.0, 1.0),
-    'pct-nh-pi': (0.0, 1.0),
-    'pct-multiple': (0.0, 1.0),
-    'pct-other': (0.0, 1.0),
-    'poverty-rate': (0.0, 0.6)
+    # 'pct-renter-occupied': (0.0, 1.0),
+    # 'median-gross-rent': (500, 1800),
+    # 'median-household-income': (10000, 100000),
+    # 'median-property-value': (10000, 1000000),
+    # 'placeholder': (0.0, 1.0),
+    # 'pct-white': (0.0, 1.0),
+    # 'pct-af-am': (0.0, 1.0),
+    # 'pct-hispanic': (0.0, 1.0),
+    # 'pct-am-ind': (0.0, 1.0),
+    # 'pct-nh-pi': (0.0, 1.0),
+    # 'pct-multiple': (0.0, 1.0),
+    # 'pct-other': (0.0, 1.0),
+    # 'poverty-rate': (0.0, 0.6)
 }
 
 if __name__ == '__main__':
@@ -42,8 +43,6 @@ if __name__ == '__main__':
                 year_df[col] = year_df['GEOID'].apply(lambda x: random.randrange(*value))
             elif isinstance(value[0], float):
                 year_df[col] =  year_df['GEOID'].apply(lambda x: random.uniform(*value)).round(2)
-        year_df['eviction-rate'] = year_df['evictions'] / (year_df['renting-occupied-households'] / 100)
-        year_df['eviction-rate'] = year_df['eviction-rate'].round(2)
         year_df_list.append(year_df)
 
     output_df = pd.concat(year_df_list).round(2)

@@ -125,13 +125,24 @@ grouped_data/%.csv: data/%.csv
 	cat $< | python3 scripts/group_census_data.py | perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Pulls fixture data, uncomment below targets for real data
-data/%.csv:
+data/%.csv: 
 	mkdir -p data
 	wget -O $@.gz $(s3_base)fixture-$@.gz
 	gunzip $@.gz
 
+## Join evictions and demographics
+# data/%.csv: data/demographics/%.csv data/evictions/%.csv
+# 	csvjoin -c GEOID --left $^ > $@
 
-## TODO: Split into demographics/ evictions/ and then data/ is joined data
+# data/evictions/%.csv:
+# 	mkdir -p data/evictions
+# 	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
+# 	gunzip $@.gz
+
+# data/demographics/%.csv:
+# 	mkdir -p data/demographics
+# 	wget -O $@.gz $(s3_base)demographics/$(notdir $@).gz
+# 	gunzip $@.gz
 
 ## Fetch Excel data, combine into CSV files
 # data/%.csv: data/%.xlsx

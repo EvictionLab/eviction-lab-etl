@@ -1,10 +1,14 @@
 import os
+import re
 import sys
 import csv
+import json
+import requests
 import numpy as np
 import pandas as pd
 from census import Census
 
+CENSUS_API_BASE = 'https://api.census.gov/data/'
 
 ACS_VAR_MAP = {
     'NAME': 'name',
@@ -38,27 +42,27 @@ ACS_12_VAR_MAP = {
 BG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census_90')
 
 CENSUS_90_BG_VAR_MAP = {
-    'P0010001': 'population',
-    'H0010001': 'housing-units',
-    'H0040002': 'vacant-housing-units',
-    'H0040001': 'occupied-housing-units',
-    'H0080002': 'renter-occupied-households',
-    'H061A001': 'median-property-value',
+    'p0010001': 'population',
+    'h0010001': 'housing-units',
+    'h0040002': 'vacant-housing-units',
+    'h0040001': 'occupied-housing-units',
+    'h0080002': 'renter-occupied-households',
+    'h061a001': 'median-property-value',
     # Average household size?
-    'P0080001': 'hispanic-pop',
-    'P0100001': 'white-pop',
-    'P0100002': 'af-am-pop',
-    'P0100003': 'am-ind-pop',
+    'p0080001': 'hispanic-pop',
+    'p0110001': 'white-pop',
+    'p0110002': 'af-am-pop',
+    'p0110003': 'am-ind-pop',
     # Combines Asian and Native Hawaiian, treating as nh-pi-pop
-    'P0100004': 'nh-pi-pop',
-    'P0100005': 'other-pop'
+    'p0110004': 'nh-pi-pop',
+    'p0110005': 'other-pop'
 }
 
 CENSUS_90_VAR_MAP = {
     'ANPSADPI': 'name',
     'P0010001': 'population',
     # Can't find one single summary stat for overall poverty
-    'H043A001': 'median-gross-rent'
+    'H043A001': 'median-gross-rent',
     'H0010001': 'housing-units',
     'H0040002': 'vacant-housing-units',
     'H0040001': 'occupied-housing-units',
@@ -117,27 +121,6 @@ CENSUS_10_VAR_MAP = {
     'P0050009': 'multiple-pop'
 }
 
-# Columns to remove (mostly used to generate output columns)
-REMOVE_COLS = [
-    'GEOID',
-    'housing-units',
-    'occupied-housing-units',
-    'poverty-pop',
-    'hispanic-pop',
-    'white-pop',
-    'af-am-pop',
-    'am-ind-pop',
-    'asian-pop',
-    'nh-pi-pop',
-    'other-pop',
-    'multiple-pop',
-    'state',
-    'county',
-    'tract',
-    'place',
-    'block group'
-]
-
 # TODO: Add int cols to compress size
 NUMERIC_COLS = [
     'population',
@@ -158,6 +141,29 @@ NUMERIC_COLS = [
     'nh-pi-pop',
     'other-pop',
     'multiple-pop'
+]
+
+OUTPUT_COLS = [
+    'GEOID',
+    'name',
+    'parent-location',
+    'year',
+    'population',
+    'poverty-rate',
+    'average-household-size',
+    'renter-occupied-households',
+    'pct-renter-occupied',
+    'median-gross-rent',
+    'median-household-income',
+    'median-property-value',
+    'pct-white',
+    'pct-af-am',
+    'pct-hispanic',
+    'pct-am-ind',
+    'pct-asian',
+    'pct-nh-pi',
+    'pct-multiple',
+    'pct-other'
 ]
 
 ACS_VARS = tuple(ACS_VAR_MAP.keys())
@@ -207,12 +213,13 @@ DATA_CLEANUP_FUNCS = {
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
-    for sc in STATE_COUNTY_FIPS:
-        lookup_dict = {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1])}
+    fips_list = STATE_FIPS if geo_str == 'tracts' else STATE_COUNTY_FIPS
+    lookup_dict = {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1])}
+    for f in fips_list:
         if geo_str == 'tracts':
-            lookup_dict['in'] = 'state:{}'.format(sc['state'])
+            lookup_dict['in'] = 'state:{}'.format(f['state'])
         elif geo_str == 'block-groups':
-            lookup_dict['in'] = 'county:{} state:{}'.format(sc['county'], sc['state'])
+            lookup_dict['in'] = 'county:{} state:{}'.format(f['county'], f['state'])
         geo_df_list.append(pd.DataFrame(census_obj.get(
             census_vars, lookup_dict, year=year
         )))
@@ -222,13 +229,18 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
 def generated_cols(df):
     df['pct-renter-occupied'] = df.apply(lambda x: x['renter-occupied-households'] / x['occupied-housing-units'] if x['occupied-housing-units'] > 0 else 0, axis=1)
     if 'poverty-pop' in df.columns.values:
-        pop_col = 'total-poverty-pop' if 'total-poverty-pop' in df.columns.values else 'population'
+        df[['population', 'poverty-pop']] = df[['population', 'poverty-pop']].apply(pd.to_numeric)
+        pop_col = 'population'
+        if 'total-poverty-pop' in df.columns.values:
+            pop_col = 'total-poverty-pop'
+            df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
         df['poverty-rate'] = df.apply(lambda x: x['poverty-pop'] / x[pop_col] if x[pop_col] > 0 else 0, axis=1)
     else:
         # Should nulls be handled this way here?
         df['poverty-rate'] = np.nan
     for dem in ['hispanic', 'white', 'af-am', 'am-ind', 'asian', 'nh-pi', 'other', 'multiple']:
         if dem + '-pop' in df.columns.values:
+            df[[dem + '-pop']] = df[[dem + '-pop']].apply(pd.to_numeric)
             df['pct-{}'.format(dem)] = df.apply(lambda x: x['{}-pop'.format(dem)] / x['population'] if x['population'] > 0 else 0, axis=1)
     return df
 
@@ -243,13 +255,21 @@ def clean_data_df(df, geo_str):
     df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
     df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
     df = generated_cols(df)
-    return df[['GEOID'] + [c for c in df.columns.values if c not in REMOVE_COLS]].copy()
+    for col in OUTPUT_COLS:
+        if col not in df.columns.values:
+            df[col] = np.nan
+    return df[OUTPUT_COLS].copy()
 
 
 def get_block_groups_90_data():
     df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'))
     df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
-    return df
+    census_df_list = []
+    for year in range(1990, 2000):
+        df_copy = df.copy()
+        df_copy['year'] = year
+        census_df_list.append(df_copy)
+    return pd.concat(census_df_list)
 
 
 def get_90_data(geo_str):
@@ -285,17 +305,33 @@ def get_00_data(geo_str):
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'state:*'}, year=2009
         ))
+    # For some reason the Census API for 2000 SF3 counties uses quotes instead of
+    # apostrophes which breaks JSON validation. Using requests manually to fix
     elif geo_str == 'counties':
-        census_df = pd.DataFrame(c.sf3.get(
-            CENSUS_00_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
+        # census_df = pd.DataFrame(c.sf3.get(
+        #     CENSUS_00_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
+        # ))
+        res = requests.get('{}2000/sf3?get={}&for=county:*&in=state:*&key={}'.format(
+            CENSUS_API_BASE, ','.join(CENSUS_00_VARS), os.getenv('CENSUS_KEY')
         ))
+        census_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res.text))
+        census_df = pd.DataFrame([
+            dict(zip(list(CENSUS_00_VARS) + ['state', 'county'], r)) for r in census_json[1:]
+        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2009
         ))
     elif geo_str == 'cities':
-        census_df = pd.DataFrame(c.sf3.get(
-            CENSUS_00_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
+        # census_df = pd.DataFrame(c.sf3.get(
+        #     CENSUS_00_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
+        # ))
+        res = requests.get('{}2000/sf3?get={}&for=place:*&in=state:*&key={}'.format(
+            CENSUS_API_BASE, ','.join(CENSUS_00_VARS), os.getenv('CENSUS_KEY')
         ))
+        census_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res.text))
+        census_df = pd.DataFrame([
+            dict(zip(list(CENSUS_00_VARS) + ['state', 'place'], r)) for r in census_json[1:]
+        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))
