@@ -10,5 +10,6 @@ grouped_data
 year_data
 search
 fixtures
+.env
 .vscode
 .DS_Store

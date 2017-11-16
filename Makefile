@@ -4,8 +4,10 @@ tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 years = 90 00 10
 year_ints = 0 1 2 3 4 5 6 7 8 9
-geo_types = states counties zip-codes cities tracts block-groups
+geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
+
+eviction_cols = evictions,eviction-rate,evictions-per-day,eviction-filings,eviction-filing-rate
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -56,7 +58,7 @@ submit_jobs:
 deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
-	aws s3 cp ./tilesets s3://eviction-lab-tilesets/fixtures --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
 ### MERGE TILES
 
@@ -125,9 +127,25 @@ grouped_data/%.csv: data/%.csv
 	cat $< | python3 scripts/group_census_data.py | perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Pulls fixture data, uncomment below targets for real data
-data/%.csv:
-	mkdir -p data
-	wget -O $@.gz $(s3_base)fixture-$@.gz
+# data/%.csv: 
+# 	mkdir -p data
+# 	wget -O $@.gz $(s3_base)fixture-$@.gz
+# 	gunzip $@.gz
+
+## Join evictions and demographics
+data/%.csv: data/demographics/%.csv data/evictions/%.csv
+	python3 scripts/csvjoin.py GEOID,year $^ > $@
+
+## Pull eviction data, get only necessary columns
+data/evictions/%.csv:
+	mkdir -p data/evictions
+	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
+	gunzip -c $@.gz | python3 scripts/subset_cols.py GEOID,year,$(eviction_cols) > $@
+
+## Pull demographic data
+data/demographics/%.csv:
+	mkdir -p data/demographics
+	wget -O $@.gz $(s3_base)demographics/$(notdir $@).gz
 	gunzip $@.gz
 
 ## Fetch Excel data, combine into CSV files
