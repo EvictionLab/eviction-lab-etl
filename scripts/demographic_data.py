@@ -268,7 +268,7 @@ def clean_data_df(df, geo_str):
 
 
 def get_block_groups_90_data():
-    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'), dtype={'GEOID': 'object'})
+    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'), dtype={'GEOID': 'object'}, encoding='utf-8')
     df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
     census_df_list = []
     for year in range(1990, 2000):

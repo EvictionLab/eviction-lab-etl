@@ -23,7 +23,7 @@ RUN rm -rf /tmp/tippecanoe-src
 
 # Link Python path, install Python packages
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    pip3 install pandas csvkit awscli
+    pip3 install pandas==0.20.3 csvkit awscli
 
 # Symlink NodeJS and install NPM packages
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \

@@ -13,7 +13,7 @@ if __name__ == '__main__':
             'jobQueue': 'eviction-lab-etl-job-queue',
             'jobDefinition': 'eviction-lab-etl-job',
             'retryStrategy': {
-                'attempts': 3
+                'attempts': 1
             },
             'parameters': {
                 'filename': filename
