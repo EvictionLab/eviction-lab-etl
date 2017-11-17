@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
         # Override container memory for block groups
         if 'block-groups' in filename:
-            job_kwargs['containerOverrides'] = {'memory': 15000}
+            job_kwargs['containerOverrides'] = {'memory': 31000}
 
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)
