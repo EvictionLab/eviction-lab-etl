@@ -48,7 +48,7 @@ comma := ,
 all: $(output_tiles)
 
 clean:
-	rm -rf centers data grouped_data year_data census_data centers_data json tiles tilesets
+	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
 
 ## Submit jobs to AWS Batch
 submit_jobs:
@@ -73,14 +73,14 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched $(tile_join_opts) -o $@ -c $^ 
 
 # Get eviction rate properties and GEOID for centers
-centers_data/%.csv: year_data/%.csv
+centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
 	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 # Create census shape tiles from joining data and geography tiles
 .SECONDEXPANSION:
-census_data/%.mbtiles: year_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
+census_data/%.mbtiles: grouped_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
 	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched $(tile_join_opts) -o $@ -c $^
 
@@ -110,21 +110,13 @@ census/%.geojson:
 
 ### DATA
 
-## Get data for a given year by the last two digits
+## Group data by FIPS code with columns for {ATTR}-{YEAR}
 ## Secondary expansion allows processing of source so that states-10.csv comes from states.csv
 .SECONDEXPANSION:
-year_data/%.csv: grouped_data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
-	mkdir -p year_data
-	$(eval year_str=$(shell echo $(lastword $(subst -, ,$*)) | head -c 1))
-	$(eval cols=$(subst $(comma),$(space),$(shell head -n 1 $<)))
-	$(eval year_patterns=$(foreach i,$(year_ints),%-$(year_str)$(i)))
-	cat $< | python3 scripts/subset_cols.py GEOID,n,pl,$(subst $(space),$(comma),$(filter $(year_patterns),$(cols))) | \
-		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
-
-## Group data by FIPS code with columns for {ATTR}-{YEAR}
-grouped_data/%.csv: data/%.csv
+grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	mkdir -p grouped_data
-	cat $< | python3 scripts/group_census_data.py | perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
+	cat $< | python3 scripts/group_census_data.py $(lastword $(subst -, ,$*)) | \
+		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Pulls fixture data, uncomment below targets for real data
 # data/%.csv: 

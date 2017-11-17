@@ -247,13 +247,14 @@ def generated_cols(df):
 
 def clean_data_df(df, geo_str):
     if geo_str == 'tracts':
-        df['name'] = df['name'].apply(lambda x: x[13:])
+        df['name'] = df['tract']
     elif geo_str == 'block-groups':
         if df['year'].max() < 2000:
             df['name'] = df['GEOID'].apply(lambda x: x[5:11] + '.' + x[11])
             df['parent-location'] = df['GEOID'].apply(lambda x: x[5:11])
         else:
             df['name'] = df.apply(lambda x: df['tract'] + '.' + df['block group'], axis=1)
+    df['name'] = df['name'].apply(lambda x: x.split(',')[0])
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     if 'parent-location' not in df.columns.values:
@@ -268,7 +269,7 @@ def clean_data_df(df, geo_str):
 
 
 def get_block_groups_90_data():
-    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'), dtype={'GEOID': 'object'}, encoding='utf-8')
+    df = pd.read_csv(os.path.join(BG_DIR, 'block-groups-90.csv'), dtype={'GEOID': 'object', 'parent-location': 'object'}, encoding='utf-8')
     df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
     census_df_list = []
     for year in range(1990, 2000):

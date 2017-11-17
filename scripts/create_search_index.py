@@ -9,13 +9,13 @@ if __name__ == '__main__':
     us_data_df = pd.read_csv(
         sys.argv[1],
         engine='python',
-        dtype={'GEOID': 'object', 'n': 'object'}
+        dtype={'GEOID': 'object', 'n': 'object', 'pl': 'object'}
     )
     us_data_df.rename(columns={'l': 'layer'}, inplace=True)
     us_center_df = pd.read_csv(
         sys.argv[2],
         engine='python',
-        dtype={'GEOID': 'object', 'n': 'object'}
+        dtype={'GEOID': 'object', 'n': 'object', 'pl': 'object'}
     )
     us_df = us_data_df.merge(us_center_df, on=['GEOID', 'layer'])
 

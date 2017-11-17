@@ -13,7 +13,7 @@ DATA_COLS = {
 }
 
 if __name__ == '__main__':
-    data_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object', 'name': 'object'})
+    data_df = pd.read_csv(sys.argv[1], dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'})
     sample_df = pd.read_csv(sys.argv[2])
 
     sample_dict = {c: sample_df[c].tolist() for c in sample_df.columns.values}
