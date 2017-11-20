@@ -19,9 +19,18 @@ if __name__ == '__main__':
         col_map = json.load(col_f)
 
     year = YEAR_MAP[sys.argv[1]]
+    input_df_list = []
 
-    input_df = pd.read_csv(sys.stdin, dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'}).round(2)
-    input_df = input_df.loc[(input_df['year'] >= year) & (input_df['year'] <= year+9)]
+    input_df_iter = pd.read_csv(
+        sys.stdin,
+        dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'},
+        iterator=True,
+        chunksize=10000
+    )
+    for df in input_df_iter:
+        input_df_list.append(df.loc[(df['year'] >= year) & (df['year'] <= year+9)])
+
+    input_df = pd.concat(input_df_list).round(2)
     input_df.rename(columns=col_map, inplace=True)
 
     # Get non-context or year columns
@@ -42,6 +51,7 @@ if __name__ == '__main__':
         year_df_list.append(year_df)
 
     # Join all year dataframes together with context on GEOID index
-    output_df = reduce(lambda x, y: x.join(y, how='left'), [context_df] + year_df_list)
+    output_df = pd.concat([context_df] + year_df_list, axis=1)
+    output_df.index.name = 'GEOID'
     output_df.fillna(-1.0, inplace=True)
     output_df[~output_df.index.duplicated()].to_csv(sys.stdout, quoting=csv.QUOTE_NONNUMERIC)

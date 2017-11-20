@@ -206,7 +206,7 @@ DATA_CLEANUP_FUNCS = {
     },
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
-        'parent-location': lambda x: x['tract'].zfill(6)
+        'parent-location': lambda x: str(x['tract']).lstrip('0')
     }
 }
 
@@ -247,14 +247,14 @@ def generated_cols(df):
 
 def clean_data_df(df, geo_str):
     if geo_str == 'tracts':
-        df['name'] = df['tract']
+        df['name'] = df['tract'].apply(lambda x: str(x).lstrip('0'))
     elif geo_str == 'block-groups':
         if df['year'].max() < 2000:
-            df['name'] = df['GEOID'].apply(lambda x: x[5:11] + '.' + x[11])
-            df['parent-location'] = df['GEOID'].apply(lambda x: x[5:11])
+            df['name'] = df['GEOID'].apply(lambda x: (x[5:11] + '.' + x[11]).lstrip('0'))
+            df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
         else:
-            df['name'] = df.apply(lambda x: df['tract'] + '.' + df['block group'], axis=1)
-    df['name'] = df['name'].apply(lambda x: x.split(',')[0])
+            df['name'] = df.apply(lambda x: df['tract'].str.lstrip('0') + '.' + df['block group'], axis=1)
+    df['name'] = df['name'].apply(lambda x: (x.split(',')[0]).lstrip('0'))
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     if 'parent-location' not in df.columns.values:
