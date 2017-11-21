@@ -38,13 +38,10 @@ data/demographics/years/%.csv: census/90/block-groups.csv census/00/block-groups
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 	csvstack $(dir $@)block-groups/*.csv > $@
 
-census/10/block-groups/%.csv:
-	mkdir -p census/10/block-groups
-	python3 scripts/get_block_groups.py $* 10 > $@
-
-census/00/block-groups/%.csv:
-	mkdir -p census/00/block-groups
-	python3 scripts/get_block_groups.py $* 00 > $@
+census/00/block-groups.csv census/10/block-groups.csv:
+	mkdir -p $(dir $@)
+	$(eval y=$(subst census/,,$(subst /block-groups.csv,,$@)))
+	python3 scripts/get_block_groups.py $* $(y) > $@
 
 # Census 1990
 census/90/block-groups.csv: $(foreach c, 301 327 333, census/stf$(c).csv)
@@ -60,4 +57,4 @@ census/90/%/stf301.csv census/90/%/stf327.csv census/90/%/stf333.csv:
 	for f in $(dir $@)stf$(c)*.dbf; do in2csv -f dbf $$f > $$f.csv; done
 	csvstack $(dir $@)stf$(c)*.csv | \
 		csvgrep -c sumlev -m 150 | \
-		csvcut -c statefp,cnty,tractbna,blckgr,$(cols_$(c)) > $@
+		python3 utils/subset_cols.py statefp,cnty,tractbna,blckgr,$(cols_$(c)) > $@

@@ -11,7 +11,7 @@ from .census_data import *
 
 c = Census(os.getenv('CENSUS_KEY'))
 
-BG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census', '90')
+CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
 STATE_FIPS = c.acs5.get(('NAME'), {'for': 'state:*'})
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
@@ -115,7 +115,7 @@ def clean_data_df(df, geo_str):
 
 def get_block_groups_90_data():
     df = pd.read_csv(
-        os.path.join(BG_DIR, 'block-groups.csv'),
+        os.path.join(CENSUS_DIR, '90', 'block-groups.csv'),
         dtype={'GEOID': 'object', 'parent-location': 'object'},
         encoding='utf-8'
     )
@@ -126,6 +126,17 @@ def get_block_groups_90_data():
         df_copy['year'] = year
         census_df_list.append(df_copy)
     return pd.concat(census_df_list)
+
+
+def get_block_groups_data(year_str):
+    df = pd.read_csv(
+        os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
+        dtype={'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
+        encoding='utf-8'
+    )
+    df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS['block-groups'], axis=1)
+    df.set_index('GEOID', inplace=True)
+    return df
 
 
 def get_90_data(geo_str):
@@ -288,8 +299,6 @@ def get_10_data(geo_str):
         acs_merge_keys = ['state', 'place']
     elif geo_str == 'tracts':
         acs_merge_keys  = ['state', 'county', 'tract']
-    elif geo_str == 'block-groups':
-        acs_merge_keys = ['state', 'county', 'tract', 'block group']
     census_df = census_df.merge(acs_12_df, on=acs_merge_keys, how='left')
 
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
@@ -315,9 +324,15 @@ if __name__ == '__main__':
         else:
             data_df = get_90_data(geo_str)
     elif year_str == '00':
-        data_df = get_00_data(geo_str)
+        if geo_str == 'block-groups':
+            data_df = get_block_groups_data(year_str)
+        else:
+            data_df = get_00_data(geo_str)
     elif year_str == '10':
-        data_df = get_10_data(geo_str)
+        if geo_str = 'block-groups':
+            data_df = get_block_groups_data(year_str)
+        else:
+            data_df = get_10_data(geo_str)
     else:
         raise ValueError('An invalid argument was supplied')
 

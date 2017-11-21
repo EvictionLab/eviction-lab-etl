@@ -52,7 +52,7 @@ clean:
 
 ## Submit jobs to AWS Batch
 submit_jobs:
-	python3 scripts/submit_jobs.py $(output_tiles)
+	python3 utils/submit_jobs.py $(output_tiles)
 
 ## Create directories with .pbf file tiles for deployment to S3
 deploy:
@@ -75,7 +75,7 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 # Get eviction rate properties and GEOID for centers
 centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
-	cat $< | python3 scripts/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+	cat $< | python3 utils/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 # Create census shape tiles from joining data and geography tiles
@@ -126,13 +126,13 @@ grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 
 ## Join evictions and demographics
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 scripts/csvjoin.py GEOID,year $^ > $@
+	python3 utils/csvjoin.py GEOID,year $^ > $@
 
 ## Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p data/evictions
 	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
-	gunzip -c $@.gz | python3 scripts/subset_cols.py GEOID,year,$(eviction_cols) > $@
+	gunzip -c $@.gz | python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
 ## Pull demographic data
 data/demographics/%.csv:
