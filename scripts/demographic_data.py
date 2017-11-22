@@ -77,21 +77,24 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
 
 
 def generated_cols(df):
-    df['pct-renter-occupied'] = df.apply(lambda x: (x['renter-occupied-households'] / x['occupied-housing-units']) * 100 if x['occupied-housing-units'] > 0 else 0, axis=1)
+    if 'occupied-housing-units' in df.columns.values:
+        df['pct-renter-occupied'] = np.where(df['occupied-housing-units'] > 0, (df['renter-occupied-households'] / df['occupied-housing-units']) * 100, 0)
+    else:
+        df['pct-renter-occupied'] = np.nan
     if 'poverty-pop' in df.columns.values:
         df[['population', 'poverty-pop']] = df[['population', 'poverty-pop']].apply(pd.to_numeric)
         pop_col = 'population'
         if 'total-poverty-pop' in df.columns.values:
             pop_col = 'total-poverty-pop'
             df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
-        df['poverty-rate'] = df.apply(lambda x: (x['poverty-pop'] / x[pop_col]) * 100 if x[pop_col] > 0 else 0, axis=1)
+        df['poverty-rate'] = np.where(df[pop_col] > 0, (df['poverty-pop'] / df[pop_col]) * 100, 0)
     else:
         # Should nulls be handled this way here?
         df['poverty-rate'] = np.nan
     for dem in ['hispanic', 'white', 'af-am', 'am-ind', 'asian', 'nh-pi', 'other', 'multiple']:
         if dem + '-pop' in df.columns.values:
             df[[dem + '-pop']] = df[[dem + '-pop']].apply(pd.to_numeric)
-            df['pct-{}'.format(dem)] = df.apply(lambda x: (x['{}-pop'.format(dem)] / x['population']) * 100 if x['population'] > 0 else 0, axis=1)
+            df['pct-{}'.format(dem)] = np.where(df['population'] > 0, (df['{}-pop'.format(dem)] / df['population']) * 100, 0)
     return df
 
 
@@ -99,12 +102,10 @@ def clean_data_df(df, geo_str):
     if geo_str == 'tracts':
         df['name'] = df['tract'].apply(lambda x: str(x).lstrip('0'))
     elif geo_str == 'block-groups':
-        if df['year'].max() < 2000:
-            df['name'] = df['GEOID'].apply(lambda x: (x[5:11] + '.' + x[11]).lstrip('0'))
-            df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
-        else:
-            df['name'] = df.apply(lambda x: df['tract'].str.lstrip('0') + '.' + df['block group'], axis=1)
-    df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
+        df['name'] = df['GEOID'].apply(lambda x: (x[5:11] + '.' + x[11]).lstrip('0'))
+        df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
+    else:
+        df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     if 'parent-location' not in df.columns.values:
@@ -121,7 +122,7 @@ def clean_data_df(df, geo_str):
 def get_block_groups_90_data():
     df = pd.read_csv(
         os.path.join(CENSUS_DIR, '90', 'block-groups.csv'),
-        dtype={'GEOID': 'object', 'parent-location': 'object'},
+        dtype={'GEOID': 'object'},
         encoding='utf-8'
     )
     df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
@@ -137,16 +138,14 @@ def get_block_groups_data(year_str):
     df_list = []
     df_iter = pd.read_csv(
         os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
-        dtype={'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
+        dtype={'GEOID': 'object', 'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
         encoding='utf-8',
         iterator=True,
-        chunksize=10000
+        chunksize=50000
     )
     for df in df_iter:
-        df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS['block-groups']['geoid'], axis=1)
-        df.set_index('GEOID', inplace=True)
         df['name'] = df['tract'].str.lstrip('0') + '.' + df['block group']
-        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        df['parent-location'] = df['tract'].str.lstrip('0')
         df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
         df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
         df = generated_cols(df)
@@ -185,6 +184,8 @@ def get_90_data(geo_str):
 
     census_sf1_df.rename(columns=CENSUS_90_SF1_VAR_MAP, inplace=True)
     census_sf3_df.rename(columns=CENSUS_90_SF3_VAR_MAP, inplace=True)
+    if 'name' in census_sf3_df.columns.values:
+        census_sf3_df.drop('name', axis=1, inplace=True)
     census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
 
     census_df_list = []
@@ -251,6 +252,8 @@ def get_00_data(geo_str):
 
     census_sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
     census_sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
+    if 'name' in census_sf3_df.columns.values:
+        census_sf3_df.drop('name', axis=1, inplace=True)
     census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
@@ -307,6 +310,8 @@ def get_10_data(geo_str):
 
     census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
     acs_12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
+    if 'name' in acs_12_df.columns.values:
+        acs_12_df.drop('name', axis=1, inplace=True)
 
     # Merge vars that are only in ACS to 2010 census
     if geo_str == 'states':
@@ -354,6 +359,5 @@ if __name__ == '__main__':
     else:
         raise ValueError('An invalid argument was supplied')
 
-    if year_str != '90' and geo_str != 'block-groups':
-        data_df = clean_data_df(data_df, geo_str).round(2)
+    data_df = clean_data_df(data_df, geo_str).round(2)
     data_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)

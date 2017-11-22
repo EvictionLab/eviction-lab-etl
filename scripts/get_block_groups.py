@@ -105,6 +105,7 @@ if __name__ == '__main__':
     else:
         raise ValueError('Invalid year suffix supplied')
     if bg_df is not None:
+        bg_df['GEOID'] = bg_df.apply(lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']), axis=1)
         bg_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     

@@ -1,10 +1,10 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-geo_types = states counties zip-codes cities tracts block-groups
+geo_types = states counties cities tracts block-groups
 
 .PRECIOUS: data/demographics/%.csv data/evictions/%.csv
 .PHONY: all clean
 
-all: $(foreach g, $(geo_types), data/$(g).csv)
+all: $(foreach g, $(geo_types), data/evictions/$(g).csv)
 
 clean:
 	rm -rf data fixtures
