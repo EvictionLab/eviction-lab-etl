@@ -15,7 +15,7 @@ YEAR_MAP = {
 }
 
 if __name__ == '__main__':
-    with open(os.path.join(BASE_DIR, 'col_map.json'), 'r') as col_f:
+    with open(os.path.join(os.path.dirname(BASE_DIR), 'conf', 'col_map.json'), 'r') as col_f:
         col_map = json.load(col_f)
 
     year = YEAR_MAP[sys.argv[1]]

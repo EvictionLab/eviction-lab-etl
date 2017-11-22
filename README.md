@@ -4,7 +4,7 @@ Makefile for running ETL on Eviction Lab data.
 
 ## Setup
 
-You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
@@ -16,7 +16,7 @@ To create any individual file (described in the `Makefile`) enter `make` and its
 
 ## Deployment
 
-Deployment is managed by an AWS Batch job. If you have an AWS account, you can use the `batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make deploy` to schedule a job.
+Deployment is managed by an AWS Batch job. If you have an AWS account, you can use the `conf/batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make deploy` to schedule a job.
 
 ## Build Census Data from Source
 
