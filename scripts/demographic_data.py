@@ -7,7 +7,7 @@ import requests
 import numpy as np
 import pandas as pd
 from census import Census
-from .census_data import *
+from census_data import *
 
 c = Census(os.getenv('CENSUS_KEY'))
 
@@ -58,11 +58,16 @@ DATA_CLEANUP_FUNCS = {
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
-    fips_list = STATE_FIPS if geo_str == 'tracts' else STATE_COUNTY_FIPS
+    if geo_str == 'tracts' and year != 1990:
+        fips_list = STATE_FIPS
+    else:
+        fips_list = STATE_COUNTY_FIPS
     lookup_dict = {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1])}
     for f in fips_list:
         if geo_str == 'tracts':
-            lookup_dict['in'] = 'state:{}'.format(f['state'])
+            lookup_dict['in'] = 'county:{} state:{}'.format(
+                f.get('county', '*'), f['state']
+            )
         elif geo_str == 'block-groups':
             lookup_dict['in'] = 'county:{} state:{}'.format(f['county'], f['state'])
         geo_df_list.append(pd.DataFrame(census_obj.get(
@@ -99,7 +104,7 @@ def clean_data_df(df, geo_str):
             df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
         else:
             df['name'] = df.apply(lambda x: df['tract'].str.lstrip('0') + '.' + df['block group'], axis=1)
-    df['name'] = df['name'].apply(lambda x: (x.split(',')[0]).lstrip('0'))
+    df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     if 'parent-location' not in df.columns.values:
@@ -129,14 +134,27 @@ def get_block_groups_90_data():
 
 
 def get_block_groups_data(year_str):
-    df = pd.read_csv(
+    df_list = []
+    df_iter = pd.read_csv(
         os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
         dtype={'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
-        encoding='utf-8'
+        encoding='utf-8',
+        iterator=True,
+        chunksize=10000
     )
-    df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS['block-groups'], axis=1)
-    df.set_index('GEOID', inplace=True)
-    return df
+    for df in df_iter:
+        df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS['block-groups']['geoid'], axis=1)
+        df.set_index('GEOID', inplace=True)
+        df['name'] = df['tract'].str.lstrip('0') + '.' + df['block group']
+        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
+        df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
+        df = generated_cols(df)
+        for col in OUTPUT_COLS:
+            if col not in df.columns.values:
+                df[col] = np.nan
+        df_list.append(df[OUTPUT_COLS])
+    return pd.concat(df_list)
 
 
 def get_90_data(geo_str):
@@ -329,12 +347,13 @@ if __name__ == '__main__':
         else:
             data_df = get_00_data(geo_str)
     elif year_str == '10':
-        if geo_str = 'block-groups':
+        if geo_str == 'block-groups':
             data_df = get_block_groups_data(year_str)
         else:
             data_df = get_10_data(geo_str)
     else:
         raise ValueError('An invalid argument was supplied')
 
-    data_df = clean_data_df(data_df, geo_str).round(2)
+    if year_str != '90' and geo_str != 'block-groups':
+        data_df = clean_data_df(data_df, geo_str).round(2)
     data_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)

@@ -61,8 +61,38 @@ def block_groups_00(state, county):
 
     return pd.concat(census_df_list + acs_df_list)
 
+
 def block_groups_10(state, county):
-    pass
+    census_df = pd.DataFrame(c.sf1.get(
+        CENSUS_10_VARS,
+        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
+        year=2010
+    ))
+    acs_12_df = pd.DataFrame(c.acs5.get(
+        ACS_12_VARS,
+        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
+        year=2012
+    ))
+    acs_df = pd.DataFrame(c.acs5.get(
+        ACS_VARS,
+        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
+        year=2015
+    ))
+
+    census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
+    acs_12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
+
+    # Merge vars that are only in ACS to 2010 census
+    census_df = census_df.merge(acs_12_df, on=['state', 'county', 'tract', 'block group'], how='left')
+    census_df['year'] = 2010
+
+    acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
+    acs_df_list = []
+    for year in range(2011, 2017):
+        acs_copy = acs_df.copy()
+        acs_copy['year'] = year
+        acs_df_list.append(acs_copy)
+    return pd.concat([census_df] + acs_df_list)
 
 
 if __name__ == '__main__':
