@@ -38,7 +38,7 @@ def block_groups_00(state, county):
     ])
     acs_df = pd.DataFrame(c.acs5.get(
         ACS_VARS,
-        {'for': 'block group:*', 'in': 'county: {} state:{}'.format(county, state)},
+        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
         year=2009
     ))
 

@@ -359,5 +359,6 @@ if __name__ == '__main__':
     else:
         raise ValueError('An invalid argument was supplied')
 
-    data_df = clean_data_df(data_df, geo_str).round(2)
+    if not (geo_str == 'block-groups' and year_str in ['00', '10']):
+        data_df = clean_data_df(data_df, geo_str).round(2)
     data_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
