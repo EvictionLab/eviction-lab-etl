@@ -19,12 +19,6 @@ STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 STATE_COUNTY_FIPS = c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
 COUNTY_FIPS_MAP = {str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS}
 
-GEO_HIERARCHY = {
-    'states': {'for': 'state:*'},
-    'counties': {'for': 'county:*', 'in': 'state:*'},
-    'cities': {'for': 'place:*', 'in': 'state:*'}
-}
-
 CENSUS_JOIN_KEYS = {
     'states': ['state'],
     'counties': ['state', 'county'],
@@ -52,22 +46,32 @@ DATA_CLEANUP_FUNCS = {
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
         'parent-location': lambda x: str(x['tract']).lstrip('0')
+    },
+    'msa': {
+        'geoid': lambda x: str(x['state']).zfill(2) + str(x['metropolitan statistical area/micropolitan statistical area']).zfill(6),
+        'parent-location': lambda x: STATE_FIPS_MAP[str(x['state']).zfill(2)]
     }
 }
 
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
-    if geo_str == 'tracts' and year != 1990:
+    if (geo_str == 'tracts' and year != 1990) or geo_str == 'msa':
         fips_list = STATE_FIPS
     else:
         fips_list = STATE_COUNTY_FIPS
-    lookup_dict = {'for': '{}:*'.format(geo_str.replace('-', ' ')[:-1])}
+    if geo_str in ['tracts', 'block-groups']:
+        lookup_str = geo_str.replace('-', ' ')[:-1]
+    else:
+        lookup_str = 'metropolitan statistical area/micropolitan statistical area'
+    lookup_dict = {'for': '{}:*'.format(lookup_str)}
     for f in fips_list:
         if geo_str == 'tracts':
             lookup_dict['in'] = 'county:{} state:{}'.format(
                 f.get('county', '*'), f['state']
             )
+        elif geo_str == 'msa':
+            lookup_dict['in'] = 'state:{}'.format(f['state'])
         elif geo_str == 'block-groups':
             lookup_dict['in'] = 'county:{} state:{}'.format(f['county'], f['state'])
         geo_df_list.append(pd.DataFrame(census_obj.get(
@@ -104,6 +108,8 @@ def clean_data_df(df, geo_str):
     elif geo_str == 'block-groups':
         df['name'] = df['GEOID'].apply(lambda x: (x[5:11] + '.' + x[11]).lstrip('0'))
         df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
+    elif geo_str == 'msa':
+        df = df.loc[df['name'].str.contains('Metro Area')].copy()
     else:
         df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
     if 'GEOID' not in df.columns.values:
@@ -322,6 +328,8 @@ def get_10_data(geo_str):
         acs_merge_keys = ['state', 'place']
     elif geo_str == 'tracts':
         acs_merge_keys  = ['state', 'county', 'tract']
+    elif geo_str == 'msa':
+        acs_merge_keys = ['state', 'metropolitan statistical area/micropolitan statistical area']
     census_df = census_df.merge(acs_12_df, on=acs_merge_keys, how='left')
 
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
