@@ -2,7 +2,7 @@ census_90_ftp_base = ftp://ftp.census.gov/census_1990/
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
 years = 90 00 10
 geo_types = states counties cities tracts block-groups
-geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
+geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y)) msa-10
 
 census_90_dirs = $(shell cat conf/census_90_dirs.txt)
 county_fips = $(shell cat conf/fips_codes.txt)
@@ -29,6 +29,9 @@ deploy:
 
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ > $@
+
+data/demographics/msa.csv: data/demographics/years/msa-10.csv
+	cp $< $@
 
 # Dependency only needed for block groups, but otherwise command is the same
 data/demographics/years/%.csv: census/90/block-groups.csv census/00/block-groups.csv census/10/block-groups.csv
