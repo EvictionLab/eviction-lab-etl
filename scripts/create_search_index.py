@@ -23,7 +23,7 @@ if __name__ == '__main__':
     DATA_COLS.append(pop_col)
 
     us_df = us_df.loc[
-        us_df['layer'].isin(['states', 'counties', 'zip-codes', 'cities']),
+        us_df['layer'].isin(['states', 'counties', 'cities']),
         ['GEOID', 'n', 'pl', pop_col, 'layer', 'longitude', 'latitude']
     ].copy()
     us_df['lower_name'] = us_df['n'].str.lower()

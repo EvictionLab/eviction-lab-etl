@@ -12,14 +12,12 @@ eviction_cols = evictions,eviction-rate,evictions-per-day,eviction-filings,evict
 states_min_zoom = 2
 counties_min_zoom = 2
 cities_min_zoom = 4
-zip-codes_min_zoom = 6
 tracts_min_zoom = 6
 block-groups_min_zoom = 7
 
 states_bytes = 1000000
 counties_bytes = 5000000
 cities_bytes = 200000
-zip-codes_bytes = 200000
 tracts_bytes = 200000
 block-groups_bytes = 200000
 

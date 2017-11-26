@@ -6,16 +6,14 @@ tracts-pattern = gz_*_*_140_*_500k.zip
 cities-pattern = gz_*_*_160_*_500k.zip
 counties-pattern = gz_*_*_050_*_500k.zip
 states-pattern = gz_*_*_040_*_500k.zip
-zip-codes-pattern = gz_*_*_860_*_500k.zip
 
 block-groups-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY + this.properties.TRACT + this.properties.BLKGRP"
 tracts-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY + this.properties.TRACT"
 cities-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.PLACE"
 counties-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY"
 states-geoid =  "this.properties.GEOID = this.properties.STATE"
-zip-codes-geoid = "this.properties.GEOID = this.properties.ZCTA5"
 
-geo_types = states counties zip-codes cities tracts block-groups
+geo_types = states counties cities tracts block-groups
 
 .PHONY: all
 

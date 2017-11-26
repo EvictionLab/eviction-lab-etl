@@ -7,4 +7,4 @@ branches:
 sudo: required
 install:
 - pip install boto3
-# script: 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make submit_jobs; fi'
+script: 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then make submit_jobs; fi'

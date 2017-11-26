@@ -1,6 +1,6 @@
 include Makefile
 
-geo_types = states counties zip-codes cities tracts block-groups
+geo_types = states counties cities tracts block-groups
 .PHONY: search clean_search
 
 search: json/united-states-search.json
