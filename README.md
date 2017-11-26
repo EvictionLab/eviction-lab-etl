@@ -1,10 +1,10 @@
-# Eviction Lab Tile Data ETL
+# Eviction Lab Data ETL
 
-Makefile for running ETL on Eviction Lab data.
+Data pipeline for Eviction Lab.
 
 ## Setup
 
-You'll need Node, Python, GNU Make, and `wget` installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python 3, GNU Make, and `wget` installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
@@ -16,11 +16,13 @@ To create any individual file (described in the `Makefile`) enter `make` and its
 
 ## Deployment
 
-Deployment is managed by an AWS Batch job. If you have an AWS account, you can use the `conf/batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make deploy` to schedule a job.
+Deployment is managed by a AWS Batch jobs. If you have an AWS account, you can use the `conf/batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make submit_jobs` to schedule a deployment.
 
 ## Build Census Data from Source
 
-Currently the Census GeoJSON is getting pulled from an S3 bucket where it has been pre-processed and gzipped. If you want to build this from the original Census files, run `make -f census.mk` before running `make`. It will create the initial GeoJSON files, and because Make uses file existence to determine dependencies you can then run `make` and any other steps as normal.
+The main `Makefile` pulls Census geography and demographic data that is pre-generated in the necessary format from the main S3 bucket. If any changes are made, you can re-create this data from source. To create the geography data, run `make -f census.mk` before generating tiles, or run `make -f demographics.mk` to generate the demographics data.
+
+**Note:** To create Census demographic data, you'll need to get a [Census API Key](https://www.census.gov/developers/), copy the `.env.sample` file to `.env`, add the API key in there, and run `source .env`.
 
 ## Create Fixture Data
 
