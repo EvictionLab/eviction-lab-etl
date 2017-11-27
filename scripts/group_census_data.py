@@ -9,7 +9,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CONTEXT_COLS = ['GEOID', 'n', 'pl']
 
 YEAR_MAP = {
-    '90': 1990,
     '00': 2000,
     '10': 2010
 }

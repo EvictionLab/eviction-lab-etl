@@ -29,65 +29,6 @@ ACS_12_VAR_MAP = {
     'B25077_001E': 'median-property-value'
 }
 
-CENSUS_90_BG_VAR_MAP = {
-    'p0010001': 'population',
-    'h0010001': 'housing-units',
-    'h0040002': 'vacant-housing-units',
-    'h0040001': 'occupied-housing-units',
-    'h0080002': 'renter-occupied-households',
-    'h061a001': 'median-property-value',
-    # Average household size?
-    'p0080001': 'hispanic-pop',
-    'p0110001': 'white-pop',
-    'p0110002': 'af-am-pop',
-    'p0110003': 'am-ind-pop',
-    # Combines Asian and Native Hawaiian, treating as nh-pi-pop
-    'p0110004': 'nh-pi-pop',
-    'p0110005': 'other-pop'
-}
-
-CENSUS_90_SF1_VAR_MAP = {
-    'ANPSADPI': 'name',
-    'P0010001': 'population',
-    # Can't find one single summary stat for overall poverty
-    # 'H043A001': 'median-gross-rent',
-    'H0010001': 'housing-units',
-    'H0020002': 'vacant-housing-units',
-    'H0020001': 'occupied-housing-units',
-    'H0030002': 'renter-occupied-households',
-    # 'P080A001': 'median-household-income',
-    # 'H061A001': 'median-property-value',
-    # Average household size?
-    'P0080001': 'hispanic-pop',
-    'P0100001': 'white-pop',
-    'P0100002': 'af-am-pop',
-    'P0100003': 'am-ind-pop',
-    # Cobines Asian and Native Hawaiian, treating as nh-pi-pop
-    'P0100004': 'asian-pop',
-    'P0100005': 'other-pop'
-}
-
-CENSUS_90_SF3_VAR_MAP = {
-    'ANPSADPI': 'name',
-    # 'P0010001': 'population',
-    # Can't find one single summary stat for overall poverty
-    'H043A001': 'median-gross-rent',
-    # 'H0010001': 'housing-units',
-    # 'H0040002': 'vacant-housing-units',
-    # 'H0040001': 'occupied-housing-units',
-    # 'H0080002': 'renter-occupied-households',
-    'P080A001': 'median-household-income',
-    'H061A001': 'median-property-value',
-    # Average household size?
-    # 'P0100001': 'hispanic-pop',
-    # 'P0120001': 'white-pop',
-    # 'P0120002': 'af-am-pop',
-    # 'P0120003': 'am-ind-pop',
-    # # Combines Asian and Native Hawaiian, treating as nh-pi-pop
-    # 'P0120004': 'asian-pop',
-    # 'P0120005': 'other-pop'
-}
-
 CENSUS_00_SF1_VAR_MAP = {
     'NAME': 'name',
     'P001001': 'population',
@@ -209,8 +150,6 @@ OUTPUT_COLS = [
 
 ACS_VARS = tuple(ACS_VAR_MAP.keys())
 ACS_12_VARS = tuple(ACS_12_VAR_MAP.keys())
-CENSUS_90_SF1_VARS = tuple(CENSUS_90_SF1_VAR_MAP.keys())
-CENSUS_90_SF3_VARS = tuple(CENSUS_90_SF3_VAR_MAP.keys())
 CENSUS_00_SF1_VARS = tuple(CENSUS_00_SF1_VAR_MAP.keys())
 CENSUS_00_SF3_VARS = tuple(CENSUS_00_SF3_VAR_MAP.keys())
 CENSUS_10_VARS = tuple(CENSUS_10_VAR_MAP.keys())

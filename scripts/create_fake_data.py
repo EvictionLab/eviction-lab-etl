@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 
-YEARS = list(range(1990, 2018))
+YEARS = list(range(2000, 2018))
 
 DATA_COLS = {
     'evictions-per-day': (0, 1000),
