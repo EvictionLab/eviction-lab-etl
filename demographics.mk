@@ -1,3 +1,5 @@
+include weights.mk
+
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
 years = 00 10
 geo_types = states counties cities tracts block-groups
@@ -26,10 +28,23 @@ data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).c
 data/demographics/msa.csv: data/demographics/years/msa-10.csv
 	cp $< $@
 
-# Dependency only needed for block groups, but otherwise command is the same
-data/demographics/years/%.csv: census/00/block-groups.csv census/10/block-groups.csv
+data/demographics/years/%.csv:
 	mkdir -p data/demographics/years
 	python3 scripts/demographic_data.py $* > $@
+
+data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
+	mkdir -p data/demographics/years
+	python3 scripts/demographic_data.py tracts-00 > $@
+	python3 scripts/convert_00_geo.py tracts $@ $<
+
+data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv
+	mkdir -p data/demographics/years
+	python3 scripts/demographic_data.py block-groups-00 > $@
+	python3 scripts/convert_00_geo.py block-groups $@ $<
+
+data/demographics/years/block-groups-10.csv: census/10/block-groups.csv
+	mkdir -p data/demographics/years
+	python3 scripts/demographic_data.py block-groups-10 > $@
 
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 	csvstack $^ > $@
@@ -43,10 +58,3 @@ census/00/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
 	python3 scripts/get_block_groups.py $* $(y) > $@
-
-# Downloading NHGIS 2000 data crosswalks
-census/00/nhgis_blk2000_blk2010_ge.csv: census/00/crosswalks.zip
-	unzip -d $(dir $@) $<
-
-census/00/crosswalks.zip:
-	wget -O $@ http://assets.nhgis.org/crosswalks/nhgis_blk2000_blk2010_ge.zip

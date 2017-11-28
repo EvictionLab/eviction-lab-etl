@@ -111,6 +111,25 @@ OUTPUT_COLS = [
     'pct-other'
 ]
 
+NUMERIC_OUTPUT_COLS = [
+    'population',
+    'poverty-rate',
+    'average-household-size',
+    'renter-occupied-households',
+    'pct-renter-occupied',
+    'median-gross-rent',
+    'median-household-income',
+    'median-property-value',
+    'pct-white',
+    'pct-af-am',
+    'pct-hispanic',
+    'pct-am-ind',
+    'pct-asian',
+    'pct-nh-pi',
+    'pct-multiple',
+    'pct-other'
+]
+
 ACS_VARS = tuple(ACS_VAR_MAP.keys())
 ACS_12_VARS = tuple(ACS_12_VAR_MAP.keys())
 CENSUS_00_SF1_VARS = tuple(CENSUS_00_SF1_VAR_MAP.keys())
