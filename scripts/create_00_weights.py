@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-    
+
 
 if __name__ == '__main__':
     geocorr_df = pd.read_csv(sys.argv[2], dtype={
