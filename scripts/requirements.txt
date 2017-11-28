@@ -2,4 +2,3 @@ boto3
 census
 csvkit
 pandas
-requests

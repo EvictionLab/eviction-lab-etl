@@ -3,7 +3,6 @@ import re
 import sys
 import csv
 import json
-import requests
 import numpy as np
 import pandas as pd
 from census import Census
@@ -56,7 +55,7 @@ DATA_CLEANUP_FUNCS = {
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
-    if (geo_str == 'tracts' and year != 1990) or geo_str == 'msa':
+    if geo_str != 'block-groups':
         fips_list = STATE_FIPS
     else:
         fips_list = STATE_COUNTY_FIPS
@@ -125,21 +124,6 @@ def clean_data_df(df, geo_str):
     return df[OUTPUT_COLS].copy()
 
 
-def get_block_groups_90_data():
-    df = pd.read_csv(
-        os.path.join(CENSUS_DIR, '90', 'block-groups.csv'),
-        dtype={'GEOID': 'object'},
-        encoding='utf-8'
-    )
-    df.rename(columns=CENSUS_90_BG_VAR_MAP, inplace=True)
-    census_df_list = []
-    for year in range(1990, 2000):
-        df_copy = df.copy()
-        df_copy['year'] = year
-        census_df_list.append(df_copy)
-    return pd.concat(census_df_list)
-
-
 def get_block_groups_data(year_str):
     df_list = []
     df_iter = pd.read_csv(
@@ -162,46 +146,6 @@ def get_block_groups_data(year_str):
     return pd.concat(df_list)
 
 
-def get_90_data(geo_str):
-    if geo_str == 'states':
-        census_sf1_df = pd.DataFrame(c.sf1.get(
-            CENSUS_90_SF1_VARS, {'for': 'state:*'}, year=1990
-        ))
-        census_sf3_df = pd.DataFrame(c.sf3.get(
-            CENSUS_90_SF3_VARS, {'for': 'state:*'}, year=1990
-        ))
-    elif geo_str == 'counties':
-        census_sf1_df = pd.DataFrame(c.sf1.get(
-            CENSUS_90_SF1_VARS, {'for': 'county:*', 'in': 'state:*'}, year=1990
-        ))
-        census_sf3_df = pd.DataFrame(c.sf3.get(
-            CENSUS_90_SF3_VARS, {'for': 'county:*', 'in': 'state:*'}, year=1990
-        ))
-    elif geo_str == 'cities':
-        census_sf1_df = pd.DataFrame(c.sf1.get(
-            CENSUS_90_SF1_VARS, {'for': 'place:*', 'in': 'state:*'}, year=1990
-        ))
-        census_sf3_df = pd.DataFrame(c.sf3.get(
-            CENSUS_90_SF3_VARS, {'for': 'place:*', 'in': 'state:*'}, year=1990
-        ))
-    else:
-        census_sf1_df = state_county_sub_data(c.sf1, geo_str, CENSUS_90_SF1_VARS, 1990)
-        census_sf3_df = state_county_sub_data(c.sf3, geo_str, CENSUS_90_SF3_VARS, 1990)
-
-    census_sf1_df.rename(columns=CENSUS_90_SF1_VAR_MAP, inplace=True)
-    census_sf3_df.rename(columns=CENSUS_90_SF3_VAR_MAP, inplace=True)
-    if 'name' in census_sf3_df.columns.values:
-        census_sf3_df.drop('name', axis=1, inplace=True)
-    census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
-
-    census_df_list = []
-    for year in range(1990, 2000):
-        census_copy = census_df.copy()
-        census_copy['year'] = year
-        census_df_list.append(census_copy)
-    return pd.concat(census_df_list)
-
-
 def get_00_data(geo_str):
     if geo_str == 'states':
         census_sf1_df = pd.DataFrame(c.sf1.get(
@@ -213,41 +157,23 @@ def get_00_data(geo_str):
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'state:*'}, year=2009
         ))
-    # For some reason the Census API for 2000 SF3 counties uses quotes instead of
-    # apostrophes which breaks JSON validation. Using requests manually to fix
     elif geo_str == 'counties':
-        res_sf1 = requests.get('{}2000/sf1?get={}&for=county:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF1_VARS), os.getenv('CENSUS_KEY')
+        census_sf1_df = pd.DataFrame(c.sf1.get(
+            CENSUS_00_SF1_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf1_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf1.text))
-        census_sf1_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF1_VARS) + ['state', 'county'], r)) for r in census_sf1_json[1:]
-        ])
-        res_sf3 = requests.get('{}2000/sf3?get={}&for=county:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF3_VARS), os.getenv('CENSUS_KEY')
+        census_sf3_df = pd.DataFrame(c.sf3.get(
+            CENSUS_00_SF3_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf3_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf3.text))
-        census_sf3_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF3_VARS) + ['state', 'county'], r)) for r in census_sf3_json[1:]
-        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2009
         ))
     elif geo_str == 'cities':
-        res_sf1 = requests.get('{}2000/sf1?get={}&for=place:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF1_VARS), os.getenv('CENSUS_KEY')
+        census_sf1_df = pd.DataFrame(c.sf1.get(
+            CENSUS_00_SF1_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf1_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf1.text))
-        census_sf1_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF1_VARS) + ['state', 'place'], r)) for r in census_sf1_json[1:]
-        ])
-        res_sf3 = requests.get('{}2000/sf3?get={}&for=place:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF3_VARS), os.getenv('CENSUS_KEY')
+        census_sf3_df = pd.DataFrame(c.sf3.get(
+            CENSUS_00_SF3_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf3_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf3.text))
-        census_sf3_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF3_VARS) + ['state', 'place'], r)) for r in census_sf3_json[1:]
-        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))
@@ -349,12 +275,7 @@ if __name__ == '__main__':
     geo_str = '-'.join(data_str.split('-')[:-1])
     year_str = data_str.split('-')[-1]
 
-    if year_str == '90':
-        if geo_str == 'block-groups':
-            data_df = get_block_groups_90_data()
-        else:
-            data_df = get_90_data(geo_str)
-    elif year_str == '00':
+    if year_str == '00':
         if geo_str == 'block-groups':
             data_df = get_block_groups_data(year_str)
         else:

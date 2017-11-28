@@ -3,7 +3,6 @@ import re
 import sys
 import csv
 import json
-import requests
 import numpy as np
 import pandas as pd
 from census import Census
@@ -17,25 +16,12 @@ else:
 
 
 def block_groups_00(state, county):
-    res_sf1 = requests.get('{}2000/sf1?get={}&for=block group:*&in=county:{} state:{}&key={}'.format(
-        CENSUS_API_BASE, ','.join(CENSUS_00_SF1_VARS), county, state, os.getenv('CENSUS_KEY')
+    census_sf1_df = pd.DataFrame(c.sf1.get(
+        CENSUS_00_SF1_VARS, {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)}, year=2000
     ))
-    if res_sf1.status_code != 200:
-        return
-    census_sf1_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf1.text))
-    census_sf1_df = pd.DataFrame([
-        dict(zip(list(CENSUS_00_SF1_VARS) + ['state', 'county', 'tract', 'block group'], r)) for r in census_sf1_json[1:]
-    ])
-    res_sf3 = requests.get('{}2000/sf3?get={}&for=block group:*&in=county:{} state:{}&key={}'.format(
-        CENSUS_API_BASE, ','.join(CENSUS_00_SF3_VARS), county, state, os.getenv('CENSUS_KEY')
+    census_sf3_df = pd.DataFrame(c.sf3.get(
+        CENSUS_00_SF3_VARS, {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)}, year=2000
     ))
-    if res_sf3.status_code != 200:
-        return
-
-    census_sf3_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf3.text))
-    census_sf3_df = pd.DataFrame([
-        dict(zip(list(CENSUS_00_SF3_VARS) + ['state', 'county', 'tract', 'block group'], r)) for r in census_sf3_json[1:]
-    ])
     acs_df = pd.DataFrame(c.acs5.get(
         ACS_VARS,
         {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
