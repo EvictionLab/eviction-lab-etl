@@ -3,11 +3,9 @@ CENSUS_API_BASE = 'https://api.census.gov/data/'
 ACS_VAR_MAP = {
     'NAME': 'name',
     'B01003_001E': 'population',
-    'B17001_002E': 'poverty-pop',
+    'B17010_002E': 'poverty-pop',
     'B25010_001E': 'average-household-size',
     'B25111_001E': 'median-gross-rent',
-    'B25001_001E': 'housing-units',
-    'B25002_003E': 'vacant-housing-units',
     'B25003_001E': 'occupied-housing-units',
     'B25003_003E': 'renter-occupied-households',
     'B19013_001E': 'median-household-income',
@@ -23,7 +21,7 @@ ACS_VAR_MAP = {
 }
 
 ACS_12_VAR_MAP = {
-    'B17001_002E': 'poverty-pop',
+    'B17010_002E': 'poverty-pop',
     'B25111_001E': 'median-gross-rent',
     'B19013_001E': 'median-household-income',
     'B25077_001E': 'median-property-value'
@@ -32,17 +30,9 @@ ACS_12_VAR_MAP = {
 CENSUS_00_SF1_VAR_MAP = {
     'NAME': 'name',
     'P001001': 'population',
-    # total-poverty-pop is "Population for whom poverty status is determined"
-    # 'P087001': 'total-poverty-pop',
-    # 'P087002': 'poverty-pop',
     'P017001': 'average-household-size',
-    # 'H063001': 'median-gross-rent',
-    'H003001': 'housing-units',
-    'H003003': 'vacant-housing-units',
     'H003002': 'occupied-housing-units',
     'H004003': 'renter-occupied-households',
-    # 'P053001': 'median-household-income',
-    # 'H076001': 'median-property-value',
     'P008010': 'hispanic-pop',
     'P008003': 'white-pop',
     'P008004': 'af-am-pop',
@@ -50,46 +40,21 @@ CENSUS_00_SF1_VAR_MAP = {
     'P008006': 'asian-pop',
     'P008007': 'nh-pi-pop',
     'P008008': 'other-pop',
-    'P008009': 'multiple-pop',
-    # 'P007010': 'hispanic-pop',
-    # 'P007011': 'white-pop',
-    # 'P007012': 'af-am-pop',
-    # 'P007013': 'am-ind-pop',
-    # 'P007014': 'asian-pop',
-    # 'P007015': 'nh-pi-pop',
-    # 'P007016': 'other-pop',
-    # 'P007017': 'multiple-pop'
+    'P008009': 'multiple-pop'
 }
 
 CENSUS_00_SF3_VAR_MAP = {
     'NAME': 'name',
-    # 'P001001': 'population',
-    # total-poverty-pop is "Population for whom poverty status is determined"
     'P087001': 'total-poverty-pop',
     'P087002': 'poverty-pop',
-    # 'P017001': 'average-household-size',
     'H063001': 'median-gross-rent',
-    # 'H001001': 'housing-units',
-    # 'H002003': 'vacant-housing-units',
-    # 'H002002': 'occupied-housing-units',
-    # 'H007003': 'renter-occupied-households',
     'P053001': 'median-household-income',
-    'H076001': 'median-property-value',
-    # 'P007010': 'hispanic-pop',
-    # 'P007011': 'white-pop',
-    # 'P007012': 'af-am-pop',
-    # 'P007013': 'am-ind-pop',
-    # 'P007014': 'asian-pop',
-    # 'P007015': 'nh-pi-pop',
-    # 'P007016': 'other-pop',
-    # 'P007017': 'multiple-pop'
+    'H076001': 'median-property-value'
 }
 
 CENSUS_10_VAR_MAP = {
     'NAME': 'name',
     'P0030001': 'population',
-    'H00010001': 'housing-units',
-    'H0030003': 'vacant-housing-units',
     'H0040001': 'occupied-housing-units',
     'H0040004': 'renter-occupied-households',
     'H0120001': 'average-household-size',
@@ -109,8 +74,6 @@ NUMERIC_COLS = [
     'poverty-pop',
     'average-household-size',
     'median-gross-rent',
-    'housing-units',
-    'vacant-housing-units',
     'occupied-housing-units',
     'renter-occupied-households',
     'median-household-income',
