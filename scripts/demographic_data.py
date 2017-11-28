@@ -3,7 +3,6 @@ import re
 import sys
 import csv
 import json
-import requests
 import numpy as np
 import pandas as pd
 from census import Census
@@ -158,41 +157,23 @@ def get_00_data(geo_str):
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'state:*'}, year=2009
         ))
-    # For some reason the Census API for 2000 SF3 counties uses quotes instead of
-    # apostrophes which breaks JSON validation. Using requests manually to fix
     elif geo_str == 'counties':
-        res_sf1 = requests.get('{}2000/sf1?get={}&for=county:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF1_VARS), os.getenv('CENSUS_KEY')
+        census_sf1_df = pd.DataFrame(c.sf1.get(
+            CENSUS_00_SF1_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf1_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf1.text))
-        census_sf1_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF1_VARS) + ['state', 'county'], r)) for r in census_sf1_json[1:]
-        ])
-        res_sf3 = requests.get('{}2000/sf3?get={}&for=county:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF3_VARS), os.getenv('CENSUS_KEY')
+        census_sf3_df = pd.DataFrame(c.sf3.get(
+            CENSUS_00_SF3_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf3_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf3.text))
-        census_sf3_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF3_VARS) + ['state', 'county'], r)) for r in census_sf3_json[1:]
-        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2009
         ))
     elif geo_str == 'cities':
-        res_sf1 = requests.get('{}2000/sf1?get={}&for=place:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF1_VARS), os.getenv('CENSUS_KEY')
+        census_sf1_df = pd.DataFrame(c.sf1.get(
+            CENSUS_00_SF1_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf1_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf1.text))
-        census_sf1_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF1_VARS) + ['state', 'place'], r)) for r in census_sf1_json[1:]
-        ])
-        res_sf3 = requests.get('{}2000/sf3?get={}&for=place:*&in=state:*&key={}'.format(
-            CENSUS_API_BASE, ','.join(CENSUS_00_SF3_VARS), os.getenv('CENSUS_KEY')
+        census_sf3_df = pd.DataFrame(c.sf3.get(
+            CENSUS_00_SF3_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2000
         ))
-        census_sf3_json = json.loads(re.sub(r'(?<=[\w\s])"(?=[\w\s])', "'", res_sf3.text))
-        census_sf3_df = pd.DataFrame([
-            dict(zip(list(CENSUS_00_SF3_VARS) + ['state', 'place'], r)) for r in census_sf3_json[1:]
-        ])
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))

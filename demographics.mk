@@ -7,10 +7,6 @@ county_fips = $(shell cat conf/fips_codes.txt)
 
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
-cols_301 = p0010001,p0080001,p0110001,p0110002,p0110003,p0110004,p0110005
-cols_327 = h0010001,h0040002,h0040001,h0080002
-cols_333 = h061a001
-
 .SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 .PHONY: all clean deploy
 
@@ -47,3 +43,10 @@ census/00/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
 	python3 scripts/get_block_groups.py $* $(y) > $@
+
+# Downloading NHGIS 2000 data crosswalks
+census/00/nhgis_blk2000_blk2010_ge.csv: census/00/crosswalks.zip
+	unzip -d $(dir $@) $<
+
+census/00/crosswalks.zip:
+	wget -O $@ http://assets.nhgis.org/crosswalks/nhgis_blk2000_blk2010_ge.zip
