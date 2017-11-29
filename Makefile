@@ -41,7 +41,7 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy submit_jobs
+.PHONY: all clean deploy deploy_tiles deploy_data submit_jobs
 
 all: $(output_tiles)
 
@@ -52,11 +52,20 @@ clean:
 submit_jobs:
 	python3 utils/submit_jobs.py $(output_tiles)
 
+## Deploy tiles and public data
+deploy: deploy_tiles deploy_data
+
 ## Create directories with .pbf file tiles for deployment to S3
-deploy:
+deploy_tiles:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+
+# ## Create structure for public data downloads, deploy
+deploy_data: data/us.csv
+	mkdir -p data/public_data
+	python3 scripts/create_public_data.py
+	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 
 ### MERGE TILES
 
@@ -65,18 +74,18 @@ tiles/%.mbtiles: census_data/%.mbtiles centers_data/%.mbtiles
 	mkdir -p tiles
 	tile-join $(tile_join_opts) -o $@ $^
 
-# Join centers tiles to data for eviction rates
+## Join centers tiles to data for eviction rates
 .SECONDEXPANSION:
 centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*)-centers --if-matched $(tile_join_opts) -o $@ -c $^ 
 
-# Get eviction rate properties and GEOID for centers
+## Get eviction rate properties and GEOID for centers
 centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
 	cat $< | python3 utils/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
-# Create census shape tiles from joining data and geography tiles
+## Create census shape tiles from joining data and geography tiles
 .SECONDEXPANSION:
 census_data/%.mbtiles: grouped_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
@@ -116,15 +125,13 @@ grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	cat $< | python3 scripts/group_census_data.py $(lastword $(subst -, ,$*)) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
-## Pulls fixture data, uncomment below targets for real data
-# data/%.csv: 
-# 	mkdir -p data
-# 	wget -O $@.gz $(s3_base)fixture-$@.gz
-# 	gunzip $@.gz
+## Combine all data into single file
+data/us.csv: $(foreach g, $(geo_types), data/$(g).csv)
+	csvstack $^ > $@
 
 ## Join evictions and demographics
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 utils/csvjoin.py GEOID,year $^ > $@
+	python3 utils/csvjoin.py GEOID,year $^ | python3 scripts/eviction_cols.py > $@
 
 ## Pull eviction data, get only necessary columns
 data/evictions/%.csv:
@@ -137,12 +144,3 @@ data/demographics/%.csv:
 	mkdir -p data/demographics
 	wget -O $@.gz $(s3_base)demographics/$(notdir $@).gz
 	gunzip $@.gz
-
-## Fetch Excel data, combine into CSV files
-# data/%.csv: data/%.xlsx
-# 	in2csv $< > $@
-
-## Get source data from S3 bucket Excel files
-# data/%.xlsx:
-# 	mkdir -p data
-# 	wget -P data $(s3_base)$@
