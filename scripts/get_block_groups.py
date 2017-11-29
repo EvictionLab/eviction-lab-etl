@@ -30,6 +30,9 @@ def block_groups_00(state, county):
 
     census_sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
     census_sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
+
+    if not len(census_sf1_df.columns.values) or not len(census_sf3_df.columns.values):
+        return
     census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=['name', 'state', 'county', 'tract', 'block group'])
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
