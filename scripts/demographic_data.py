@@ -87,9 +87,9 @@ def generated_cols(df):
     if 'poverty-pop' in df.columns.values:
         df[['population', 'poverty-pop']] = df[['population', 'poverty-pop']].apply(pd.to_numeric)
         pop_col = 'population'
-        # if 'total-poverty-pop' in df.columns.values:
-        #     pop_col = 'total-poverty-pop'
-        #     df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
+        if 'total-poverty-pop' in df.columns.values:
+            pop_col = 'total-poverty-pop'
+            df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
         df['poverty-rate'] = np.where(df[pop_col] > 0, (df['poverty-pop'] / df[pop_col]) * 100, 0)
     else:
         # Should nulls be handled this way here?

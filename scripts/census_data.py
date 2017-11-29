@@ -3,6 +3,7 @@ CENSUS_API_BASE = 'https://api.census.gov/data/'
 ACS_VAR_MAP = {
     'NAME': 'name',
     'B01003_001E': 'population',
+    'B17010_001E': 'total-poverty-pop',
     'B17010_002E': 'poverty-pop',
     'B25010_001E': 'average-household-size',
     'B25111_001E': 'median-gross-rent',
@@ -21,6 +22,7 @@ ACS_VAR_MAP = {
 }
 
 ACS_12_VAR_MAP = {
+    'B17010_001E': 'total-poverty-pop',
     'B17010_002E': 'poverty-pop',
     'B25111_001E': 'median-gross-rent',
     'B19013_001E': 'median-household-income',
