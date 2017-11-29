@@ -2,12 +2,17 @@ s3_base = https://s3.amazonaws.com/eviction-lab-data/
 geo_types = states counties cities tracts block-groups
 
 .PRECIOUS: data/demographics/%.csv data/evictions/%.csv
-.PHONY: all clean
+.PHONY: all clean deploy
 
 all: $(foreach g, $(geo_types), data/evictions/$(g).csv)
 
 clean:
 	rm -rf data fixtures
+
+# Deploy using for loop rather than recursive because of files below
+deploy:
+	for f in data/evictions/*.csv; do gzip $$f; done
+	for f in data/evictions/*.gz; do aws s3 cp $$f s3://eviction-lab-data/evictions/$$(basename $$f) --acl=public-read; done
 
 data/evictions/%.csv: data/demographics/%.csv fixtures/sample/%.csv
 	mkdir -p data/evictions

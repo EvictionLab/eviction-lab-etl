@@ -29,7 +29,15 @@ if __name__ == '__main__':
     for df in input_df_iter:
         input_df_list.append(df.loc[(df['year'] >= year) & (df['year'] <= year+9)])
 
-    input_df = pd.concat(input_df_list).round(2)
+    input_df = pd.concat(input_df_list)
+
+    # Generate eviction columns
+    input_df['eviction-rate'] = input_df['evictions'] / (input_df['renter-occupied-households'] / 100)
+    input_df['eviction-filing-rate'] = input_df['eviction-filings'] / (input_df['renter-occupied-households'] / 100)
+    # Naive year calculation
+    input_df['evictions-per-date'] = input_df['evictions'] / 365
+    input_df = input_df.round(2)
+
     input_df.rename(columns=col_map, inplace=True)
 
     # Get non-context or year columns
