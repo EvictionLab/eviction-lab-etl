@@ -30,14 +30,6 @@ if __name__ == '__main__':
         input_df_list.append(df.loc[(df['year'] >= year) & (df['year'] <= year+9)])
 
     input_df = pd.concat(input_df_list)
-
-    # Generate eviction columns
-    input_df['eviction-rate'] = input_df['evictions'] / (input_df['renter-occupied-households'] / 100)
-    input_df['eviction-filing-rate'] = input_df['eviction-filings'] / (input_df['renter-occupied-households'] / 100)
-    # Naive year calculation
-    input_df['evictions-per-date'] = input_df['evictions'] / 365
-    input_df = input_df.round(2)
-
     input_df.rename(columns=col_map, inplace=True)
 
     # Get non-context or year columns
@@ -61,4 +53,6 @@ if __name__ == '__main__':
     output_df = pd.concat([context_df] + year_df_list, axis=1)
     output_df.index.name = 'GEOID'
     output_df.fillna(-1.0, inplace=True)
+    # FIXME: Not sure why some names are showing up as NA (and then -1.0), but removing for now
+    output_df = output_df[output_df['n'] != -1.0]
     output_df[~output_df.index.duplicated()].to_csv(sys.stdout, quoting=csv.QUOTE_NONNUMERIC)
