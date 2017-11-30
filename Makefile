@@ -41,7 +41,7 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy deploy_tiles deploy_data submit_jobs
+.PHONY: all clean deploy deploy_data submit_jobs
 
 all: $(output_tiles)
 
@@ -49,14 +49,12 @@ clean:
 	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
 
 ## Submit jobs to AWS Batch
+## Not including deploy_data because of time
 submit_jobs:
 	python3 utils/submit_jobs.py $(output_tiles)
 
-## Deploy tiles and public data
-deploy: deploy_tiles deploy_data
-
 ## Create directories with .pbf file tiles for deployment to S3
-deploy_tiles:
+deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
