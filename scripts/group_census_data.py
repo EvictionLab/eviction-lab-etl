@@ -53,4 +53,6 @@ if __name__ == '__main__':
     output_df = pd.concat([context_df] + year_df_list, axis=1)
     output_df.index.name = 'GEOID'
     output_df.fillna(-1.0, inplace=True)
+    # FIXME: Not sure why some names are showing up as NA (and then -1.0), but removing for now
+    output_df = output_df[output_df['n'] != -1.0]
     output_df[~output_df.index.duplicated()].to_csv(sys.stdout, quoting=csv.QUOTE_NONNUMERIC)

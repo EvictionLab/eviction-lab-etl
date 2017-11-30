@@ -10,6 +10,8 @@ from census_data import *
 
 c = Census(os.getenv('CENSUS_KEY'))
 
+END_YEAR = 2017
+
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
 STATE_FIPS = c.acs5.get(('NAME'), {'for': 'state:*'})
@@ -262,7 +264,7 @@ def get_10_data(geo_str):
 
     census_df['year'] = 2010
     acs_df_list = []
-    for year in range(2011, 2017):
+    for year in range(2011, END_YEAR):
         acs_copy = acs_df.copy()
         acs_copy['year'] = year
         acs_df_list.append(acs_copy)
