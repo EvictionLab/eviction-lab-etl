@@ -41,7 +41,7 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy deploy_data submit_jobs
+.PHONY: all clean deploy submit_jobs
 
 all: $(output_tiles)
 
@@ -58,12 +58,6 @@ deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
-
-# ## Create structure for public data downloads, deploy
-deploy_data: data/us.csv
-	mkdir -p data/public_data
-	python3 scripts/create_public_data.py
-	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 
 ### MERGE TILES
 
@@ -122,10 +116,6 @@ grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	mkdir -p grouped_data
 	cat $< | python3 scripts/group_census_data.py $(lastword $(subst -, ,$*)) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
-
-## Combine all data into single file
-data/us.csv: $(foreach g, $(geo_types), data/$(g).csv)
-	csvstack $^ > $@
 
 ## Join evictions and demographics
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
