@@ -23,7 +23,7 @@ deploy_data: $(GENERATED_FILES)
 	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 
 # Make GeoJSON from grouped public data with stacked attributes
-$(GEO_TARGETS): data/grouped_public/%.csv census/%.geojson
+$(GEO_TARGETS): grouped_public/%.csv census/%.geojson
 	$(call get_state_fips,$@)
 	mkdir -p $(dir $@)
 	$(mapshaper_cmd) -i $(lastword $^) field-types=GEOID:str \
@@ -31,7 +31,7 @@ $(GEO_TARGETS): data/grouped_public/%.csv census/%.geojson
 		-join $< field-types=GEOID:str keys=GEOID,GEOID -o $@
 
 # Need to combine grouped_data CSVs for GeoJSON merge
-data/grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
+grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
 	mkdir -p $(dir $@)
 	python3 utils/csvjoin.py GEOID,n,pl $^ > $@
 
@@ -46,6 +46,12 @@ $(CSV_ALL_TARGETS): data/public_data/us/all.csv
 	$(call get_state_fips,$@)
 	mkdir -p $(dir $@)
 	csvgrep -c GEOID -r '^$(state_fips)' $< > $@
+
+# All US geography data without filtering
+data/public_data/us/%.geojson: $(foreach y, $(years), grouped_data/%-$(y).csv)
+	mkdir -p $(dir $@)
+	$(mapshaper_cmd) -i $(lastword $^) field-types=GEOID:str \
+		-join $< field-types=GEOID:str keys=GEOID,GEOID -o $@
 
 # For US data, just copy without filtering
 data/public_data/us/%.csv: data/%.csv
