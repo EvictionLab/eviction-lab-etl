@@ -41,12 +41,12 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy submit_jobs
+.PHONY: all clean deploy deploy_data submit_jobs
 
 all: $(output_tiles)
 
 clean:
-	rm -rf centers data grouped_data census_data centers_data json tiles tilesets
+	rm -rf centers data grouped_data grouped_public census_data centers_data json tiles tilesets
 
 ## Submit jobs to AWS Batch
 ## Not including deploy_data because of time
@@ -58,6 +58,26 @@ deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+
+### PUBLIC DATA
+
+deploy_data: $(foreach g, $(geo_types), data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv
+	python3 scripts/create_public_data.py
+	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
+
+# Need to combine grouped_data CSVs for GeoJSON merge
+grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
+	mkdir -p $(dir $@)
+	python3 utils/csvjoin.py GEOID,n,pl $^ > $@
+
+# For US data, just copy without filtering
+data/public_data/us/%.csv: data/%.csv
+	mkdir -p $(dir $@)
+	cp data/$(notdir $@) $@
+
+data/public_data/us/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
+	mkdir -p $(dir $@)
+	csvstack $^ > $@
 
 ### MERGE TILES
 
