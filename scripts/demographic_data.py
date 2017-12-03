@@ -20,12 +20,23 @@ STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 STATE_COUNTY_FIPS = c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
 COUNTY_FIPS_MAP = {str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS}
 
+REMOVE_CITY_SUFFIXES = ['town', 'city', 'CDP', 'municipality', 'borough', '(balance)', 'village']
+
 CENSUS_JOIN_KEYS = {
     'states': ['state'],
     'counties': ['state', 'county'],
     'cities': ['state', 'place'],
     'tracts': ['state', 'county', 'tract']
 }
+
+# Census tract names follow rules described here:
+# https://www.census.gov/geo/reference/gtc/gtc_ct.html
+def create_tract_name(tract):
+    tract_name = str(tract).lstrip('0')
+    if tract_name[-2:] == '00':
+        return tract_name[:-2]
+    else:
+        return tract_name[:-2] + '.' + tract_name[-2:]
 
 DATA_CLEANUP_FUNCS = {
     'states': {
@@ -46,7 +57,7 @@ DATA_CLEANUP_FUNCS = {
     },
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
-        'parent-location': lambda x: str(x['tract']).lstrip('0')
+        'parent-location': lambda x: create_tract_name(x['tract'])
     },
     'msa': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['metropolitan statistical area/micropolitan statistical area']).zfill(6),
@@ -104,11 +115,15 @@ def generated_cols(df):
 
 
 def clean_data_df(df, geo_str):
-    if geo_str == 'tracts':
-        df['name'] = df['tract'].apply(lambda x: str(x).lstrip('0'))
+    if geo_str == 'cities':
+        for s in REMOVE_CITY_SUFFIXES:
+            df['name'] = df['name'].str.rstrip(s)
+        df['name'] = df['name'].str.strip()
+    elif geo_str == 'tracts':
+        df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
-        df['name'] = df['GEOID'].apply(lambda x: (x[5:11] + '.' + x[11]).lstrip('0'))
-        df['parent-location'] = df['GEOID'].apply(lambda x: str(x[5:11]).lstrip('0'))
+        df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
+        df['parent-location'] = df['GEOID'].apply(create_tract_name)
     elif geo_str == 'msa':
         df = df.loc[df['name'].str.contains('Metro Area')].copy()
     else:
@@ -136,8 +151,8 @@ def get_block_groups_data(year_str):
         chunksize=50000
     )
     for df in df_iter:
-        df['name'] = df['tract'].str.lstrip('0') + '.' + df['block group']
-        df['parent-location'] = df['tract'].str.lstrip('0')
+        df['name'] = df['tract'].apply(create_tract_name) + '.' + df['block group']
+        df['parent-location'] = df['tract'].apply(create_tract_name)
         df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
         df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
         df = generated_cols(df)

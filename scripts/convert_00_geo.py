@@ -1,6 +1,7 @@
 import sys
 import csv
 import pandas as pd
+from demographic_data import create_tract_name
 from census_data import *
 
 
@@ -21,9 +22,9 @@ if __name__ == '__main__':
 
     output_df.rename(columns={'GEOID10': 'GEOID'}, inplace=True)
     if sys.argv[1] == 'tracts':
-        output_df['name'] = output_df['GEOID'].str.slice(5).str.lstrip('0')
+        output_df['name'] = output_df['GEOID'].str.slice(5).apply(create_tract_name)
     elif sys.argv[1] == 'block-groups':
-        output_df['name'] = output_df['GEOID'].str.slice(5, -1).str.lstrip('0') + '.' + output_df['GEOID'].str.slice(-1)
+        output_df['name'] = output_df['GEOID'].str.slice(5, -1).apply(create_tract_name) + '.' + output_df['GEOID'].str.slice(-1)
     else:
         raise ValueError('Invalid geography string supplied')
 
