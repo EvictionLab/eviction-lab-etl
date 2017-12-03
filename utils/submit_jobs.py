@@ -21,16 +21,17 @@ if __name__ == '__main__':
         }
 
         # Override container memory for block groups
-        if 'block-groups' in filename:
+        if 'block-groups' in filename or 'deploy_data' in filename:
             job_kwargs['containerOverrides'] = {'memory': 15000}
 
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)
 
-    client.submit_job(
-        jobName='cache-job',
-        jobQueue='eviction-lab-etl-job-queue',
-        jobDefinition='etl-cache-invalidation-job',
-        retryStrategy={'attempts': 1},
-        dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
-    )
+    if not (len(job_filenames) == 1 and job_filenames[0] == 'deploy_data'):
+        client.submit_job(
+            jobName='cache-job',
+            jobQueue='eviction-lab-etl-job-queue',
+            jobDefinition='etl-cache-invalidation-job',
+            retryStrategy={'attempts': 1},
+            dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
+        )
