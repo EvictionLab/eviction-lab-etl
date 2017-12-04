@@ -151,7 +151,7 @@ def get_block_groups_data(year_str):
     )
     for df in df_iter:
         df['name'] = df['tract'].apply(create_tract_name) + '.' + df['block group']
-        df['parent-location'] = df['tract'].apply(create_tract_name)
+        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
         df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
         df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
         df = generated_cols(df)
