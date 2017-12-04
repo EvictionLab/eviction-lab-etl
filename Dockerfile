@@ -6,7 +6,8 @@ RUN apt-get update \
   && apt-get -y upgrade \
   && apt-get -y install git build-essential \
     libsqlite3-dev zlib1g-dev libssl-dev \
-    python3-dev python3-pip gzip curl wget
+    python3-dev python3-pip gzip curl wget \
+    libspatialindex-dev
 
 # Create a directory and copy in all files
 RUN mkdir -p /tmp/tippecanoe-src

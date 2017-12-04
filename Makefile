@@ -61,7 +61,7 @@ deploy:
 
 ### PUBLIC DATA
 
-deploy_data: $(foreach g, $(geo_types), data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv
+deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv
 	python3 scripts/create_public_data.py
 	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 
