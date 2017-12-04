@@ -1,5 +1,7 @@
 import os
+import io
 import sys
+import boto3
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -7,6 +9,9 @@ import geopandas as gpd
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PUBLIC_DATA_DIR = os.path.join(BASE_DIR, 'data', 'public_data')
+BUCKET = 'eviction-lab-public-data'
+s3 = boto3.resource('s3')
+client = boto3.client('s3')
 
 GEO_TYPE_LEN = {
     'states': 2,
@@ -29,22 +34,28 @@ def create_state_csvs(df, fips, state):
 
     for geo, geo_len in GEO_TYPE_LEN.items():
         print('Writing CSV data for {} {}'.format(state, geo))
+        filename = os.path.join(PUBLIC_DATA_DIR, state, '{}.csv'.format(geo))
         df.loc[
             (df['GEOID'].str.len() == geo_len) &
             (df['GEOID'].str.startswith(fips))
-        ].to_csv(
-            os.path.join(PUBLIC_DATA_DIR, state, '{}.csv'.format(geo)),
-            index=False
+        ].to_csv(filename, index=False)
+        client.upload_file(
+            filename, BUCKET, '{}/{}.csv'.format(state, geo)
         )
+        os.remove(filename)
 
 
 def create_state_geojson(df, fips, state):
     for geo, geo_df in geo_df_map.items():
         print('Writing GeoJSON for {} {}'.format(state, geo))
+        filename = os.path.join(PUBLIC_DATA_DIR, state, '{}.geojson'.format(geo))
         geo_df.loc[geo_df['GEOID'].str.startswith(fips)].to_file(
-            os.path.join(PUBLIC_DATA_DIR, state, '{}.geojson'.format(geo)),
-            driver='GeoJSON'
+            filename, driver='GeoJSON'
         )
+        client.upload_file(
+            filename, BUCKET, '{}/{}.geojson'.format(state, geo)
+        )
+        os.remove(filename)
 
 
 if __name__ == '__main__':
