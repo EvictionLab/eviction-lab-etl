@@ -36,7 +36,7 @@ def create_tract_name(tract):
     if tract_name[-2:] == '00':
         return tract_name[:-2]
     else:
-        return tract_name[:-2] + '.' + tract_name[-2:]
+        return tract_name[:-2] + '.' + tract_name[-2:]    
 
 DATA_CLEANUP_FUNCS = {
     'states': {
@@ -194,6 +194,8 @@ def get_00_data(geo_str):
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))
+        # Handle ACS var difference
+        acs_df['NAME'] = acs_df['NAME'].apply(lambda x: ','.join(x.split(',')[:-1]).strip())
     else:
         census_sf1_df = state_county_sub_data(c.sf1, geo_str, CENSUS_00_SF1_VARS, 2000)
         census_sf3_df = state_county_sub_data(c.sf3, geo_str, CENSUS_00_SF3_VARS, 2000)
@@ -252,6 +254,8 @@ def get_10_data(geo_str):
         acs_df = pd.DataFrame(c.acs5.get(
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2015
         ))
+        # Handle ACS var difference
+        acs_df['NAME'] = acs_df['NAME'].apply(lambda x: ','.join(x.split(',')[:-1]).strip())
     else:
         census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_10_VARS, 2010)
         acs_12_df = state_county_sub_data(c.acs5, geo_str, ACS_12_VARS, 2012)
