@@ -36,7 +36,7 @@ def create_tract_name(tract):
     if tract_name[-2:] == '00':
         return tract_name[:-2]
     else:
-        return tract_name[:-2] + '.' + tract_name[-2:]    
+        return tract_name[:-2] + '.' + tract_name[-2:]
 
 DATA_CLEANUP_FUNCS = {
     'states': {
@@ -57,7 +57,7 @@ DATA_CLEANUP_FUNCS = {
     },
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
-        'parent-location': lambda x: create_tract_name(x['tract'])
+        'parent-location': lambda x: COUNTY_FIPS_MAP.get(str(x['state']).zfill(2) + str(x['county']).zfill(3), STATE_FIPS_MAP[str(x['state']).zfill(2)])
     },
     'msa': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['metropolitan statistical area/micropolitan statistical area']).zfill(6),
@@ -123,7 +123,6 @@ def clean_data_df(df, geo_str):
         df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
         df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
-        df['parent-location'] = df['GEOID'].apply(create_tract_name)
     elif geo_str == 'msa':
         df = df.loc[df['name'].str.contains('Metro Area')].copy()
     else:
