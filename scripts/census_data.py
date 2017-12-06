@@ -131,6 +131,36 @@ NUMERIC_OUTPUT_COLS = [
     'pct-other'
 ]
 
+COUNTY_CROSSWALK = {
+    # 2000
+    '02201': {
+        'GEOID': '02198',
+        'name': 'Prince of Wales-Hyder Census Area',
+        'parent-location': 'Alaska'
+    },
+    '02232': {
+        'GEOID': '02105',
+        'name': 'Hoonah-Angoon Census Area',
+        'parent-location': 'Alaska'
+    },
+    '02280': {
+        'GEOID': '02275',
+        'name': 'Wrangell City and Borough',
+        'parent-location': 'Alaska'
+    },
+    # 2010
+    '46113': {
+        'GEOID': '46102',
+        'name': 'Oglala Lakota County',
+        'parent-location': 'South Dakota'
+    },
+    '02270': {
+        'GEOID': '02518',
+        'name': 'Kusilvak Census Area',
+        'parent-location': 'Alaska'
+    }
+}
+
 ACS_VARS = tuple(ACS_VAR_MAP.keys())
 ACS_12_VARS = tuple(ACS_12_VAR_MAP.keys())
 CENSUS_00_SF1_VARS = tuple(CENSUS_00_SF1_VAR_MAP.keys())

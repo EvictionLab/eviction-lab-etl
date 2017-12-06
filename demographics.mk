@@ -23,7 +23,7 @@ deploy:
 	for f in data/demographics/*.gz; do aws s3 cp $$f s3://eviction-lab-data/demographics/$$(basename $$f) --acl=public-read; done
 
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ > $@
+	csvstack $^ | python3 scripts/crosswalk_geo.py $* > $@
 
 data/demographics/msa.csv: data/demographics/years/msa-10.csv
 	cp $< $@
