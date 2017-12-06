@@ -1,6 +1,7 @@
 import sys
 import boto3
 
+LARGE_MEM_JOBS = ['block-groups', 'deploy_data', 'demographics']
 
 if __name__ == '__main__':
     client = boto3.client('batch')
@@ -20,14 +21,14 @@ if __name__ == '__main__':
             }
         }
 
-        # Override container memory for block groups
-        if 'block-groups' in filename or 'deploy_data' in filename:
+        # Override container memory for specific jobs
+        if any([j in filename for j in LARGE_MEM_JOBS]):
             job_kwargs['containerOverrides'] = {'memory': 15000}
 
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)
 
-    if not (len(job_filenames) == 1 and job_filenames[0] == 'deploy_data'):
+    if not (len(job_filenames) == 1 and job_filenames[0] in ['deploy_data', 'demographics']):
         client.submit_job(
             jobName='cache-job',
             jobQueue='eviction-lab-etl-job-queue',

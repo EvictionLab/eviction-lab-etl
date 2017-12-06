@@ -70,7 +70,6 @@ CENSUS_10_VAR_MAP = {
     'P0050009': 'multiple-pop'
 }
 
-# TODO: Add int cols to compress size
 NUMERIC_COLS = [
     'population',
     'poverty-pop',

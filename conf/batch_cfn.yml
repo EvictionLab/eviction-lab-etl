@@ -20,6 +20,9 @@ Parameters:
     Type: String
     Default: ELMVCLYHTM582
     Description: Select a Cloudfront distribution for cache invalidation.
+  CensusApiKey:
+    Type: String
+    Description: Census API Key
 Resources:
   # Needs to be created, but issues with creating through CloudFormation and then deleting
   # BatchServiceRole:
@@ -115,6 +118,9 @@ Resources:
         ReadonlyRootFilesystem: false
         Vcpus: 2
         Image: evictionlab/eviction-lab-etl
+        Environment:
+        - Name: CENSUS_KEY
+          Value: !Ref 'CensusApiKey'
   CacheJobDefinition:
     Type: AWS::Batch::JobDefinition
     DependsOn: BatchJobRole
