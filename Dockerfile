@@ -7,7 +7,13 @@ RUN apt-get update \
   && apt-get -y install git build-essential \
     libsqlite3-dev zlib1g-dev libssl-dev \
     python3-dev python3-pip gzip curl wget \
-    libspatialindex-dev unzip
+    libspatialindex-dev unzip locales
+
+# Set locale for UTF 8 encoding in shell
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 # Create a directory and copy in all files
 RUN mkdir -p /tmp/tippecanoe-src
