@@ -28,3 +28,4 @@ census/%.geojson:
 		-each $($*-geoid) \
 		-filter-fields GEOID \
 		-o $@ combine-layers format=geojson
+	python3 scripts/convert_census_geojson.py $@
