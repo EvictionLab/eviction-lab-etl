@@ -38,12 +38,14 @@ if __name__ == '__main__':
     # Create context dataframe to join later
     max_year = input_df['year'].max()
     context_df = input_df.loc[input_df['year'] == max_year, CONTEXT_COLS]
+    context_df.drop_duplicates(subset=['GEOID'], inplace=True)
     context_df.set_index('GEOID', inplace=True)
 
     # Create list of dataframes by year with -YEAR appended to data columns
     year_df_list = []
     for year in input_df['year'].unique():
         year_df = input_df.loc[input_df['year'] == year, ['GEOID'] + data_cols]
+        year_df.drop_duplicates(subset=['GEOID'], inplace=True)
         year_df.set_index('GEOID', inplace=True)
         year_str = str(year)[2:]
         year_df.columns = ['{}-{}'.format(col, year_str) for col in year_df.columns.values]
