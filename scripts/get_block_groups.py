@@ -71,8 +71,9 @@ def block_groups_10(state, county):
     census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
     acs_12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
 
-    # Merge vars that are only in ACS to 2010 census
-    census_df = census_df.merge(acs_12_df, on=['state', 'county', 'tract', 'block group'], how='left')
+    if len(acs_12_df.columns.values):
+        # Merge vars that are only in ACS to 2010 census
+        census_df = census_df.merge(acs_12_df, on=['state', 'county', 'tract', 'block group'], how='left')
     census_df['year'] = 2010
 
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
