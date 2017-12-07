@@ -145,7 +145,9 @@ data/%.csv: data/demographics/%.csv data/evictions/%.csv
 data/evictions/%.csv:
 	mkdir -p data/evictions
 	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
-	gunzip -c $@.gz | python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
+	gunzip -c $@.gz | \
+		python3 scripts/crosswalk_geo.py $* | \
+		python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
 ## Pull demographic data
 data/demographics/%.csv:
