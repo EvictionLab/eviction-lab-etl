@@ -140,6 +140,15 @@ def clean_data_df(df, geo_str):
     return df[OUTPUT_COLS].copy()
 
 
+def crosswalk_county(df):
+    for k, v in COUNTY_CROSSWALK.items():
+        if 'name' in df.columns.values and 'parent-location' in df.columns.values:
+            df.loc[df['GEOID'] == k, ['GEOID', 'name', 'parent-location']] = [v['GEOID'], v['name'], v['parent-location']]
+        elif 'GEOID' in df.columns.values:
+            df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
+    return df
+
+
 def get_block_groups_data(year_str):
     df_list = []
     df_iter = pd.read_csv(
@@ -204,6 +213,11 @@ def get_00_data(geo_str):
     census_sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
     if 'name' in census_sf3_df.columns.values:
         census_sf3_df.drop('name', axis=1, inplace=True)
+    
+    census_sf1_df = crosswalk_county(census_sf1_df)
+    census_sf3_df = crosswalk_county(census_sf3_df)
+    acs_df = crosswalk_county(acs_df)
+
     census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 

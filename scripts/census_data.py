@@ -155,7 +155,7 @@ COUNTY_CROSSWALK = {
         'parent-location': 'South Dakota'
     },
     '02270': {
-        'GEOID': '02518',
+        'GEOID': '02158',
         'name': 'Kusilvak Census Area',
         'parent-location': 'Alaska'
     }
