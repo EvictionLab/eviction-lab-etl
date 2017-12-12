@@ -2,7 +2,6 @@
     "name": "n",
     "parent-location": "pl",
     "population": "p",
-    "evictions-per-day": "epd",
     "pct-renter-occupied": "pro",
     "median-gross-rent": "mgr",
     "median-household-income": "mhi",
