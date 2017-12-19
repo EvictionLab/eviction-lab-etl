@@ -15,9 +15,13 @@ states-geoid =  "this.properties.GEOID = this.properties.STATE"
 
 geo_types = states counties cities tracts block-groups
 
-.PHONY: all
+.PHONY: all deploy
 
 all: $(foreach t, $(geo_types), census/$(t).geojson)
+
+deploy:
+	for f in census/*.geojson; do gzip $$f; done
+	for f in census/*.geojson.gz; do aws s3 cp $$f s3://eviction-lab-data/census/$$(basename $$f) --acl=public-read; done
 
 ## Census GeoJSON
 census/%.geojson:
@@ -26,6 +30,7 @@ census/%.geojson:
 	for f in ./census/$*/*.zip; do unzip -d ./census/$* $$f; done
 	mapshaper ./census/$*/*.shp combine-files \
 		-each $($*-geoid) \
+		-filter "!this.properties.GEOID.startsWith('72')" \
 		-filter-fields GEOID \
 		-o $@ combine-layers format=geojson
 	python3 scripts/convert_census_geojson.py $@
