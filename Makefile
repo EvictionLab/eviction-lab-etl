@@ -59,11 +59,23 @@ deploy:
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
 	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
 
-### PUBLIC DATA
+### DATA DEPLOYMENT
 
-deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv
+deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv data/rankings/city-rankings.csv
 	python3 scripts/create_public_data.py
 	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
+	aws s3 cp data/rankings/city-rankings.csv s3://eviction-lab-data/rankings/city-rankings.csv --acl=public-read
+
+### CITY RANKING DATA
+
+data/rankings/city-rankings.csv: data/public_data/us/cities.csv data/rankings/cities-centers.csv
+	python3 scripts/create_city_ranking_data.py $^ $@
+
+data/rankings/cities-centers.csv: centers/cities.geojson
+	mkdir -p $(dir $@)
+	in2csv --format json -k features $< > $@
+
+### PUBLIC DATA
 
 # Need to combine grouped_data CSVs for GeoJSON merge
 grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
