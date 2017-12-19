@@ -14,11 +14,16 @@ END_YEAR = 2017
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
-STATE_FIPS = c.acs5.get(('NAME'), {'for': 'state:*'})
+# Pull data for 50 states
+STATE_FIPS = [r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72']
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 
-STATE_COUNTY_FIPS = c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
-COUNTY_FIPS_MAP = {str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS}
+STATE_COUNTY_FIPS = [
+    r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'}) if r['state'] != '72'
+]
+COUNTY_FIPS_MAP = {
+    str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS
+}
 
 REMOVE_CITY_SUFFIXES = ['town', 'city', 'CDP', 'municipality', 'borough', '(balance)', 'village']
 
