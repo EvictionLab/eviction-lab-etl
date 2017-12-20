@@ -10,8 +10,6 @@ from data_constants import *
 
 c = Census(os.getenv('CENSUS_KEY'))
 
-END_YEAR = 2017
-
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
 # Pull data for 50 states

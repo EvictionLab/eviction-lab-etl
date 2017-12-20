@@ -1,5 +1,7 @@
 CENSUS_API_BASE = 'https://api.census.gov/data/'
 
+END_YEAR = 2018
+
 ACS_VAR_MAP = {
     'NAME': 'name',
     'B01003_001E': 'population',

@@ -78,7 +78,7 @@ def block_groups_10(state, county):
 
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
     acs_df_list = []
-    for year in range(2011, 2017):
+    for year in range(2011, END_YEAR):
         acs_copy = acs_df.copy()
         acs_copy['year'] = year
         acs_df_list.append(acs_copy)
