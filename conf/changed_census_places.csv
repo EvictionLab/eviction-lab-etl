@@ -50,7 +50,7 @@ GEOID00,GEOID10,NAME10
 2116084,2116110,Coal Run Village
 2184567,2126528,Farley
 2152680,2136102,Heritage Creek
-2148000,2148006,Louisville/Jefferson County metro government
+2148000,2148006,Louisville/Jefferson County
 2447925,2425050,Edgewater
 2430837,2430800,Friendship Heights Village
 2434711,2445325,Landover
@@ -139,6 +139,3 @@ GEOID00,GEOID10,NAME10
 5506362,5506350,Bellevue
 5583860,5579740,Tichigan
 5632650,5624750,Encampment
-7275780,7210048,Cacao comunidad
-7204572,7242842,Las Carolinas comunidad
-7210048,7275780,San Antonio comunidad

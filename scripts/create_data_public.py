@@ -67,6 +67,7 @@ if __name__ == '__main__':
         os.path.join(PUBLIC_DATA_DIR, 'us', 'all.csv'), 
         dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'}
     )
+    data_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
 
     geo_df_map = {}
     for k, v in GEO_TYPE_LEN.items():
@@ -79,7 +80,7 @@ if __name__ == '__main__':
             dtype={'GEOID': 'object', 'n': 'object', 'pl': 'object'}
         )
         geo_df = geo_df.merge(attr_df, on='GEOID', how='left')
-        geo_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        geo_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
         print('Writing United States GeoJSON file for {}'.format(k))
         geo_df.to_file(
             os.path.join(PUBLIC_DATA_DIR, 'us', '{}.geojson'.format(k)),

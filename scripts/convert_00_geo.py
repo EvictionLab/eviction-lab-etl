@@ -1,8 +1,8 @@
 import sys
 import csv
 import pandas as pd
-from demographic_data import create_tract_name
-from census_data import *
+from create_data_demographics import create_tract_name
+from data_constants import *
 
 
 if __name__ == '__main__':

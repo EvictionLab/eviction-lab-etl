@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 from census import Census
-from census_data import *
+from data_constants import *
 
 c = Census(os.getenv('CENSUS_KEY'))
 c_16 = Census(os.getenv('CENSUS_KEY'), year=2016)
@@ -15,13 +15,22 @@ END_YEAR = 2017
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
-STATE_FIPS = c.acs5.get(('NAME'), {'for': 'state:*'})
+# Pull data for 50 states
+STATE_FIPS = [r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72']
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 
-STATE_COUNTY_FIPS = c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
-COUNTY_FIPS_MAP = {str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS}
+STATE_COUNTY_FIPS = [
+    r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'}) if r['state'] != '72'
+]
+COUNTY_FIPS_MAP = {
+    str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS
+}
 
-REMOVE_CITY_SUFFIXES = ['town', 'city', 'CDP', 'municipality', 'borough', '(balance)', 'village']
+REMOVE_CITY_SUFFIXES = [
+    'town', 'city', 'CDP', 'municipality', 'borough', '(balance)', 'village',
+    'consolidated government', 'metro government', 'metropolitan government',
+    'unified governm', 'unified government'
+]
 
 CENSUS_JOIN_KEYS = {
     'states': ['state'],
@@ -118,8 +127,8 @@ def generated_cols(df):
 def clean_data_df(df, geo_str):
     if geo_str == 'cities':
         for s in REMOVE_CITY_SUFFIXES:
-            df['name'] = df['name'].str.rstrip(s)
-        df['name'] = df['name'].str.strip()
+            df.loc[df['name'].str.endswith(s), 'name'] = df.loc[df['name'].str.endswith(s)]['name'].str.slice(0,-len(s))
+            df['name'] = df['name'].str.strip()
     elif geo_str == 'tracts':
         df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
@@ -220,6 +229,8 @@ def get_00_data(geo_str):
     acs_df = crosswalk_county(acs_df)
 
     census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
+    census_df = census_df.loc[census_df['state'] != '72'].copy()
+    acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
     census_df_list = []
@@ -292,7 +303,8 @@ def get_10_data(geo_str):
     elif geo_str == 'msa':
         acs_merge_keys = ['state', 'metropolitan statistical area/micropolitan statistical area']
     census_df = census_df.merge(acs_12_df, on=acs_merge_keys, how='left')
-
+    census_df = census_df.loc[census_df['state'] != '72'].copy()
+    acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
     census_df['year'] = 2010

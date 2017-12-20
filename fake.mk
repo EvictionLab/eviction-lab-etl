@@ -16,7 +16,7 @@ deploy:
 
 data/evictions/%.csv: data/demographics/%.csv fixtures/sample/%.csv
 	mkdir -p data/evictions
-	python3 scripts/create_fake_data.py $^ > $@
+	python3 scripts/create_data_fake.py $^ > $@
 
 data/demographics/%.csv:
 	mkdir -p data/demographics

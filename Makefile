@@ -57,13 +57,25 @@ submit_jobs:
 deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
-	aws s3 cp ./tilesets s3://eviction-lab-tilesets/staging --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+
+### DATA DEPLOYMENT
+
+deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv data/rankings/city-rankings.csv
+	python3 scripts/create_data_public.py
+	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
+	aws s3 cp data/rankings/city-rankings.csv s3://eviction-lab-data/rankings/city-rankings.csv --acl=public-read
+
+### CITY RANKING DATA
+
+data/rankings/city-rankings.csv: data/public_data/us/cities.csv data/rankings/cities-centers.csv
+	python3 scripts/create_data_rankings.py $^ $@
+
+data/rankings/cities-centers.csv: centers/cities.geojson
+	mkdir -p $(dir $@)
+	in2csv --format json -k features $< > $@
 
 ### PUBLIC DATA
-
-deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv
-	python3 scripts/create_public_data.py
-	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 
 # Need to combine grouped_data CSVs for GeoJSON merge
 grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
@@ -134,19 +146,19 @@ census/%.geojson:
 .SECONDEXPANSION:
 grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	mkdir -p grouped_data
-	cat $< | python3 scripts/group_census_data.py $(lastword $(subst -, ,$*)) | \
+	cat $< | python3 scripts/process_group_data.py $(lastword $(subst -, ,$*)) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Join evictions and demographics
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 utils/csvjoin.py GEOID,year $^ | python3 scripts/eviction_cols.py > $@
+	python3 utils/csvjoin.py GEOID,year $^ | python3 scripts/process_eviction_cols.py > $@
 
 ## Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p data/evictions
 	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
 	gunzip -c $@.gz | \
-		python3 scripts/crosswalk_geo.py $* | \
+		python3 scripts/convert_crosswalk_geo.py $* | \
 		python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
 ## Pull demographic data
