@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 from census import Census
-from census_data import *
+from data_constants import *
 
 
 if os.getenv('CENSUS_KEY'):

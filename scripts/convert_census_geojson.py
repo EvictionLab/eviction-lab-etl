@@ -1,6 +1,6 @@
 import sys
 import json
-from census_data import COUNTY_CROSSWALK
+from data_constants import COUNTY_CROSSWALK
 
 CROSSWALK_GEO = ['counties', 'tracts', 'block-groups']
 

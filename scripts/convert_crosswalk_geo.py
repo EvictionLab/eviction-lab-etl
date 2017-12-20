@@ -2,7 +2,7 @@ import os
 import csv
 import sys
 import pandas as pd
-from census_data import COUNTY_CROSSWALK
+from data_constants import COUNTY_CROSSWALK
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 

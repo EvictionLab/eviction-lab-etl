@@ -3,13 +3,10 @@ centers
 data
 census_data
 centers_data
-json
 tiles
 tilesets
 grouped_data
 grouped_public
-year_data
-search
 fixtures
 .env
 .vscode
