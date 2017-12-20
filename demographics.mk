@@ -1,5 +1,3 @@
-include weights.mk
-
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
 years = 00 10
 geo_types = states counties cities tracts block-groups
@@ -22,29 +20,31 @@ deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
 	for f in data/demographics/*.gz; do aws s3 cp $$f s3://eviction-lab-data/demographics/$$(basename $$f) --acl=public-read; done
 
+## DEMOGRAPHIC DATA
+
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ | python3 scripts/crosswalk_geo.py $* > $@
+	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
 data/demographics/msa.csv: data/demographics/years/msa-10.csv
 	cp $< $@
 
 data/demographics/years/%.csv:
 	mkdir -p data/demographics/years
-	python3 scripts/demographic_data.py $* > $@
+	python3 scripts/create_data_demographics.py $* > $@
 
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
 	mkdir -p data/demographics/years
-	python3 scripts/demographic_data.py tracts-00 > $@
+	python3 scripts/create_data_demographics.py tracts-00 > $@
 	python3 scripts/convert_00_geo.py tracts $@ $<
 
 data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv
 	mkdir -p data/demographics/years
-	python3 scripts/demographic_data.py block-groups-00 > $@
+	python3 scripts/create_data_demographics.py block-groups-00 > $@
 	python3 scripts/convert_00_geo.py block-groups $@ $<
 
 data/demographics/years/block-groups-10.csv: census/10/block-groups.csv
 	mkdir -p data/demographics/years
-	python3 scripts/demographic_data.py block-groups-10 > $@
+	python3 scripts/create_data_demographics.py block-groups-10 > $@
 
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 	csvstack $^ > $@
@@ -52,9 +52,30 @@ census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(
 census/10/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/get_block_groups.py $* $(y) > $@
+	python3 scripts/create_block_groups.py $* $(y) > $@
 
 census/00/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/get_block_groups.py $* $(y) > $@
+	python3 scripts/create_block_groups.py $* $(y) > $@
+
+## WEIGHTS
+
+census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_ge.csv
+	python3 scripts/create_00_weights.py $* $^ > $@
+
+# Uses estimates of geography breakdown from Missouri Census Data Center http://mcdc2.missouri.edu/websas/geocorr2k.html
+census/00/geocorr.csv:
+	mkdir -p census/00
+	wget -O $@.gz $(s3_base)relationships/$(notdir $@).gz
+	gunzip $@.gz
+
+# Downloading NHGIS 2000 data crosswalks
+census/00/nhgis_blk2000_blk2010_ge.csv: census/00/crosswalks.zip
+	unzip -d $(dir $@) $<
+	touch $@
+
+.INTERMEDIATE:
+census/00/crosswalks.zip:
+	mkdir -p $(dir $@)
+	wget -O $@ http://assets.nhgis.org/crosswalks/nhgis_blk2000_blk2010_ge.zip
