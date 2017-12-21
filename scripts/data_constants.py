@@ -8,7 +8,7 @@ ACS_VAR_MAP = {
     'B17010_001E': 'total-poverty-pop',
     'B17010_002E': 'poverty-pop',
     'B25010_001E': 'average-household-size',
-    'B25111_001E': 'median-gross-rent',
+    'B25064_001E': 'median-gross-rent',
     'B25003_001E': 'occupied-housing-units',
     'B25003_003E': 'renter-occupied-households',
     'B19013_001E': 'median-household-income',
@@ -26,7 +26,7 @@ ACS_VAR_MAP = {
 ACS_12_VAR_MAP = {
     'B17010_001E': 'total-poverty-pop',
     'B17010_002E': 'poverty-pop',
-    'B25111_001E': 'median-gross-rent',
+    'B25064_001E': 'median-gross-rent',
     'B19013_001E': 'median-household-income',
     'B25077_001E': 'median-property-value'
 }
@@ -151,14 +151,14 @@ COUNTY_CROSSWALK = {
         'parent-location': 'Alaska'
     },
     # 2010
-    '46113': {
-        'GEOID': '46102',
-        'name': 'Oglala Lakota County',
+    '46102': {
+        'GEOID': '46113',
+        'name': 'Shannon County',
         'parent-location': 'South Dakota'
     },
-    '02270': {
-        'GEOID': '02158',
-        'name': 'Kusilvak Census Area',
+    '02158': {
+        'GEOID': '02270',
+        'name': 'Wade Hampton Census Area',
         'parent-location': 'Alaska'
     }
 }
