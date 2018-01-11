@@ -61,7 +61,7 @@ deploy:
 
 ### DATA DEPLOYMENT
 
-deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/US/$(g).csv grouped_public/$(g).csv) data/public_data/US/all.csv data/rankings/city-rankings.csv
+deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/US/$(g).csv grouped_public/$(g).csv) data/public_data/US/all.csv data/rankings/city-rankings.csv data/search/counties.csv
 	python3 scripts/create_data_public.py
 	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 	aws s3 cp data/rankings/city-rankings.csv s3://eviction-lab-data/rankings/city-rankings.csv --acl=public-read
