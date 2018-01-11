@@ -60,11 +60,11 @@ def create_state_geojson(df, fips, state):
 
 if __name__ == '__main__':
     state_fips_df = pd.read_csv(os.path.join(BASE_DIR, 'conf', 'state_fips.csv'), dtype={'fips': 'object'})
-    state_fips = {s[0]: s[1] for s in zip(state_fips_df.fips, state_fips_df.usps)}
+    state_fips = {s[0]: s[1].upper() for s in zip(state_fips_df.fips, state_fips_df.usps)}
 
     print('Reading United States CSV data')
     data_df = pd.read_csv(
-        os.path.join(PUBLIC_DATA_DIR, 'us', 'all.csv'), 
+        os.path.join(PUBLIC_DATA_DIR, 'US', 'all.csv'), 
         dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'}
     )
     data_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         geo_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
         print('Writing United States GeoJSON file for {}'.format(k))
         geo_df.to_file(
-            os.path.join(PUBLIC_DATA_DIR, 'us', '{}.geojson'.format(k)),
+            os.path.join(PUBLIC_DATA_DIR, 'US', '{}.geojson'.format(k)),
             driver='GeoJSON'
         )
         geo_df_map[k] = geo_df

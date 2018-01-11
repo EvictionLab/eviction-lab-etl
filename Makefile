@@ -61,7 +61,7 @@ deploy:
 
 ### DATA DEPLOYMENT
 
-deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/$(g).csv grouped_public/$(g).csv) data/public_data/us/all.csv data/rankings/city-rankings.csv
+deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/US/$(g).csv grouped_public/$(g).csv) data/public_data/US/all.csv data/rankings/city-rankings.csv
 	python3 scripts/create_data_public.py
 	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
 	aws s3 cp data/rankings/city-rankings.csv s3://eviction-lab-data/rankings/city-rankings.csv --acl=public-read
@@ -69,7 +69,7 @@ deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/us/
 
 ## COUNTY SEARCH DATA
 
-data/search/counties.csv: data/public_data/us/counties.csv data/search/counties-centers.csv
+data/search/counties.csv: data/public_data/US/counties.csv data/search/counties-centers.csv
 	python3 scripts/create_counties_search.py $^ $@
 
 data/search/counties-centers.csv: centers/counties.geojson
@@ -78,7 +78,7 @@ data/search/counties-centers.csv: centers/counties.geojson
 
 ### CITY RANKING DATA
 
-data/rankings/city-rankings.csv: data/public_data/us/cities.csv data/rankings/cities-centers.csv
+data/rankings/city-rankings.csv: data/public_data/US/cities.csv data/rankings/cities-centers.csv
 	python3 scripts/create_data_rankings.py $^ $@
 
 data/rankings/cities-centers.csv: centers/cities.geojson
@@ -93,11 +93,11 @@ grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
 	python3 utils/csvjoin.py GEOID,n,pl $^ > $@
 
 # For US data, just copy without filtering
-data/public_data/us/%.csv: data/%.csv
+data/public_data/US/%.csv: data/%.csv
 	mkdir -p $(dir $@)
 	cp data/$(notdir $@) $@
 
-data/public_data/us/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
+data/public_data/US/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
 	mkdir -p $(dir $@)
 	csvstack $^ > $@
 
