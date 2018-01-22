@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import json
+import numpy as np
 import pandas as pd
 from functools import reduce
 
@@ -54,7 +55,9 @@ if __name__ == '__main__':
     # Join all year dataframes together with context on GEOID index
     output_df = pd.concat([context_df] + year_df_list, axis=1)
     output_df.index.name = 'GEOID'
-    output_df.fillna(-1.0, inplace=True)
+    
+    # Replace leftover inf and nan data with -1 null placeholder
+    output_df.replace([np.inf, -np.inf, np.nan], -1.0, inplace=True)
 
     output_df = output_df[output_df['n'] != -1.0]
     output_df[~output_df.index.duplicated()].to_csv(sys.stdout, quoting=csv.QUOTE_NONNUMERIC)
