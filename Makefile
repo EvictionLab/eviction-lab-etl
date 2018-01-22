@@ -30,6 +30,10 @@ $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom) --maximum
 states_census_opts = --minimum-zoom=$(states_min_zoom) $(census_opts)
 counties_census_opts = --minimum-zoom=$(counties_min_zoom) $(census_opts) --maximum-tile-bytes=$(counties_bytes)
 
+# Center data column options
+$(foreach g, $(geo_years), $(eval $(g)_center_cols = GEOID,n))
+cities-10_center_cols = GEOID,n,p-10
+
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
@@ -121,7 +125,7 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 ## Get eviction rate properties and GEOID for centers
 centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
-	cat $< | python3 utils/subset_cols.py GEOID,n,$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+	cat $< | python3 utils/subset_cols.py $($*_center_cols),$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## Create census shape tiles from joining data and geography tiles
