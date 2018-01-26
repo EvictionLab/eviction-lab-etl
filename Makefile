@@ -1,5 +1,5 @@
 s3_base = https://s3.amazonaws.com/eviction-lab-data/
-tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
+tippecanoe_opts = --attribute-type=GEOID:string --simplification=12 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 years = 00 10
@@ -22,13 +22,10 @@ tracts_bytes = 200000
 block-groups_bytes = 300000
 
 census_opts = --detect-shared-borders --coalesce-smallest-as-needed
-small_tile_census_opts = --low-detail=10 --grid-low-zooms $(census_opts)
 
 # Assign layer properties based on minimum zoom
-$(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --maximum-tile-bytes=$($g_bytes) $(small_tile_census_opts)))
+$(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --maximum-tile-bytes=$($g_bytes) $(census_opts)))
 $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom) --maximum-tile-bytes=1000000))
-states_census_opts = --minimum-zoom=$(states_min_zoom) $(census_opts)
-counties_census_opts = --minimum-zoom=$(counties_min_zoom) $(census_opts) --maximum-tile-bytes=$(counties_bytes)
 
 # Center data column options
 $(foreach g, $(geo_years), $(eval $(g)_center_cols = GEOID,n))
