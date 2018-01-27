@@ -11,5 +11,5 @@ if __name__ == '__main__':
 
     # data_cols = [c for c in df.columns.values if '-' in c]
     eviction_cols = [c for c in df.columns.values if 'er-' in c or 'efr-' in c]
-    us_avg = df[eviction_cols].to_dict(orient='records')[0]
+    us_avg = df[eviction_cols].mean().round(2).to_dict()
     json.dump(us_avg, sys.stdout)
