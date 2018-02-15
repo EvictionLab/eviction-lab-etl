@@ -7,7 +7,6 @@ ACS_VAR_MAP = {
     'B01003_001E': 'population',
     'B17010_001E': 'total-poverty-pop',
     'B17010_002E': 'poverty-pop',
-    'B25010_001E': 'average-household-size',
     'B25064_001E': 'median-gross-rent',
     'B25003_001E': 'occupied-housing-units',
     'B25003_003E': 'renter-occupied-households',
@@ -34,7 +33,6 @@ ACS_12_VAR_MAP = {
 CENSUS_00_SF1_VAR_MAP = {
     'NAME': 'name',
     'P001001': 'population',
-    'P017001': 'average-household-size',
     'H003002': 'occupied-housing-units',
     'H004003': 'renter-occupied-households',
     'P008010': 'hispanic-pop',
@@ -61,7 +59,6 @@ CENSUS_10_VAR_MAP = {
     'P0030001': 'population',
     'H0040001': 'occupied-housing-units',
     'H0040004': 'renter-occupied-households',
-    'H0120001': 'average-household-size',
     'P0040003': 'hispanic-pop',
     'P0050003': 'white-pop',
     'P0050004': 'af-am-pop',
@@ -75,7 +72,6 @@ CENSUS_10_VAR_MAP = {
 NUMERIC_COLS = [
     'population',
     'poverty-pop',
-    'average-household-size',
     'median-gross-rent',
     'occupied-housing-units',
     'renter-occupied-households',
@@ -98,7 +94,6 @@ OUTPUT_COLS = [
     'year',
     'population',
     'poverty-rate',
-    'average-household-size',
     'renter-occupied-households',
     'pct-renter-occupied',
     'median-gross-rent',
@@ -117,7 +112,6 @@ OUTPUT_COLS = [
 NUMERIC_OUTPUT_COLS = [
     'population',
     'poverty-rate',
-    'average-household-size',
     'renter-occupied-households',
     'pct-renter-occupied',
     'median-gross-rent',

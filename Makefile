@@ -21,7 +21,7 @@ cities_bytes = 200000
 tracts_bytes = 200000
 block-groups_bytes = 300000
 
-census_opts = --detect-shared-borders --coalesce-smallest-as-needed
+census_opts = --detect-shared-borders --coalesce-densest-as-needed
 
 # Assign layer properties based on minimum zoom
 $(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --maximum-tile-bytes=$($g_bytes) $(census_opts)))

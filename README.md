@@ -24,10 +24,6 @@ The main `Makefile` pulls Census geography and demographic data that is pre-gene
 
 **Note:** To create Census demographic data, you'll need to get a [Census API Key](https://www.census.gov/developers/), copy the `.env.sample` file to `.env`, add the API key in there, and run `source .env`.
 
-## Create Fixture Data
-
-To create fixture data (used in our workflow to test load times), run `make -f fake.mk` similarly to building census data from source.
-
 ## View Tiles Locally
 
 With Docker installed, run:
