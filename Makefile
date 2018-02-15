@@ -16,7 +16,7 @@ tracts_min_zoom = 6
 block-groups_min_zoom = 7
 
 states_bytes = 1000000
-counties_bytes = 75000
+counties_bytes = 5000000
 cities_bytes = 200000
 tracts_bytes = 200000
 block-groups_bytes = 300000
