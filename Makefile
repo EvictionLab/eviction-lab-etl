@@ -16,7 +16,7 @@ tracts_min_zoom = 6
 block-groups_min_zoom = 7
 
 states_bytes = 1000000
-counties_bytes = 5000000
+counties_bytes = 75000
 cities_bytes = 200000
 tracts_bytes = 200000
 block-groups_bytes = 300000
@@ -48,6 +48,7 @@ all: $(output_tiles)
 
 clean:
 	rm -rf centers data grouped_data grouped_public census_data centers_data json tiles tilesets
+	rm -rf census/*.mbtiles
 
 ## Submit jobs to AWS Batch
 ## Not including deploy_data because of time
@@ -152,7 +153,10 @@ census/%.geojson:
 	wget -P census $(s3_base)$@.gz
 	gunzip $@.gz
 	$(mapshaper_cmd) -i $@ field-types=GEOID:str \
-		-each "this.properties.west = this.bounds[0]; this.properties.south = this.bounds[1]; this.properties.east = this.bounds[2]; this.properties.north = this.bounds[3];" \
+		-each "this.properties.west = +this.bounds[0].toFixed(4); \
+			this.properties.south = +this.bounds[1].toFixed(4); \
+			this.properties.east = +this.bounds[2].toFixed(4); \
+			this.properties.north = +this.bounds[3].toFixed(4);" \
 		-o $@ force
 
 ### DATA
