@@ -34,6 +34,8 @@ cities-10_center_cols = GEOID,n,p-10
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
+output_data_sources = $(foreach g, $(geo_types), census/$(g).geojson data/public/US/$(g).csv grouped_public/$(g).csv)
+output_data = $(output_data_sources) data/public/US/all.csv data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/avg/us.json
 
 # For comma-delimited list
 null :=
@@ -63,10 +65,11 @@ deploy:
 
 ### DATA DEPLOYMENT
 
-deploy_data: $(foreach g, $(geo_types), census/$(g).geojson data/public_data/US/$(g).csv grouped_public/$(g).csv) data/public_data/US/all.csv data/rankings/city-rankings.csv data/search/counties.csv data/avg/us.json
+deploy_data: $(output_data)
 	python3 scripts/create_data_public.py
-	aws s3 cp ./data/public_data s3://eviction-lab-public-data --recursive --acl=public-read
-	aws s3 cp data/rankings/city-rankings.csv s3://eviction-lab-data/rankings/city-rankings.csv --acl=public-read
+	aws s3 cp ./data/public s3://eviction-lab-public-data --recursive --acl=public-read
+	aws s3 cp data/rankings/states-rankings.csv s3://eviction-lab-data/rankings/states-rankings.csv --acl=public-read
+	aws s3 cp data/rankings/cities-rankings.csv s3://eviction-lab-data/rankings/cities-rankings.csv --acl=public-read
 	aws s3 cp data/search/counties.csv s3://eviction-lab-data/search/counties.csv --acl=public-read
 	aws s3 cp data/avg/us.json s3://eviction-lab-data/avg/us.json --acl=public-read
 
@@ -76,7 +79,7 @@ data/avg/us.json: grouped_public/states.csv
 
 ## COUNTY SEARCH DATA
 
-data/search/counties.csv: data/public_data/US/counties.csv data/search/counties-centers.csv
+data/search/counties.csv: data/public/US/counties.csv data/search/counties-centers.csv
 	python3 scripts/create_counties_search.py $^ $@
 
 data/search/counties-centers.csv: centers/counties.geojson
@@ -85,10 +88,10 @@ data/search/counties-centers.csv: centers/counties.geojson
 
 ### CITY RANKING DATA
 
-data/rankings/city-rankings.csv: data/public_data/US/cities.csv data/rankings/cities-centers.csv
+data/rankings/%-rankings.csv: data/public/US/%.csv data/rankings/%-centers.csv
 	python3 scripts/create_data_rankings.py $^ $@
 
-data/rankings/cities-centers.csv: centers/cities.geojson
+data/rankings/%-centers.csv: centers/%.geojson
 	mkdir -p $(dir $@)
 	in2csv --format json -k features $< > $@
 
@@ -100,11 +103,11 @@ grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
 	python3 utils/csvjoin.py GEOID,n,pl $^ > $@
 
 # For US data, just copy without filtering
-data/public_data/US/%.csv: data/%.csv
+data/public/US/%.csv: data/%.csv
 	mkdir -p $(dir $@)
 	cp data/$(notdir $@) $@
 
-data/public_data/US/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
+data/public/US/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
 	mkdir -p $(dir $@)
 	csvstack $^ > $@
 

@@ -23,7 +23,7 @@ def area_type(pop):
 
 
 if __name__ == '__main__':
-    city_data_df = pd.read_csv(
+    data_df = pd.read_csv(
         sys.argv[1],
         engine='python',
         dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'}
@@ -32,26 +32,28 @@ if __name__ == '__main__':
     # FIXME: Uncomment when this lines up
     # max_year = city_data_df['year'].max()
     max_year = 2016
-    city_data_df = city_data_df.loc[city_data_df['year'] == max_year][DATA_COLS].copy()
+    data_df = data_df.loc[data_df['year'] == max_year][DATA_COLS].copy()
 
-    city_center_df = pd.read_csv(
+    center_df = pd.read_csv(
         sys.argv[2],
         engine='python',
         dtype={'properties/GEOID': 'object'}
     )
-    city_center_df.rename(columns={
+    center_df.rename(columns={
         'properties/GEOID': 'GEOID',
         'geometry/coordinates/0': 'lon',
         'geometry/coordinates/1': 'lat'
     }, inplace=True)
-    city_center_df = city_center_df[['GEOID', 'lon', 'lat']].copy()
-    city_center_df['GEOID'] = city_center_df['GEOID'].str.zfill(7)
+    center_df = center_df[['GEOID', 'lon', 'lat']].copy()
+    geoid_len = 7 if 'cities' in sys.argv[1] else 2
+    center_df['GEOID'] = center_df['GEOID'].str.zfill(geoid_len)
 
-    city_df = city_data_df.merge(city_center_df, on=['GEOID'], how='left')
-    city_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    city_df[['lat', 'lon']] = city_df[['lat', 'lon']].round(4)
-    city_df['area-type'] = city_df['population'].apply(area_type)
-    city_df.drop('population', axis=1, inplace=True)
+    df = data_df.merge(center_df, on=['GEOID'], how='left')
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df[['lat', 'lon']] = df[['lat', 'lon']].round(4)
+    if 'cities' in sys.argv[1]:
+        df['area-type'] = df['population'].apply(area_type)
+    df.drop('population', axis=1, inplace=True)
 
     # Write CSV file
-    city_df.to_csv(sys.argv[3], index=False)
+    df.to_csv(sys.argv[3], index=False)

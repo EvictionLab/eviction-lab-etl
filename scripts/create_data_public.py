@@ -8,7 +8,7 @@ import geopandas as gpd
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-PUBLIC_DATA_DIR = os.path.join(BASE_DIR, 'data', 'public_data')
+PUBLIC_DATA_DIR = os.path.join(BASE_DIR, 'data', 'public')
 BUCKET = 'eviction-lab-public-data'
 s3 = boto3.resource('s3')
 client = boto3.client('s3')
