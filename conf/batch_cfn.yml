@@ -20,6 +20,10 @@ Parameters:
     Type: String
     Default: ELMVCLYHTM582
     Description: Select a Cloudfront distribution for cache invalidation.
+  DataCloudfrontId:
+    Type: String
+    Default: E3P26Z91ICB4HP
+    Description: Select a Cloudfront distribution for public data cache invalidation.
   CensusApiKey:
     Type: String
     Description: Census API Key
@@ -121,6 +125,8 @@ Resources:
         Environment:
         - Name: CENSUS_KEY
           Value: !Ref 'CensusApiKey'
+        - Name: PUBLIC_DATA_CLOUDFRONT_ID
+          Value: !Ref 'DataCloudfrontId'
   CacheJobDefinition:
     Type: AWS::Batch::JobDefinition
     DependsOn: BatchJobRole

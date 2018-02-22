@@ -72,6 +72,7 @@ deploy_data: $(output_data)
 	aws s3 cp data/rankings/cities-rankings.csv s3://eviction-lab-data/rankings/cities-rankings.csv --acl=public-read
 	aws s3 cp data/search/counties.csv s3://eviction-lab-data/search/counties.csv --acl=public-read
 	aws s3 cp data/avg/us.json s3://eviction-lab-data/avg/us.json --acl=public-read
+	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
 
 data/avg/us.json: grouped_public/states.csv
 	mkdir -p $(dir $@)
