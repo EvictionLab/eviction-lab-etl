@@ -15,15 +15,22 @@ states-geoid =  "this.properties.GEOID = this.properties.STATE"
 
 geo_types = states counties cities tracts block-groups
 
-.PHONY: all deploy
+.PHONY: all deploy help
 
+## all              : Create all census GeoJSON
 all: $(foreach t, $(geo_types), census/$(t).geojson)
 
+# Based on https://swcarpentry.github.io/make-novice/08-self-doc/
+## help             : Print help
+help: census.mk
+	perl -ne '/^## / && s/^## //g && print' $<
+
+## deploy           : Deploy census data to S3
 deploy:
 	for f in census/*.geojson; do gzip $$f; done
 	for f in census/*.geojson.gz; do aws s3 cp $$f s3://eviction-lab-data/census/$$(basename $$f) --acl=public-read; done
 
-## Census GeoJSON
+## census/%.geojson : Download and clean census GeoJSON
 census/%.geojson:
 	mkdir -p census/$*
 	wget -np -nd -r -P census/$* -A '$($*-pattern)' $(census_ftp_base)

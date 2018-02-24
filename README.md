@@ -12,7 +12,7 @@ sudo pip install csvkit pandas
 brew install tippecanoe
 ```
 
-To create any individual file (described in the `Makefile`) enter `make` and its name. Otherwise, to generate the full set of files, run `make`.
+To create any individual file (described in the `Makefile`) enter `make` and its name. Otherwise, to generate the full set of files, run `make`. To see a list of all available targets with descriptions in any of the makefiles, run `make -f {FILE} help`.
 
 ## Deployment
 
