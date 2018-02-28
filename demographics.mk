@@ -29,9 +29,11 @@ deploy:
 
 ### DEMOGRAPHIC DATA
 
-## data/demographics/%.csv                     : Create crosswalked demographic data for each geography and year group
+## data/demographics/%.csv                     : Create crosswalked and interpolated demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
+	csvstack $^ | \
+	python3 scripts/convert_crosswalk_geo.py $* | \
+	python3 scripts/convert_interpolate.py > $@
 
 ## data/demographics/msa.csv                   : Copy over MSA data
 data/demographics/msa.csv: data/demographics/years/msa-10.csv
