@@ -164,7 +164,7 @@ census/%.mbtiles: census/%.geojson
 ## centers/%.geojson                : GeoJSON centers
 centers/%.geojson: census/%.geojson
 	mkdir -p centers
-	geojson-polygon-labels --by-feature $< > $@
+	geojson-polygon-labels --style largest $< > $@
 
 ## census/%.geojson                 : Census GeoJSON from S3 bucket
 census/%.geojson:
