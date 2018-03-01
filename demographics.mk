@@ -86,7 +86,7 @@ census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_g
 # Uses estimates of geography breakdown from Missouri Census Data Center http://mcdc2.missouri.edu/websas/geocorr2k.html
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights
 census/00/geocorr.csv:
-	mkdir -p census/00
+	mkdir -p $(dir $@)
 	wget -O $@.gz $(s3_base)relationships/$(notdir $@).gz
 	gunzip $@.gz
 
