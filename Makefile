@@ -1,4 +1,5 @@
-s3_base = https://s3.amazonaws.com/eviction-lab-data/
+s3_bucket = eviction-lab-data
+s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
@@ -35,8 +36,7 @@ cities-10_center_cols = GEOID,n,p-10
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
-output_data_sources = $(foreach g, $(geo_types), census/$(g).geojson data/public/US/$(g).csv grouped_public/$(g).csv)
-output_data = $(output_data_sources) data/public/US/all.csv data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/avg/us.json
+tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/avg/us.json
 
 # For comma-delimited list
 null :=
@@ -45,7 +45,7 @@ comma := ,
 
 # Don't delete files created throughout on completion
 .PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
-.PHONY: all clean deploy deploy_data submit_jobs help
+.PHONY: all clean deploy deploy_public_data deploy_data submit_jobs help
 
 ## all                              : Create all output data
 all: $(output_tiles)
@@ -62,7 +62,7 @@ help: Makefile
 
 ## submit_jobs                      : Submit jobs to AWS Batch
 submit_jobs:
-	python3 utils/submit_jobs.py $(output_tiles)
+	python3 utils/submit_jobs.py $(output_tiles) deploy_data
 
 ## deploy                           : Create directories with .pbf file tiles, copy to S3
 deploy:
@@ -72,14 +72,14 @@ deploy:
 
 ### DATA DEPLOYMENT
 
-## deploy_data                      : Create public data, deploy misc. data files to S3
-deploy_data: $(output_data)
+## deploy_data                      : Deploy all data files used in the map and rankings tool
+deploy_data: $(tool_data)
+	for f in $^; do aws s3 cp $$f s3://$(s3_bucket)/$$f --acl=public-read; done
+
+## deploy_public_data               : Create and deploy public data
+deploy_public_data: data/public/US/all.csv $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv)
 	python3 scripts/create_data_public.py
 	aws s3 cp ./data/public s3://eviction-lab-public-data --recursive --acl=public-read
-	aws s3 cp data/rankings/states-rankings.csv s3://eviction-lab-data/rankings/states-rankings.csv --acl=public-read
-	aws s3 cp data/rankings/cities-rankings.csv s3://eviction-lab-data/rankings/cities-rankings.csv --acl=public-read
-	aws s3 cp data/search/counties.csv s3://eviction-lab-data/search/counties.csv --acl=public-read
-	aws s3 cp data/avg/us.json s3://eviction-lab-data/avg/us.json --acl=public-read
 	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
 
 ## data/avg/us.json                 : Averages of US data
@@ -141,8 +141,9 @@ centers_data/%.mbtiles: centers_data/%.csv centers/$$(subst -$$(lastword $$(subs
 ## centers_data/%.csv               : Get eviction rate properties and GEOID for centers
 centers_data/%.csv: grouped_data/%.csv
 	mkdir -p centers_data
-	cat $< | python3 utils/subset_cols.py $($*_center_cols),$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
-		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
+	cat $< | \
+	python3 utils/subset_cols.py $($*_center_cols),$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
+	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## census_data/%.mbtiles            : Create census shape tiles from joining data and geography tiles
 .SECONDEXPANSION:
@@ -168,7 +169,7 @@ centers/%.geojson: census/%.geojson
 ## census/%.geojson                 : Census GeoJSON from S3 bucket
 census/%.geojson:
 	mkdir -p census
-	wget -P census $(s3_base)$@.gz
+	wget --no-use-server-timestamps -P census $(s3_base)$@.gz
 	gunzip $@.gz
 	$(mapshaper_cmd) -i $@ field-types=GEOID:str \
 		-each "this.properties.west = +this.bounds[0].toFixed(4); \
@@ -184,23 +185,25 @@ census/%.geojson:
 .SECONDEXPANSION:
 grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	mkdir -p grouped_data
-	cat $< | python3 scripts/process_group_data.py $(lastword $(subst -, ,$*)) | \
-		perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
+	cat $< | \
+	python3 scripts/process_group_data.py $(lastword $(subst -, ,$*)) | \
+	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## data/%.csv                       : Join evictions and demographics
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 utils/csvjoin.py GEOID,year $^ | python3 scripts/process_eviction_cols.py > $@
+	python3 utils/csvjoin.py GEOID,year $^ | \
+	python3 scripts/process_eviction_cols.py > $@
 
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p data/evictions
-	wget -O $@.gz $(s3_base)evictions/$(notdir $@).gz
+	wget --no-use-server-timestamps -O $@.gz $(s3_base)evictions/$(notdir $@).gz
 	gunzip -c $@.gz | \
-		python3 scripts/convert_crosswalk_geo.py $* | \
-		python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
+	python3 scripts/convert_crosswalk_geo.py $* | \
+	python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
 ## data/demographics/%.csv          : Pull demographic data
 data/demographics/%.csv:
 	mkdir -p data/demographics
-	wget -O $@.gz $(s3_base)demographics/$(notdir $@).gz
+	wget --no-use-server-timestamps -O $@.gz $(s3_base)demographics/$(notdir $@).gz
 	gunzip $@.gz
