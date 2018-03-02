@@ -65,7 +65,7 @@ def block_groups_10(state, county):
     acs_df = pd.DataFrame(c.acs5.get(
         ACS_VARS,
         {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
-        year=2015
+        year=2016
     ))
 
     census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
