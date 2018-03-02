@@ -9,6 +9,7 @@ from census import Census
 from data_constants import *
 
 c = Census(os.getenv('CENSUS_KEY'))
+c_16 = Census(os.getenv('CENSUS_KEY'), year=2016)
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
@@ -253,8 +254,8 @@ def get_10_data(geo_str):
         acs_12_df = pd.DataFrame(c.acs5.get(
             ACS_12_VARS, {'for': 'state:*'}, year=2012
         ))
-        acs_df = pd.DataFrame(c.acs5.get(
-            ACS_VARS, {'for': 'state:*'}, year=2015
+        acs_df = pd.DataFrame(c_16.acs5.get(
+            ACS_VARS, {'for': 'state:*'}, year=2016
         ))
     elif geo_str == 'counties':
         census_df = pd.DataFrame(c.sf1.get(
@@ -263,8 +264,8 @@ def get_10_data(geo_str):
         acs_12_df = pd.DataFrame(c.acs5.get(
             ACS_12_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2012
         ))
-        acs_df = pd.DataFrame(c.acs5.get(
-            ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2015
+        acs_df = pd.DataFrame(c_16.acs5.get(
+            ACS_VARS, {'for': 'county:*', 'in': 'state:*'}, year=2016
         ))
     elif geo_str == 'cities':
         census_df = pd.DataFrame(c.sf1.get(
@@ -273,15 +274,15 @@ def get_10_data(geo_str):
         acs_12_df = pd.DataFrame(c.acs5.get(
             ACS_12_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2012
         ))
-        acs_df = pd.DataFrame(c.acs5.get(
-            ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2015
+        acs_df = pd.DataFrame(c_16.acs5.get(
+            ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2016
         ))
         # Handle ACS var difference
         acs_df['NAME'] = acs_df['NAME'].apply(lambda x: ','.join(x.split(',')[:-1]).strip())
     else:
         census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_10_VARS, 2010)
         acs_12_df = state_county_sub_data(c.acs5, geo_str, ACS_12_VARS, 2012)
-        acs_df = state_county_sub_data(c.acs5, geo_str, ACS_VARS, 2015)
+        acs_df = state_county_sub_data(c_16.acs5, geo_str, ACS_VARS, 2016)
 
     census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
     acs_12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
