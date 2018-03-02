@@ -17,12 +17,13 @@ ENV LC_ALL en_US.UTF-8
 
 # Create a directory and copy in all files
 RUN mkdir -p /tmp/tippecanoe-src
-RUN git clone https://github.com/mapbox/tippecanoe.git /tmp/tippecanoe-src
+RUN git clone -b 1.27.8 https://github.com/mapbox/tippecanoe.git /tmp/tippecanoe-src
 WORKDIR /tmp/tippecanoe-src
 
 # Build tippecanoe
-RUN make \
-  && make install
+RUN git checkout -b master && \
+  make && \
+  make install
 
 # Remove the temp directory
 WORKDIR /
@@ -32,7 +33,7 @@ RUN rm -rf /tmp/tippecanoe-src
 RUN curl -sL https://deb.nodesource.com/setup_7.x | bash - && \
     ln -s /usr/bin/nodejs /usr/bin/node && \
     apt-get -y install nodejs && \
-    npm install -g mapshaper geojson-polygon-labels
+    npm install -g mapshaper@0.4.60 geojson-polygon-labels@1.2.1
 
 WORKDIR /
 RUN git clone https://github.com/EvictionLab/eviction-lab-etl.git
