@@ -8,7 +8,7 @@ You'll need Node, Python 3, GNU Make, and `wget` installed. You'll also need the
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
-sudo pip install csvkit pandas
+pip install -r scripts/requirements.txt
 brew install tippecanoe
 ```
 

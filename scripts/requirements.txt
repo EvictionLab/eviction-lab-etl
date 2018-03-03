@@ -1,7 +1,8 @@
-awscli
-boto3
-census
-csvkit
-pandas
-geopandas
-rtree
+awscli<2
+boto3<2
+census==0.8.6
+csvkit==1.0.2
+numpy==1.14.1
+pandas==0.22.0
+geopandas==0.3.0
+Rtree==0.8.3
