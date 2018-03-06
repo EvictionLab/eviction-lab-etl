@@ -1,7 +1,11 @@
 s3_bucket = eviction-lab-data
+s3_tool_data_bucket = eviction-lab-tool-data
 s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
+
+CLOUDFRONT_DEV = E38VYWEWUWNX26
+CLOUDFRONT_PROD = E1A16ES5GX062O
 
 years = 00 10
 year_ints = 0 1 2 3 4 5 6 7 8 9
@@ -74,7 +78,9 @@ deploy:
 
 ## deploy_data                      : Deploy all data files used in the map and rankings tool
 deploy_data: $(tool_data)
-	for f in $^; do aws s3 cp $$f s3://$(s3_bucket)/$$f --acl=public-read; done
+	for f in $^; do aws s3 cp $$f s3://$(s3_tool_data_bucket)/$$f --acl=public-read; done
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_DEV) --paths /*
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_PROD) --paths /*
 
 ## deploy_public_data               : Create and deploy public data
 deploy_public_data: data/public/US/all.csv $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv)
