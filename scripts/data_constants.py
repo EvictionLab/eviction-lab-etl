@@ -12,6 +12,7 @@ ACS_VAR_MAP = {
     'B25003_003E': 'renter-occupied-households',
     'B19013_001E': 'median-household-income',
     'B25077_001E': 'median-property-value',
+    'B25071_001E': 'rent-burden',
     'B03002_012E': 'hispanic-pop',
     'B03002_003E': 'white-pop',
     'B03002_004E': 'af-am-pop',
@@ -27,7 +28,8 @@ ACS_12_VAR_MAP = {
     'B17010_002E': 'poverty-pop',
     'B25064_001E': 'median-gross-rent',
     'B19013_001E': 'median-household-income',
-    'B25077_001E': 'median-property-value'
+    'B25077_001E': 'median-property-value',
+    'B25071_001E': 'rent-burden'
 }
 
 CENSUS_00_SF1_VAR_MAP = {
@@ -51,7 +53,8 @@ CENSUS_00_SF3_VAR_MAP = {
     'P087002': 'poverty-pop',
     'H063001': 'median-gross-rent',
     'P053001': 'median-household-income',
-    'H076001': 'median-property-value'
+    'H076001': 'median-property-value',
+    'H070001': 'rent-burden'
 }
 
 CENSUS_10_VAR_MAP = {
@@ -77,6 +80,7 @@ NUMERIC_COLS = [
     'renter-occupied-households',
     'median-household-income',
     'median-property-value',
+    'rent-burden',
     'hispanic-pop',
     'white-pop',
     'af-am-pop',
@@ -99,6 +103,7 @@ OUTPUT_COLS = [
     'median-gross-rent',
     'median-household-income',
     'median-property-value',
+    'rent-burden',
     'pct-white',
     'pct-af-am',
     'pct-hispanic',
@@ -117,6 +122,7 @@ NUMERIC_OUTPUT_COLS = [
     'median-gross-rent',
     'median-household-income',
     'median-property-value',
+    'rent-burden',
     'pct-white',
     'pct-af-am',
     'pct-hispanic',
