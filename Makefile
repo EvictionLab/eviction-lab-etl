@@ -69,13 +69,13 @@ submit_jobs:
 deploy:
 	mkdir -p tilesets
 	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
-	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2
+	aws s3 cp ./tilesets s3://eviction-lab-tilesets --recursive --acl=public-read --content-encoding=gzip --region=us-east-2 --cache-control max-age=2628000
 
 ### DATA DEPLOYMENT
 
 ## deploy_data                      : Deploy all data files used in the map and rankings tool
 deploy_data: $(tool_data)
-	for f in $^; do aws s3 cp $$f s3://$(s3_tool_data_bucket)/$$f --acl=public-read; done
+	for f in $^; do aws s3 cp $$f s3://$(s3_tool_data_bucket)/$$f --acl=public-read --cache-control max-age=2628000; done
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths /*
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths /*
 
