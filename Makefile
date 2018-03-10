@@ -148,11 +148,12 @@ centers_data/%.csv: grouped_data/%.csv
 	python3 utils/subset_cols.py $($*_center_cols),$(subst $(space),$(comma),$(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<)))) | \
 	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
-## census_data/%.mbtiles            : Create census shape tiles from joining data and geography tiles
+## census_data/%.mbtiles            : Create census shape tiles from joining non-eviction data and geography tiles
 .SECONDEXPANSION:
 census_data/%.mbtiles: grouped_data/%.csv census/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).mbtiles
 	mkdir -p census_data
-	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched $(tile_join_opts) -o $@ -c $^
+	$(eval exclude_cols=$(foreach c, $(filter e%,$(subst $(comma),$(space),$(shell head -n 1 $<))), -x $c))
+	tile-join -l $(subst -$(lastword $(subst -, ,$*)),,$*) --if-matched $(tile_join_opts) $(exclude_cols) -o $@ -c $^
 
 ### GEOGRAPHY 
 
