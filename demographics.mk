@@ -39,24 +39,24 @@ data/demographics/msa.csv: data/demographics/years/msa-10.csv
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv:
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py $* > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py tracts-00 > $@
 	python3 scripts/convert_00_geo.py tracts $@ $<
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
 data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py block-groups-00 > $@
 	python3 scripts/convert_00_geo.py block-groups $@ $<
 
 ## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
 data/demographics/years/block-groups-10.csv: census/10/block-groups.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py block-groups-10 > $@
 
 ## census/%/block-groups.csv                   : Consolidate block groups by county
