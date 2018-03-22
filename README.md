@@ -4,7 +4,7 @@ Data pipeline for Eviction Lab.
 
 ## Setup
 
-You'll need Node, Python 3, GNU Make, and `wget` installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python 3, GNU Make, `wget`, and the AWS CLI installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels

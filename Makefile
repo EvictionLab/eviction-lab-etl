@@ -1,6 +1,5 @@
 s3_bucket = eviction-lab-etl-data
 s3_tool_data_bucket = eviction-lab-tool-data
-s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
@@ -172,7 +171,7 @@ centers/%.geojson: census/%.geojson
 ## census/%.geojson                 : Census GeoJSON from S3 bucket
 census/%.geojson:
 	mkdir -p $(dir $@)
-	wget --no-use-server-timestamps -P census $(s3_base)$@.gz
+	aws s3 cp s3://$(s3_bucket)/$@.gz $@.gz
 	gunzip $@.gz
 	$(mapshaper_cmd) -i $@ field-types=GEOID:str \
 		-each "this.properties.west = +this.bounds[0].toFixed(4); \
@@ -200,7 +199,7 @@ data/%.csv: data/demographics/%.csv data/evictions/%.csv
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p $(dir $@)
-	wget --no-use-server-timestamps -O $@.gz $(s3_base)evictions/$(notdir $@).gz
+	aws s3 cp s3://$(s3_bucket)/evictions/$(notdir $@).gz $@.gz
 	gunzip -c $@.gz | \
 	python3 scripts/convert_crosswalk_geo.py $* | \
 	python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
@@ -208,5 +207,5 @@ data/evictions/%.csv:
 ## data/demographics/%.csv          : Pull demographic data
 data/demographics/%.csv:
 	mkdir -p $(dir $@)
-	wget --no-use-server-timestamps -O $@.gz $(s3_base)demographics/$(notdir $@).gz
+	aws s3 cp s3://$(s3_bucket)/demographics/$(notdir $@).gz $@.gz
 	gunzip $@.gz

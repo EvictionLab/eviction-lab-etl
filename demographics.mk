@@ -1,5 +1,4 @@
 s3_bucket = eviction-lab-etl-data
-s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y)) msa-10
@@ -86,7 +85,7 @@ census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_g
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights
 census/00/geocorr.csv:
 	mkdir -p $(dir $@)
-	wget -O $@.gz $(s3_base)relationships/$(notdir $@).gz
+	aws s3 cp s3://$(s3_bucket)/relationships/$(notdir $@).gz $@.gz
 	gunzip $@.gz
 
 ## census/00/nhgis_blk2000_blk2010_ge.csv      : Download NHGIS 2000 data crosswalks
