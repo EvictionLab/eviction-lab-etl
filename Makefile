@@ -1,4 +1,4 @@
-s3_bucket = eviction-lab-data
+s3_bucket = eviction-lab-etl-data
 s3_tool_data_bucket = eviction-lab-tool-data
 s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force

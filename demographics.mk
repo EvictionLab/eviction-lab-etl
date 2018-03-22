@@ -1,4 +1,5 @@
-s3_base = https://s3.amazonaws.com/eviction-lab-data/
+s3_bucket = eviction-lab-etl-data
+s3_base = https://s3.amazonaws.com/$(s3_bucket)/
 years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y)) msa-10
@@ -25,7 +26,7 @@ help: demographics.mk
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://eviction-lab-data/demographics/$$(basename $$f) --acl=public-read; done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(s3_bucket)/demographics/$$(basename $$f) --acl=public-read; done
 
 ### DEMOGRAPHIC DATA
 
