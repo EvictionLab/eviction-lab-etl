@@ -1,4 +1,5 @@
 # Makefile for creating Census geography data for 2010 from source rather than S3
+s3_bucket = eviction-lab-etl-data
 census_ftp_base = ftp://ftp2.census.gov/geo/tiger/GENZ2010/
 
 block-groups-pattern = gz_*_*_150_*_500k.zip
@@ -28,7 +29,7 @@ help: census.mk
 
 ## deploy              : Deploy gzipped census data to S3
 deploy: $(foreach f, $(GENERATED_FILES), $(f).gz)
-	for f in $^; do aws s3 cp $$f s3://eviction-lab-data/$$f --acl=public-read; done
+	for f in $^; do aws s3 cp $$f s3://$(s3_bucket)/$$f --acl=public-read; done
 
 ## census/%.geojson.gz : Gzip census GeoJSON
 census/%.geojson.gz: census/%.geojson

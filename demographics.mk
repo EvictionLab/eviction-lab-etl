@@ -1,4 +1,4 @@
-s3_base = https://s3.amazonaws.com/eviction-lab-data/
+s3_bucket = eviction-lab-etl-data
 years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y)) msa-10
@@ -25,7 +25,7 @@ help: demographics.mk
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://eviction-lab-data/demographics/$$(basename $$f) --acl=public-read; done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(s3_bucket)/demographics/$$(basename $$f) --acl=public-read; done
 
 ### DEMOGRAPHIC DATA
 
@@ -41,24 +41,24 @@ data/demographics/msa.csv: data/demographics/years/msa-10.csv
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv:
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py $* > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py tracts-00 > $@
 	python3 scripts/convert_00_geo.py tracts $@ $<
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
 data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py block-groups-00 > $@
 	python3 scripts/convert_00_geo.py block-groups $@ $<
 
 ## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
 data/demographics/years/block-groups-10.csv: census/10/block-groups.csv
-	mkdir -p data/demographics/years
+	mkdir -p $(dir $@)
 	python3 scripts/create_data_demographics.py block-groups-10 > $@
 
 ## census/%/block-groups.csv                   : Consolidate block groups by county
@@ -87,7 +87,7 @@ census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_g
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights
 census/00/geocorr.csv:
 	mkdir -p $(dir $@)
-	wget -O $@.gz $(s3_base)relationships/$(notdir $@).gz
+	aws s3 cp s3://$(s3_bucket)/relationships/$(notdir $@).gz $@.gz
 	gunzip $@.gz
 
 ## census/00/nhgis_blk2000_blk2010_ge.csv      : Download NHGIS 2000 data crosswalks

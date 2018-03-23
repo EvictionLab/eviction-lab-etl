@@ -24,6 +24,14 @@ Parameters:
     Type: String
     Default: E3P26Z91ICB4HP
     Description: Select a Cloudfront distribution for public data cache invalidation.
+  CloudfrontIdDev:
+    Type: String
+    Default: E38VYWEWUWNX26
+    Description: Select a Cloudfront distribution for dev site cache invalidation
+  CloudfrontIdProd:
+    Type: String
+    Default: E1A16ES5GX062O
+    Description: Select a Cloudfront distribution for dev site cache invalidation
   CensusApiKey:
     Type: String
     Description: Census API Key
@@ -127,6 +135,10 @@ Resources:
           Value: !Ref 'CensusApiKey'
         - Name: PUBLIC_DATA_CLOUDFRONT_ID
           Value: !Ref 'DataCloudfrontId'
+        - Name: CLOUDFRONT_ID_DEV
+          Value: !Ref 'CloudfrontIdDev'
+        - Name: CLOUDFRONT_ID_PROD
+          Value: !Ref 'CloudfrontIdProd'
   CacheJobDefinition:
     Type: AWS::Batch::JobDefinition
     DependsOn: BatchJobRole
