@@ -17,7 +17,7 @@ if __name__ == '__main__':
     output_df = pd.DataFrame(
         output_df.groupby(['GEOID10', 'year'])[NUMERIC_COLS].sum()
     ).reset_index()
-    output_df = output_df.merge(context_df, on='GEOID10', how='left').round(2)
+    output_df = output_df.merge(context_df, on='GEOID10', how='left')
     output_df['year'] = output_df['year'].astype('int')
 
     output_df.rename(columns={'GEOID10': 'GEOID'}, inplace=True)

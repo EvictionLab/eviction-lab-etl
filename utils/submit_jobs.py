@@ -1,7 +1,7 @@
 import sys
 import boto3
 
-LARGE_MEM_JOBS = ['block-groups', 'deploy_public_data', 'demographics']
+LARGE_MEM_JOBS = ['block-groups', 'deploy_public_data']
 
 if __name__ == '__main__':
     client = boto3.client('batch')
