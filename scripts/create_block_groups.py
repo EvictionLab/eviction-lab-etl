@@ -89,13 +89,11 @@ if __name__ == '__main__':
     state, county = sys.argv[1][:2], sys.argv[1][2:]
 
     if sys.argv[2] == '00':
-        bg_df = block_groups_00(state, county)
+        df = block_groups_00(state, county)
     elif sys.argv[2] == '10':
-        bg_df = block_groups_10(state, county)
+        df = block_groups_10(state, county)
     else:
         raise ValueError('Invalid year suffix supplied')
-    if bg_df is not None:
-        bg_df['GEOID'] = bg_df.apply(lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']), axis=1)
-        bg_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
-
-    
+    if df is not None:
+        df['GEOID'] = df['state'].str.zfill(2) + df['county'].str.zfill(3) + df['tract'].str.zfill(6) + df['block group']
+        df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)

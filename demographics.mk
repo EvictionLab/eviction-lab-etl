@@ -29,11 +29,9 @@ deploy:
 
 ### DEMOGRAPHIC DATA
 
-## data/demographics/%.csv                     : Create crosswalked and interpolated demographic data for geographies
+## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ | \
-	python3 scripts/convert_crosswalk_geo.py $* | \
-	python3 scripts/convert_interpolate.py > $@
+	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
 ## data/demographics/msa.csv                   : Copy over MSA data
 data/demographics/msa.csv: data/demographics/years/msa-10.csv
@@ -42,24 +40,28 @@ data/demographics/msa.csv: data/demographics/years/msa-10.csv
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv:
 	mkdir -p $(dir $@)
-	python3 scripts/create_data_demographics.py $* > $@
+	python3 scripts/create_census_data.py $* | \
+	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
 	mkdir -p $(dir $@)
-	python3 scripts/create_data_demographics.py tracts-00 > $@
-	python3 scripts/convert_00_geo.py tracts $@ $<
+	python3 scripts/create_census_data.py tracts-00 | \
+	python3 scripts/convert_00_geo.py tracts $< | \
+	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
 data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv
 	mkdir -p $(dir $@)
-	python3 scripts/create_data_demographics.py block-groups-00 > $@
-	python3 scripts/convert_00_geo.py block-groups $@ $<
+	python3 scripts/create_census_data.py block-groups-00 | \
+	python3 scripts/convert_00_geo.py block-groups $< | \
+	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
 data/demographics/years/block-groups-10.csv: census/10/block-groups.csv
 	mkdir -p $(dir $@)
-	python3 scripts/create_data_demographics.py block-groups-10 > $@
+	python3 scripts/create_census_data.py block-groups-10 | \
+	python3 scripts/convert_census_vars.py > $@
 
 ## census/%/block-groups.csv                   : Consolidate block groups by county
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)

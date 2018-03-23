@@ -1,21 +1,21 @@
 import sys
 import csv
 import pandas as pd
-from create_data_demographics import create_tract_name
+from create_census_data import create_tract_name
 from data_constants import *
 
 
 if __name__ == '__main__':
-    data_df = pd.read_csv(sys.argv[2], dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'})
-    weight_df = pd.read_csv(sys.argv[3], dtype={'GEOID00': 'object', 'GEOID10': 'object'})
+    data_df = pd.read_csv(sys.stdin, dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'})
+    weight_df = pd.read_csv(sys.argv[2], dtype={'GEOID00': 'object', 'GEOID10': 'object'})
 
     output_df = weight_df.merge(data_df, left_on='GEOID00', right_on='GEOID', how='left')
     context_df = output_df[['GEOID10', 'name', 'parent-location']].copy()
     context_df.drop_duplicates(subset=['GEOID10'], inplace=True)
 
-    output_df[NUMERIC_OUTPUT_COLS] = output_df[NUMERIC_OUTPUT_COLS].multiply(output_df['weight'], axis=0)
+    output_df[NUMERIC_COLS] = output_df[NUMERIC_COLS].multiply(output_df['weight'], axis=0)
     output_df = pd.DataFrame(
-        output_df.groupby(['GEOID10', 'year'])[NUMERIC_OUTPUT_COLS].sum()
+        output_df.groupby(['GEOID10', 'year'])[NUMERIC_COLS].sum()
     ).reset_index()
     output_df = output_df.merge(context_df, on='GEOID10', how='left').round(2)
     output_df['year'] = output_df['year'].astype('int')
@@ -28,4 +28,4 @@ if __name__ == '__main__':
     else:
         raise ValueError('Invalid geography string supplied')
 
-    output_df[OUTPUT_COLS].to_csv(sys.argv[2], index=False, quoting=csv.QUOTE_NONNUMERIC)
+    output_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)

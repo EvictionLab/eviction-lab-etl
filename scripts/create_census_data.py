@@ -8,7 +8,11 @@ import pandas as pd
 from census import Census
 from data_constants import *
 
-c = Census(os.getenv('CENSUS_KEY'))
+
+if os.getenv('CENSUS_KEY'):
+    c = Census(os.getenv('CENSUS_KEY'))
+else:
+    raise Exception('Environment variable CENSUS_KEY not specified')
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
@@ -72,6 +76,36 @@ DATA_CLEANUP_FUNCS = {
     }
 }
 
+def crosswalk_county(df):
+    for k, v in COUNTY_CROSSWALK.items():
+        if 'name' in df.columns.values and 'parent-location' in df.columns.values:
+            df.loc[df['GEOID'] == k, ['GEOID', 'name', 'parent-location']] = [v['GEOID'], v['name'], v['parent-location']]
+        elif 'GEOID' in df.columns.values:
+            df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
+    return df
+
+
+def clean_data_df(df, geo_str):
+    if geo_str == 'cities':
+        for s in REMOVE_CITY_SUFFIXES:
+            df.loc[df['name'].str.endswith(s), 'name'] = df.loc[df['name'].str.endswith(s)]['name'].str.slice(0,-len(s))
+            df['name'] = df['name'].str.strip()
+    elif geo_str == 'tracts':
+        df['name'] = df['tract'].apply(create_tract_name)
+    elif geo_str == 'block-groups':
+        df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
+    elif geo_str == 'msa':
+        df = df.loc[df['name'].str.contains('Metro Area')].copy()
+    else:
+        df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
+    if 'GEOID' not in df.columns.values:
+        df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
+    if 'parent-location' not in df.columns.values:
+        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+    df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
+    df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
+    return df
+
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
@@ -97,85 +131,6 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
             census_vars, lookup_dict, year=year
         )))
     return pd.concat(geo_df_list)
-
-
-def generated_cols(df):
-    if 'occupied-housing-units' in df.columns.values:
-        df['pct-renter-occupied'] = np.where(df['occupied-housing-units'] > 0, (df['renter-occupied-households'] / df['occupied-housing-units']) * 100, 0)
-    else:
-        df['pct-renter-occupied'] = np.nan
-    if 'poverty-pop' in df.columns.values:
-        df[['population', 'poverty-pop']] = df[['population', 'poverty-pop']].apply(pd.to_numeric)
-        pop_col = 'population'
-        if 'total-poverty-pop' in df.columns.values:
-            pop_col = 'total-poverty-pop'
-            df[[pop_col]] = df[[pop_col]].apply(pd.to_numeric)
-        df['poverty-rate'] = np.where(df[pop_col] > 0, (df['poverty-pop'] / df[pop_col]) * 100, 0)
-    else:
-        # Should nulls be handled this way here?
-        df['poverty-rate'] = np.nan
-    for dem in ['hispanic', 'white', 'af-am', 'am-ind', 'asian', 'nh-pi', 'other', 'multiple']:
-        if dem + '-pop' in df.columns.values:
-            df[[dem + '-pop']] = df[[dem + '-pop']].apply(pd.to_numeric)
-            df['pct-{}'.format(dem)] = np.where(df['population'] > 0, (df['{}-pop'.format(dem)] / df['population']) * 100, 0)
-    return df
-
-
-def clean_data_df(df, geo_str):
-    if geo_str == 'cities':
-        for s in REMOVE_CITY_SUFFIXES:
-            df.loc[df['name'].str.endswith(s), 'name'] = df.loc[df['name'].str.endswith(s)]['name'].str.slice(0,-len(s))
-            df['name'] = df['name'].str.strip()
-    elif geo_str == 'tracts':
-        df['name'] = df['tract'].apply(create_tract_name)
-    elif geo_str == 'block-groups':
-        df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
-    elif geo_str == 'msa':
-        df = df.loc[df['name'].str.contains('Metro Area')].copy()
-    else:
-        df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
-    if 'GEOID' not in df.columns.values:
-        df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
-    if 'parent-location' not in df.columns.values:
-        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
-    df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
-    df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
-    df = generated_cols(df)
-    for col in OUTPUT_COLS:
-        if col not in df.columns.values:
-            df[col] = np.nan
-    return df[OUTPUT_COLS].copy()
-
-
-def crosswalk_county(df):
-    for k, v in COUNTY_CROSSWALK.items():
-        if 'name' in df.columns.values and 'parent-location' in df.columns.values:
-            df.loc[df['GEOID'] == k, ['GEOID', 'name', 'parent-location']] = [v['GEOID'], v['name'], v['parent-location']]
-        elif 'GEOID' in df.columns.values:
-            df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
-    return df
-
-
-def get_block_groups_data(year_str):
-    df_list = []
-    df_iter = pd.read_csv(
-        os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
-        dtype={'GEOID': 'object', 'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
-        encoding='utf-8',
-        iterator=True,
-        chunksize=50000
-    )
-    for df in df_iter:
-        df['name'] = df['tract'].apply(create_tract_name) + '.' + df['block group']
-        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
-        df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
-        df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
-        df = generated_cols(df)
-        for col in OUTPUT_COLS:
-            if col not in df.columns.values:
-                df[col] = np.nan
-        df_list.append(df[OUTPUT_COLS])
-    return pd.concat(df_list)
 
 
 def get_00_data(geo_str):
@@ -314,6 +269,23 @@ def get_10_data(geo_str):
     return pd.concat([census_df] + acs_df_list)
 
 
+def get_block_groups_data(year_str):
+    df_list = []
+    df_iter = pd.read_csv(
+        os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
+        dtype={'GEOID': 'object', 'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
+        encoding='utf-8',
+        iterator=True,
+        chunksize=50000
+    )
+    for df in df_iter:
+        df['name'] = df['tract'].apply(create_tract_name) + '.' + df['block group']
+        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        df = clean_data_df(df, 'block-groups')
+        df_list.append(df)
+    return pd.concat(df_list)
+
+
 if __name__ == '__main__':
     data_str = sys.argv[1]
     geo_str = '-'.join(data_str.split('-')[:-1])
@@ -321,17 +293,17 @@ if __name__ == '__main__':
 
     if year_str == '00':
         if geo_str == 'block-groups':
-            data_df = get_block_groups_data(year_str)
+            df = get_block_groups_data(year_str)
         else:
-            data_df = get_00_data(geo_str)
+            df = get_00_data(geo_str)
     elif year_str == '10':
         if geo_str == 'block-groups':
-            data_df = get_block_groups_data(year_str)
+            df = get_block_groups_data(year_str)
         else:
-            data_df = get_10_data(geo_str)
+            df = get_10_data(geo_str)
     else:
-        raise ValueError('An invalid argument was supplied')
+        raise ValueError('An invalid year suffix was supplied')
 
-    if not (geo_str == 'block-groups' and year_str in ['00', '10']):
-        data_df = clean_data_df(data_df, geo_str).round(2)
-    data_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    if geo_str != 'block-groups':
+        df = clean_data_df(df, geo_str)
+    df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
