@@ -94,6 +94,7 @@ if __name__ == '__main__':
         df = block_groups_10(state, county)
     else:
         raise ValueError('Invalid year suffix supplied')
-    if df is not None:
+
+    if df is not None and 'state' in df.columns.values:
         df['GEOID'] = df['state'].str.zfill(2) + df['county'].str.zfill(3) + df['tract'].str.zfill(6) + df['block group']
         df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
