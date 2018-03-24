@@ -7,7 +7,7 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
-eviction_cols = evictions,eviction-filings
+eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -192,9 +192,11 @@ grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## data/%.csv                       : Join evictions and demographics
+# FIXME: Only joining rather than calculating rates while figuring out imputation
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 utils/csvjoin.py GEOID,year $^ | \
-	python3 scripts/process_eviction_cols.py > $@
+	python3 utils/csvjoin.py GEOID,year $^ > $@
+	# python3 utils/csvjoin.py GEOID,year $^ | \
+	# python3 scripts/process_eviction_cols.py > $@
 
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
