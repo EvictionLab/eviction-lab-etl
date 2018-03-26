@@ -3,13 +3,12 @@ import json
 import pandas as pd
 
 if __name__ == '__main__':
-    df = pd.read_csv(
-        sys.argv[1],
-        engine='python',
-        dtype={'GEOID': 'object', 'n': 'object', 'pl': 'object'}
-    )
+    df = pd.read_csv(sys.stdin, dtype={'year': 'object'})
+    avg_records = df.to_dict(orient='records')
+    us_avg = {}
+    for r in avg_records:
+        year_suffix = r['year'][2:]
+        us_avg['er-{}'.format(year_suffix)] = r['eviction-rate']
+        us_avg['efr-{}'.format(year_suffix)] = r['eviction-filing-rate']
 
-    # data_cols = [c for c in df.columns.values if '-' in c]
-    eviction_cols = [c for c in df.columns.values if 'er-' in c or 'efr-' in c]
-    us_avg = df[eviction_cols].mean().round(2).to_dict()
     json.dump(us_avg, sys.stdout)

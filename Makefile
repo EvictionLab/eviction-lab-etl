@@ -84,9 +84,11 @@ deploy_public_data: data/public/US/all.csv $(foreach g, $(geo_types), census/$(g
 	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
 
 ## data/avg/us.json                 : Averages of US data
-data/avg/us.json: grouped_public/states.csv
+data/avg/us.json:
 	mkdir -p $(dir $@)
-	python3 scripts/create_us_average.py $< > $@
+	aws s3 cp s3://$(s3_bucket)/evictions/us.csv.gz - | \
+	gunzip -c | \
+	python3 scripts/create_us_average.py > $@
 
 ### COUNTY SEARCH DATA
 
