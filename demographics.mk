@@ -93,8 +93,8 @@ census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_g
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights
 census/00/geocorr.csv:
 	mkdir -p $(dir $@)
-	aws s3 cp s3://$(s3_bucket)/relationships/$(notdir $@).gz $@.gz
-	gunzip $@.gz
+	aws s3 cp s3://$(s3_bucket)/relationships/$(notdir $@).gz - | \
+	gunzip > $@
 
 ## census/00/nhgis_blk2000_blk2010_ge.csv      : Download NHGIS 2000 data crosswalks
 census/00/nhgis_blk2000_blk2010_ge.csv: census/00/crosswalks.zip
