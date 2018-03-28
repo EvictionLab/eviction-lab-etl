@@ -33,5 +33,6 @@ if __name__ == '__main__':
         'trt_fips': 'object',
         'bkg_fips': 'object'
     })
-    df.rename(VARNAME_CROSSWALK, inplace=True)
-    df[EVICTION_COLS].to_csv(sys.stdout, index=False)
+    df.rename(columns=VARNAME_CROSSWALK, inplace=True)
+    output_cols = [c for c in df.columns.values if c in EVICTION_COLS]
+    df[output_cols].to_csv(sys.stdout, index=False)

@@ -88,6 +88,7 @@ data/avg/us.json:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(s3_bucket)/evictions/us.csv.gz - | \
 	gunzip -c | \
+	python3 scripts/convert_varnames.py | \
 	python3 scripts/create_us_average.py > $@
 
 ### COUNTY SEARCH DATA
