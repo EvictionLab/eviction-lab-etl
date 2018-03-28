@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # Passing -i flag drops listed columns instead of retaining them
     inverse = False
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         inverse = sys.argv[2] == '-i'
 
     if not inverse:
