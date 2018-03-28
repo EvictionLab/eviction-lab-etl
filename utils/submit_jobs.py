@@ -1,6 +1,7 @@
 import sys
 import boto3
 
+JOB_RETRY_ATTEMPTS = 3
 LARGE_MEM_JOBS = ['block-groups', 'deploy_public_data']
 
 if __name__ == '__main__':
@@ -14,7 +15,7 @@ if __name__ == '__main__':
             'jobQueue': 'eviction-lab-etl-job-queue',
             'jobDefinition': 'eviction-lab-etl-job',
             'retryStrategy': {
-                'attempts': 1
+                'attempts': JOB_RETRY_ATTEMPTS
             },
             'parameters': {
                 'filename': filename
@@ -33,6 +34,6 @@ if __name__ == '__main__':
             jobName='cache-job',
             jobQueue='eviction-lab-etl-job-queue',
             jobDefinition='etl-cache-invalidation-job',
-            retryStrategy={'attempts': 1},
+            retryStrategy={'attempts': JOB_RETRY_ATTEMPTS},
             dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
         )
