@@ -16,6 +16,7 @@ VARNAME_CROSSWALK = {
     'st_fips': 'GEOID',
     'co_fips': 'GEOID',
     'placefips': 'GEOID',
+    'pl_fips': 'GEOID',
     'trt_fips': 'GEOID',
     'bkg_fips': 'GEOID',
     'tenure': 'renter-occupied-households',
@@ -30,6 +31,7 @@ if __name__ == '__main__':
         'st_fips': 'object',
         'co_fips': 'object',
         'placefips': 'object',
+        'pl_fips': 'object',
         'trt_fips': 'object',
         'bkg_fips': 'object'
     })
