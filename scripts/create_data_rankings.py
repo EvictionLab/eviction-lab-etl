@@ -4,10 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-DATA_COLS = [
-    'GEOID', 'name', 'parent-location', 'population',
-    'evictions', 'eviction-filings', 'eviction-rate', 'eviction-filing-rate'
-]
+DATA_COLS = ['GEOID', 'name', 'parent-location', 'population', 'evictions', 'eviction-rate']
 
 LOW_POP_CUTOFF = 20000
 MID_POP_CUTOFF = 100000
@@ -31,7 +28,7 @@ if __name__ == '__main__':
     # Get only most recent data, necessary columns
     # FIXME: Uncomment when this lines up
     # max_year = city_data_df['year'].max()
-    max_year = 2016
+    max_year = 2015
     data_df = data_df.loc[data_df['year'] == max_year][DATA_COLS].copy()
 
     center_df = pd.read_csv(
