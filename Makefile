@@ -7,7 +7,7 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
-eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate,renter-occupied-households
+eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -115,20 +115,22 @@ data/rankings/%-centers.csv: centers/%.geojson
 
 ### PUBLIC DATA
 
-## grouped_public/%.csv             : Need to combine grouped_data CSVs for GeoJSON merge
-grouped_public/%.csv: $(foreach y, $(years), grouped_data/%-$(y).csv)
+## grouped_public/%.csv             : Need to combine full data CSVs for GeoJSON merge
+grouped_public/%.csv: data/public/US/%.csv
 	mkdir -p $(dir $@)
-	python3 utils/csvjoin.py GEOID,n,pl $^ > $@
-
-## data/public/US/%.csv             : For US data, just copy without filtering
-data/public/US/%.csv: data/%.csv
-	mkdir -p $(dir $@)
-	cp data/$(notdir $@) $@
+	cat $< | \
+	python3 scripts/process_group_data.py | \
+	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
 
 ## data/public/US/all.csv           : Full US public data
-data/public/US/all.csv: $(foreach g, $(geo_types), data/$(g).csv)
+data/public/US/all.csv: $(foreach g, $(geo_types), data/public/US/$(g).csv)
 	mkdir -p $(dir $@)
 	csvstack $^ > $@
+
+## data/public/US/%.csv             : For US data, pull demographics and full eviction data
+data/public/US/%.csv: data/demographics/%.csv data/full-evictions/%.csv
+	mkdir -p $(dir $@)
+	python3 utils/csvjoin.py GEOID,year $^ > $@
 
 ### MERGE TILES
 
@@ -198,13 +200,21 @@ grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
 data/%.csv: data/demographics/%.csv data/evictions/%.csv
 	python3 utils/csvjoin.py GEOID,year $^ > $@
 
+## data/full-evictions/%.csv        : Pull eviction data, including imputed/subbed
+data/full-evictions/%.csv:
+	mkdir -p $(dir $@)
+	aws s3 cp s3://$(s3_bucket)/evictions/$(notdir $@).gz - | \
+	gunzip -c | \
+	python3 scripts/convert_varnames.py > $@
+
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(s3_bucket)/evictions/$(notdir $@).gz - | \
 	gunzip -c | \
 	python3 scripts/convert_varnames.py | \
-	python3 scripts/convert_crosswalk_geo.py $* > $@
+	python3 scripts/convert_crosswalk_geo.py $* | \
+	python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
 ## data/demographics/%.csv          : Pull demographic data
 data/demographics/%.csv:

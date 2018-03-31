@@ -69,6 +69,9 @@ if __name__ == '__main__':
     )
     data_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
 
+    # Convert imputed/subbed flags to int
+    data_df[['imputed', 'subbed']] = data_df[['imputed', 'subbed']].fillna(0).astype(int)
+
     geo_df_map = {}
     for k, v in GEO_TYPE_LEN.items():
         geo_df = gpd.read_file(

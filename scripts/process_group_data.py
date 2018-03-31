@@ -18,7 +18,13 @@ if __name__ == '__main__':
     with open(os.path.join(os.path.dirname(BASE_DIR), 'conf', 'col_map.json'), 'r') as col_f:
         col_map = json.load(col_f)
 
-    year = YEAR_MAP[sys.argv[1]]
+    if len(sys.argv) > 1:
+        min_year = YEAR_MAP[sys.argv[1]]
+        max_year = min_year + 9
+    else:
+        min_year = 2000
+        max_year = 2019
+
     input_df_list = []
 
     input_df_iter = pd.read_csv(
@@ -28,7 +34,7 @@ if __name__ == '__main__':
         chunksize=10000
     )
     for df in input_df_iter:
-        input_df_list.append(df.loc[(df['year'] >= year) & (df['year'] <= year+9)])
+        input_df_list.append(df.loc[(df['year'] >= min_year) & (df['year'] <= max_year)])
 
     input_df = pd.concat(input_df_list)
     input_df.rename(columns=col_map, inplace=True)
