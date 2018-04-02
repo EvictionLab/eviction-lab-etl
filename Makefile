@@ -220,5 +220,4 @@ data/evictions/%.csv:
 data/demographics/%.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(s3_bucket)/demographics/$(notdir $@).gz - | \
-	gunzip -c | \
-	python3 utils/subset_cols.py renter-occupied-households -i > $@
+	gunzip -c > $@

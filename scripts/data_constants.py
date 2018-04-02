@@ -1,6 +1,6 @@
 CENSUS_API_BASE = 'https://api.census.gov/data/'
 
-END_YEAR = 2018
+END_YEAR = 2017
 
 ACS_VAR_MAP = {
     'NAME': 'name',
@@ -98,7 +98,6 @@ OUTPUT_COLS = [
     'year',
     'population',
     'poverty-rate',
-    'renter-occupied-households',
     'pct-renter-occupied',
     'median-gross-rent',
     'median-household-income',
@@ -117,7 +116,6 @@ OUTPUT_COLS = [
 NUMERIC_OUTPUT_COLS = [
     'population',
     'poverty-rate',
-    'renter-occupied-households',
     'pct-renter-occupied',
     'median-gross-rent',
     'median-household-income',

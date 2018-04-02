@@ -25,7 +25,7 @@ help: demographics.mk
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(s3_bucket)/demographics/$$(basename $$f) --acl=public-read; done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(s3_bucket)/demographics/$$(basename $$f); done
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
