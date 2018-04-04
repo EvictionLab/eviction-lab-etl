@@ -1,0 +1,154 @@
+Eviction Lab Data Dictionary
+
+Additional information in our FAQ evictionlab.org/help-faq/
+Full methodology evictionlab.org/methods/
+
+Notes:
+- "cities" files correspond to Census Places
+- All geographies are converted to their 2010 Census FIPS codes, names, and boundaries
+
+Variables:
+
+- GEOID
+    - Census FIPS code
+- name
+    - Census location name (modified for display on map)
+- parent-location
+    - Parent location of given geography.
+    - USA for states, state for counties and cities, counties for tracts and block groups
+- population
+    - Total population
+    - 2000-2004 use 2000 Census SF1 P001001
+    - 2005-2009 use 2009 5-year ACS B01003_001E
+    - 2010 uses 2010 Census P0030001
+    - 2011-2016 uses 2015 5-year ACS B01003_001E
+- poverty-rate
+    - % of the population with income in the past 12 months below the poverty level
+    - 2000-2004 divides P087002 by P087001 in the 2000 Census summary file 3
+    - 2005-2009 divides B17010_002E by B17010_001E in 2009 5-year ACS
+    - 2010 divides B17010_002E by B17010_001E in 2012 5-year ACS
+    - 2011-2016 divides B17010_002E by B17010_001E in 2015 5-year ACS
+- pct-renter-occupied
+    - NOTE: This is not based off of the interpolated renter-occupied-households variable
+    - % of occupied housing units that are renter-occupied
+    - 2000-2004 divides H004003 by H003002 in 2000 Census summary file 1
+    - 2005-2009 divides B25003_003E by B25003_001E in 2009 5-year ACS
+    - 2010 divides H0040004 by H0040001 in 2010 Census
+    - 2011-2016 divides B25003_003E by B25003_001E in 2015 5-year ACS
+- median-gross-rent
+    - Median gross rent
+    - 2000-20004 uses 2000 Census summary file 3 H063001
+    - 2005-2009 uses 2009 5-year ACS B25064_001E
+    - 2010 uses 2012 5-year ACS B25064_001E
+    - 2011-2016 uses 2015 5-year ACS B25064_001E
+- median-household-income
+    - Median household income
+    - 2000-2004 uses 2000 Census summary file 3 P053001
+    - 2005-2009 uses 2009 5-year ACS B19013_001E
+    - 2010 uses 2012 5-year ACS B19013_001E
+    - 2011-2016 uses 2015 5-year ACS B19013_001E
+- median-property-value
+    - Median property value
+    - 2000-2004 uses 2000 Census summary file 3 H076001
+    - 2005-2009 uses 2009 5-year ACS B25077_001E
+    - 2010 uses 2012 5-year ACS B25077_001E
+    - 2011-2016 uses 2015 5-year ACS B25077_001E
+- rent-burden
+    - Median gross rent as a percentage of household income, max is 50% representing >= 50%
+    - 2000-2004 uses 2000 Census summary file 3 H070001
+    - 2005-2009 uses 2009 5-year ACS B25071_001E
+    - 2010 uses 2012 5-year ACS B25071_001E
+    - 2011-2016 uses 2015 5-year ACS B25071_001E
+- pct-white
+    - % population that is White alone and not Hispanic or Latino
+    - 2000-2004 divides P008003 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_003E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050003 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_003E by B01003_001E in 2015 5-year ACS
+- pct-af-am
+    - % population that is Black or African American alone and not Hispanic or Latino
+    - 2000-2004 divides P008004 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_004E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050004 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_004E by B01003_001E in 2015 5-year ACS
+- pct-hispanic
+    - % population that is of Hispanic or Latino origin
+    - 2000-2004 divides P008010 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_012E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0040003 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_012E by B01003_001E in 2015 5-year ACS
+- pct-am-ind
+    - % population that is American Indian and Alaska Native alone and not Hispanic or Latino
+    - 2000-2004 divides P008005 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_005E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050005 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_005E by B01003_001E in 2015 5-year ACS
+- pct-asian
+    - % population that is Asian alone and not Hispanic or Latino
+    - 2000-2004 divides P008006 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_006E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050006 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_006E by B01003_001E in 2015 5-year ACS
+- pct-nh-pi
+    - % population that is Native Hawaiian and Other Pacific Islander alone and not Hispanic or Latino
+    - 2000-2004 divides P008007 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_007E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050007 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_007E by B01003_001E in 2015 5-year ACS
+- pct-other
+    - % population that is other race alone and not Hispanic or Latino
+    - 2000-2004 divides P008008 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_008E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050008 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_008E by B01003_001E in 2015 5-year ACS
+- pct-multiple
+    - % population that is two or more races and not Hispanic or Latino
+    - 2000-2004 divides P008009 by P001001 in 2000 Census summary file 1
+    - 2005-2009 divides B03002_009E by B01003_001E in 2009 5-year ACS
+    - 2010 divides P0050009 by P0030001 in 2010 Census
+    - 2011-2016 divides B03002_009E by B01003_001E in 2015 5-year ACS
+- renter-occupied-households
+    - Interpolated count of renter-occupied households
+    - Based on Census and ESRI Business Analyst demographic estimates
+- evictions
+    - Number of eviction judgments in which renters were ordered to leave in a given area and year
+    - Only counts a single address which received an eviction judgment per year
+- eviction-filings
+    - All eviction cases filed in an area, including multiple cases filed against the same address in the same year
+- eviction-rate
+    - Ratio of the number of renter-occupied households in an area that received an eviction judgement in which renters were ordered to leave
+    - Only counts a single address per year which received an eviction judgment
+- eviction-filing-rate
+    - Ratio of the number of evictions filed in an area over the number of renter-occupied homes in that area
+    - Counts all eviction cases filed in an area, including multiple cases filed against the same address in the same year
+- imputed
+    - Boolean variable indicating whether eviction numbers and renter-occupied-households were imputed
+    - 0: false, 1: true
+- subbed
+    - Boolean variable indicating whether eviction numbers and renter-occupied-households were pulled from another source other than Eviction Lab sources
+    - 0: false, 1: true
+
+GeoJSON Abbreviated Variables:
+
+- n: name
+- pl: parent-location
+- p: population
+- pro: pct-renter-occupied
+- mgr: median-gross-rent
+- mhi: median-household-income
+- mpv: median-property-value
+- rb: rent-burden
+- roh: renter-occupied-households
+- pr: poverty-rate
+- pw: pct-white
+- paa: pct-af-am
+- ph: pct-hispanic
+- pai: pct-am-ind
+- pa: pct-asian
+- pnp: pct-nh-pi
+- pm: pct-multiple
+- po: pct-other
+- e: evictions
+- ef: eviction-filings
+- er: eviction-rate
+- efr: eviction-filing-rate

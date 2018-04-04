@@ -78,9 +78,10 @@ deploy_data: $(tool_data)
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths /*
 
 ## deploy_public_data               : Create and deploy public data
-deploy_public_data: data/public/US/all.csv $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv)
+deploy_public_data: data/public/US/all.csv conf/DATA_DICTIONARY.txt $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv)
 	python3 scripts/create_data_public.py
 	aws s3 cp ./data/public s3://eviction-lab-data-downloads --recursive --acl=public-read
+	aws s3 cp ./conf/DATA_DICTIONARY.txt s3://eviction-lab-data-downloads/DATA_DICTIONARY.txt --acl=public-read
 	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
 
 ## data/avg/us.json                 : Averages of US data
