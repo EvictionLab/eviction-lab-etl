@@ -35,7 +35,7 @@ cities-10_center_cols = GEOID,n,p-10
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
-tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/avg/us.json
+tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/search/locations.csv data/avg/us.json
 
 # For comma-delimited list
 null :=
@@ -43,7 +43,7 @@ space := $(null) $(null)
 comma := ,
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles
+.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles data/search/%.csv
 .PHONY: all clean deploy deploy_public_data deploy_data submit_jobs help
 
 ## all                              : Create all output data
@@ -92,14 +92,18 @@ data/avg/us.json:
 	python3 scripts/convert_varnames.py | \
 	python3 scripts/create_us_average.py > $@
 
-### COUNTY SEARCH DATA
+### SEARCH DATA
 
-## data/search/counties.csv         : Create county search data
-data/search/counties.csv: data/public/US/counties.csv data/search/counties-centers.csv
-	python3 scripts/create_counties_search.py $^ $@
+## data/search/locations.csv        : Search data for counties and states
+data/search/locations.csv: data/search/counties.csv data/search/states.csv
+	csvstack $^ > $@
 
-## data/search/counties-centers.csv : Convert counties centers to CSV
-data/search/counties-centers.csv: centers/counties.geojson
+## data/search/%.csv                : Create search data
+data/search/%.csv: data/public/US/%.csv data/search/%-centers.csv
+	python3 scripts/create_search_data.py $^ $@
+
+## data/search/%-centers.csv        : Convert geography centers to CSV
+data/search/%-centers.csv: centers/%.geojson
 	mkdir -p $(dir $@)
 	in2csv --format json -k features $< > $@
 
