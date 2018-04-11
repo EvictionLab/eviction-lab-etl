@@ -1,5 +1,6 @@
 s3_bucket = eviction-lab-etl-data
 s3_tool_data_bucket = eviction-lab-tool-data
+s3_export_bucket = eviction-lab-exports
 tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-only-low-zooms --maximum-zoom=10 --no-tile-stats --force
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
@@ -71,9 +72,10 @@ deploy:
 
 ### DATA DEPLOYMENT
 
-## deploy_data                      : Deploy all data files used in the map and rankings tool
+## deploy_data                      : Deploy all data files used in the map and rankings tool, remove old exports
 deploy_data: $(tool_data)
 	for f in $^; do aws s3 cp $$f s3://$(s3_tool_data_bucket)/$$f --acl=public-read --cache-control max-age=2628000; done
+	aws s3 rm s3://$(s3_export_bucket) --recursive
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths /*
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths /*
 
