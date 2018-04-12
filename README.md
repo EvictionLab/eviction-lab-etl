@@ -1,6 +1,6 @@
-# Eviction Lab Data ETL
+# Eviction Lab Data Tool ETL
 
-Data pipeline for Eviction Lab.
+Data pipeline for [the Eviction Lab map and rankings tool](https://evictionlab.org/map/). Pulls Census and ACS data from the [US Census API](https://www.census.gov/developers/) as well as US Census geography files and combines them with data provided by the Eviction Lab research team ([see Methods for more info](https://evictionlab.org/methods/)) to create [Mapbox vector tiles](https://www.mapbox.com/vector-tiles/), CSV files for rankings, and [public data download files](https://evictionlab.org/get-the-data/).
 
 ## Setup
 
@@ -31,3 +31,7 @@ With Docker installed, run:
 `docker run -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl GEOGRAPHY.mbtiles`
 
 You'll be able to view a UI for tiles at `localhost:8080`
+
+## License
+
+This application is open source code under the [MIT License](LICENSE).

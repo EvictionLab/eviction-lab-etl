@@ -70,10 +70,6 @@ DATA_CLEANUP_FUNCS = {
     'block-groups': {
         'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
         'parent-location': lambda x: COUNTY_FIPS_MAP.get(str(x['state']).zfill(2) + str(x['county']).zfill(3), STATE_FIPS_MAP[str(x['state']).zfill(2)])
-    },
-    'msa': {
-        'geoid': lambda x: str(x['state']).zfill(2) + str(x['metropolitan statistical area/micropolitan statistical area']).zfill(6),
-        'parent-location': lambda x: STATE_FIPS_MAP[str(x['state']).zfill(2)]
     }
 }
 
@@ -95,8 +91,6 @@ def clean_data_df(df, geo_str):
         df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
         df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
-    elif geo_str == 'msa':
-        df = df.loc[df['name'].str.contains('Metro Area')].copy()
     else:
         df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
     if 'GEOID' not in df.columns.values:
@@ -124,8 +118,6 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
             lookup_dict['in'] = 'county:{} state:{}'.format(
                 f.get('county', '*'), f['state']
             )
-        elif geo_str == 'msa':
-            lookup_dict['in'] = 'state:{}'.format(f['state'])
         elif geo_str == 'block-groups':
             lookup_dict['in'] = 'county:{} state:{}'.format(f['county'], f['state'])
         geo_df_list.append(pd.DataFrame(census_obj.get(
@@ -253,8 +245,6 @@ def get_10_data(geo_str):
         acs_merge_keys = ['state', 'place']
     elif geo_str == 'tracts':
         acs_merge_keys  = ['state', 'county', 'tract']
-    elif geo_str == 'msa':
-        acs_merge_keys = ['state', 'metropolitan statistical area/micropolitan statistical area']
     census_df = census_df.merge(acs_12_df, on=acs_merge_keys, how='left')
     census_df = census_df.loc[census_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()

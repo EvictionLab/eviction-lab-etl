@@ -1,7 +1,7 @@
 s3_bucket = eviction-lab-etl-data
 years = 00 10
 geo_types = states counties cities tracts block-groups
-geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y)) msa-10
+geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 county_fips = $(shell cat conf/fips_codes.txt)
 
@@ -36,10 +36,6 @@ submit_jobs:
 ## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
-
-## data/demographics/msa.csv                   : Copy over MSA data
-data/demographics/msa.csv: data/demographics/years/msa-10.csv
-	cp $< $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv:
