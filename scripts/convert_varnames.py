@@ -38,7 +38,7 @@ if __name__ == '__main__':
         'bkg_fips': 'object'
     })
     df.rename(columns=VARNAME_CROSSWALK, inplace=True)
-    output_cols = [c for c in df.columns.values if c in EVICTION_COLS]
+    output_cols = [c for c in EVICTION_COLS if c in df.columns.values]
     # Add imputed and subbed if not included
     add_cols = [c for c in ['imputed', 'subbed'] if c not in output_cols]
     for c in add_cols:
