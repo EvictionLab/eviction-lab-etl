@@ -8,7 +8,7 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
-eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
+eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate,low-flag
 
 states_min_zoom = 2
 counties_min_zoom = 2

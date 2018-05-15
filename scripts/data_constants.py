@@ -131,6 +131,8 @@ NUMERIC_OUTPUT_COLS = [
     'pct-other'
 ]
 
+INT_COLS = ['imputed', 'subbed', 'low-flag']
+
 COUNTY_CROSSWALK = {
     # 2000
     '02201': {

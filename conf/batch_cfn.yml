@@ -12,10 +12,6 @@ Parameters:
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Select security group.
-  BatchServiceRole:
-    Type: String
-    Default: eviction-lab-etl-batch
-    Description: Name of the IAM role that the batch service will use.
   CloudfrontId:
     Type: String
     Default: ELMVCLYHTM582
@@ -37,19 +33,19 @@ Parameters:
     Description: Census API Key
 Resources:
   # Needs to be created, but issues with creating through CloudFormation and then deleting
-  # BatchServiceRole:
-  #     Type: AWS::IAM::Role
-  #     Properties:
-  #       AssumeRolePolicyDocument:
-  #         Version: "2012-10-17"
-  #         Statement:
-  #           - Effect: Allow
-  #             Principal:
-  #               Service: batch.amazonaws.com
-  #             Action: sts:AssumeRole
-  #       ManagedPolicyArns:
-  #         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
-  #       Path: /service-role/
+  BatchServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: batch.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+        Path: /service-role/
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -92,10 +88,12 @@ Resources:
         - !Ref BatchInstanceRole
   ComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
-    DependsOn: BatchInstanceProfile
+    DependsOn:
+      - BatchInstanceProfile
+      - BatchServiceRole
     Properties:
       Type: MANAGED
-      ServiceRole: !Ref 'BatchServiceRole'
+      ServiceRole: !GetAtt BatchServiceRole.Arn
       ComputeEnvironmentName: eviction-lab-etl-compute-env
       ComputeResources:
         MaxvCpus: 256

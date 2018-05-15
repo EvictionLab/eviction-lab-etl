@@ -11,7 +11,8 @@ EVICTION_COLS = [
     'eviction-rate',
     'eviction-filing-rate',
     'imputed',
-    'subbed'
+    'subbed',
+    'low-flag'
 ]
 
 VARNAME_CROSSWALK = {
@@ -25,7 +26,8 @@ VARNAME_CROSSWALK = {
     'renter_households': 'renter-occupied-households',
     'cases': 'eviction-filings',
     'evictrate': 'eviction-rate',
-    'caserate': 'eviction-filing-rate'
+    'caserate': 'eviction-filing-rate',
+    'low_county_ind': 'low-flag'
 }
 
 if __name__ == '__main__':
@@ -44,4 +46,5 @@ if __name__ == '__main__':
     for c in add_cols:
         output_cols.append(c)
         df[c] = 0
+    df[INT_COLS] = df[INT_COLS].fillna(0).astype(int)
     df[output_cols].to_csv(sys.stdout, index=False)

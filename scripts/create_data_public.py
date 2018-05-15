@@ -5,6 +5,7 @@ import boto3
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from data_constants import INT_COLS
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -69,8 +70,8 @@ if __name__ == '__main__':
     )
     data_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
 
-    # Convert imputed/subbed flags to int
-    data_df[['imputed', 'subbed']] = data_df[['imputed', 'subbed']].fillna(0).astype(int)
+    # Convert int cols to int
+    data_df[INT_COLS] = data_df[INT_COLS].fillna(0).astype(int)
 
     geo_df_map = {}
     for k, v in GEO_TYPE_LEN.items():
