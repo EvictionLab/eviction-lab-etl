@@ -36,7 +36,8 @@ VARNAME_CROSSWALK = {
     'evictions_imp': 'evictions-imp',
     'evictions_non_imp': 'evictions-non-imp',
     'evictrate': 'eviction-rate',
-    'low_county_ind': 'low-flag'
+    'low_county_ind': 'low-flag',
+    'low_state_ind': 'low-flag'
 }
 
 if __name__ == '__main__':
