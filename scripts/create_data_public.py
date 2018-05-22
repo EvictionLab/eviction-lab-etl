@@ -10,7 +10,7 @@ from data_constants import INT_COLS
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PUBLIC_DATA_DIR = os.path.join(BASE_DIR, 'data', 'public')
-BUCKET = 'eviction-lab-data-downloads'
+BUCKET = os.getenv('S3_DATA_DOWNLOADS_BUCKET')
 s3 = boto3.resource('s3')
 client = boto3.client('s3')
 

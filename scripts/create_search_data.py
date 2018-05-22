@@ -17,8 +17,12 @@ if __name__ == '__main__':
         geoid_len = 2
     else:
         df['name'] = df['name'] + ', ' + df['parent-location']
-        df['layer'] = 'counties'
-        geoid_len = 5
+        if 'counties' in sys.argv[1]:
+            df['layer'] = 'counties'
+            geoid_len = 5
+        elif 'cities' in sys.argv[1]:
+            df['layer'] = 'cities'
+            geoid_len = 7
     df = df[['GEOID', 'name', 'layer']].copy()
 
     center_df = pd.read_csv(

@@ -31,6 +31,21 @@ Parameters:
   CensusApiKey:
     Type: String
     Description: Census API Key
+  S3SourceDataBucket:
+    Type: String
+    Default: eviction-lab-etl-data-staging
+  S3ToolDataBucket:
+    Type: String
+    Default: eviction-lab-tool-data-staging
+  S3TilesetsBucket:
+    Type: String
+    Default: eviction-lab-tilesets-staging
+  S3DataDownloadsBucket:
+    Type: String
+    Default: eviction-lab-data-downloads-staging
+  S3ExportsBucket:
+    Type: String
+    Default: eviction-lab-exports-dev
 Resources:
   # Needs to be created, but issues with creating through CloudFormation and then deleting
   BatchServiceRole:
@@ -94,7 +109,7 @@ Resources:
     Properties:
       Type: MANAGED
       ServiceRole: !GetAtt BatchServiceRole.Arn
-      ComputeEnvironmentName: eviction-lab-etl-compute-env
+      ComputeEnvironmentName: !Join ['', [!Ref 'AWS::StackName', '-compute-env']]
       ComputeResources:
         MaxvCpus: 256
         MinvCpus: 0
@@ -115,7 +130,7 @@ Resources:
     DependsOn: BatchJobRole
     Properties:
       Type: container
-      JobDefinitionName: eviction-lab-etl-job
+      JobDefinitionName: !Join ['', [!Ref 'AWS::StackName', '-job']]
       Parameters: {'filename': 'tiles/states-10.mbtiles'}
       RetryStrategy:
         Attempts: 2
@@ -137,12 +152,22 @@ Resources:
           Value: !Ref 'CloudfrontIdDev'
         - Name: CLOUDFRONT_ID_PROD
           Value: !Ref 'CloudfrontIdProd'
+        - Name: S3_SOURCE_DATA_BUCKET
+          Value: !Ref 'S3SourceDataBucket'
+        - Name: S3_TOOL_DATA_BUCKET
+          Value: !Ref 'S3ToolDataBucket'
+        - Name: S3_TILESETS_BUCKET
+          Value: !Ref 'S3TilesetsBucket'
+        - Name: S3_DATA_DOWNLOADS_BUCKET
+          Value: !Ref 'S3DataDownloadsBucket'
+        - Name: S3_EXPORTS_BUCKET
+          Value: !Ref 'S3ExportsBucket'
   CacheJobDefinition:
     Type: AWS::Batch::JobDefinition
     DependsOn: BatchJobRole
     Properties:
       Type: container
-      JobDefinitionName: etl-cache-invalidation-job
+      JobDefinitionName: !Join ['', [!Ref 'AWS::StackName', '-cache-invalidation-job']]
       Parameters: {'cloudfront_dist': !Ref 'CloudfrontId'}
       RetryStrategy:
         Attempts: 1
@@ -170,4 +195,4 @@ Resources:
           ComputeEnvironment: !Ref 'ComputeEnvironment'
       State: ENABLED
       Priority: 1
-      JobQueueName: eviction-lab-etl-job-queue
+      JobQueueName: !Join ['', [!Ref 'AWS::StackName', '-job-queue']]
