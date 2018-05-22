@@ -127,6 +127,9 @@ Variables:
 - subbed
     - Boolean variable indicating whether eviction numbers and renter-occupied-households were pulled from another source other than Eviction Lab sources
     - 0: false, 1: true
+- low-flag
+    - Boolean variable indicating whether the eviction numbers are estimated to be lower than they are in reality. Based on county estimates for tracts and block groups
+    - 0: false, 1: true
 
 GeoJSON Abbreviated Variables:
 
@@ -152,3 +155,4 @@ GeoJSON Abbreviated Variables:
 - ef: eviction-filings
 - er: eviction-rate
 - efr: eviction-filing-rate
+- lf: low-flag

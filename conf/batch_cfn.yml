@@ -12,10 +12,6 @@ Parameters:
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Select security group.
-  BatchServiceRole:
-    Type: String
-    Default: eviction-lab-etl-batch
-    Description: Name of the IAM role that the batch service will use.
   CloudfrontId:
     Type: String
     Default: ELMVCLYHTM582
@@ -35,21 +31,36 @@ Parameters:
   CensusApiKey:
     Type: String
     Description: Census API Key
+  S3SourceDataBucket:
+    Type: String
+    Default: eviction-lab-etl-data-staging
+  S3ToolDataBucket:
+    Type: String
+    Default: eviction-lab-tool-data-staging
+  S3TilesetsBucket:
+    Type: String
+    Default: eviction-lab-tilesets-staging
+  S3DataDownloadsBucket:
+    Type: String
+    Default: eviction-lab-data-downloads-staging
+  S3ExportsBucket:
+    Type: String
+    Default: eviction-lab-exports-dev
 Resources:
   # Needs to be created, but issues with creating through CloudFormation and then deleting
-  # BatchServiceRole:
-  #     Type: AWS::IAM::Role
-  #     Properties:
-  #       AssumeRolePolicyDocument:
-  #         Version: "2012-10-17"
-  #         Statement:
-  #           - Effect: Allow
-  #             Principal:
-  #               Service: batch.amazonaws.com
-  #             Action: sts:AssumeRole
-  #       ManagedPolicyArns:
-  #         - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
-  #       Path: /service-role/
+  BatchServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: batch.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+        Path: /service-role/
   BatchInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -92,11 +103,13 @@ Resources:
         - !Ref BatchInstanceRole
   ComputeEnvironment:
     Type: AWS::Batch::ComputeEnvironment
-    DependsOn: BatchInstanceProfile
+    DependsOn:
+      - BatchInstanceProfile
+      - BatchServiceRole
     Properties:
       Type: MANAGED
-      ServiceRole: !Ref 'BatchServiceRole'
-      ComputeEnvironmentName: eviction-lab-etl-compute-env
+      ServiceRole: !GetAtt BatchServiceRole.Arn
+      ComputeEnvironmentName: !Join ['', [!Ref 'AWS::StackName', '-compute-env']]
       ComputeResources:
         MaxvCpus: 256
         MinvCpus: 0
@@ -117,7 +130,7 @@ Resources:
     DependsOn: BatchJobRole
     Properties:
       Type: container
-      JobDefinitionName: eviction-lab-etl-job
+      JobDefinitionName: !Join ['', [!Ref 'AWS::StackName', '-job']]
       Parameters: {'filename': 'tiles/states-10.mbtiles'}
       RetryStrategy:
         Attempts: 2
@@ -139,12 +152,22 @@ Resources:
           Value: !Ref 'CloudfrontIdDev'
         - Name: CLOUDFRONT_ID_PROD
           Value: !Ref 'CloudfrontIdProd'
+        - Name: S3_SOURCE_DATA_BUCKET
+          Value: !Ref 'S3SourceDataBucket'
+        - Name: S3_TOOL_DATA_BUCKET
+          Value: !Ref 'S3ToolDataBucket'
+        - Name: S3_TILESETS_BUCKET
+          Value: !Ref 'S3TilesetsBucket'
+        - Name: S3_DATA_DOWNLOADS_BUCKET
+          Value: !Ref 'S3DataDownloadsBucket'
+        - Name: S3_EXPORTS_BUCKET
+          Value: !Ref 'S3ExportsBucket'
   CacheJobDefinition:
     Type: AWS::Batch::JobDefinition
     DependsOn: BatchJobRole
     Properties:
       Type: container
-      JobDefinitionName: etl-cache-invalidation-job
+      JobDefinitionName: !Join ['', [!Ref 'AWS::StackName', '-cache-invalidation-job']]
       Parameters: {'cloudfront_dist': !Ref 'CloudfrontId'}
       RetryStrategy:
         Attempts: 1
@@ -172,4 +195,4 @@ Resources:
           ComputeEnvironment: !Ref 'ComputeEnvironment'
       State: ENABLED
       Priority: 1
-      JobQueueName: eviction-lab-etl-job-queue
+      JobQueueName: !Join ['', [!Ref 'AWS::StackName', '-job-queue']]

@@ -1,17 +1,23 @@
 import sys
 import json
 import pandas as pd
+from data_constants import *
 
 EVICTION_COLS = [
     'GEOID',
     'year',
     'renter-occupied-households',
     'eviction-filings',
+    'eviction-filings-imp',
+    'eviction-filings-non-imp',
     'evictions',
+    'evictions-imp',
+    'evictions-non-imp',
     'eviction-rate',
     'eviction-filing-rate',
     'imputed',
-    'subbed'
+    'subbed',
+    'low-flag'
 ]
 
 VARNAME_CROSSWALK = {
@@ -24,8 +30,13 @@ VARNAME_CROSSWALK = {
     'tenure': 'renter-occupied-households',
     'renter_households': 'renter-occupied-households',
     'cases': 'eviction-filings',
+    'cases_imp': 'eviction-filings-imp',
+    'cases_non_imp': 'eviction-filings-non-imp',
+    'caserate': 'eviction-filing-rate',
+    'evictions_imp': 'evictions-imp',
+    'evictions_non_imp': 'evictions-non-imp',
     'evictrate': 'eviction-rate',
-    'caserate': 'eviction-filing-rate'
+    'low_county_ind': 'low-flag'
 }
 
 if __name__ == '__main__':
@@ -39,9 +50,13 @@ if __name__ == '__main__':
     })
     df.rename(columns=VARNAME_CROSSWALK, inplace=True)
     output_cols = [c for c in EVICTION_COLS if c in df.columns.values]
-    # Add imputed and subbed if not included
-    add_cols = [c for c in ['imputed', 'subbed'] if c not in output_cols]
-    for c in add_cols:
-        output_cols.append(c)
-        df[c] = 0
+    # Add imputed and subbed if not included and not non-imputed data
+    if not any(['-imp' in c for c in output_cols]):
+        add_cols = [c for c in ['imputed', 'subbed'] if c not in output_cols]
+        for c in add_cols:
+            output_cols.append(c)
+            df[c] = 0
+    for col in INT_COLS:
+        if col in df.columns:
+            df[col] = df[col].fillna(0).astype(int)
     df[output_cols].to_csv(sys.stdout, index=False)

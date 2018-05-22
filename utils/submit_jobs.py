@@ -1,8 +1,12 @@
+import os
 import sys
 import boto3
 
 JOB_RETRY_ATTEMPTS = 3
 LARGE_MEM_JOBS = ['block-groups', 'deploy_public_data']
+JOB_QUEUE = os.getenv('JOB_QUEUE')
+JOB_DEFINITION = os.getenv('JOB_DEFINITION')
+CACHE_JOB_DEFINITION = os.getenv('CACHE_JOB_DEFINITION')
 
 if __name__ == '__main__':
     client = boto3.client('batch')
@@ -12,8 +16,8 @@ if __name__ == '__main__':
     for filename in job_filenames:
         job_kwargs = {
             'jobName': 'etl-job',
-            'jobQueue': 'eviction-lab-etl-job-queue',
-            'jobDefinition': 'eviction-lab-etl-job',
+            'jobQueue': JOB_QUEUE,
+            'jobDefinition': JOB_DEFINITION,
             'retryStrategy': {
                 'attempts': JOB_RETRY_ATTEMPTS
             },
@@ -32,8 +36,8 @@ if __name__ == '__main__':
     if not (len(job_filenames) == 1 and job_filenames[0] in ['deploy_data', 'demographics']):
         client.submit_job(
             jobName='cache-job',
-            jobQueue='eviction-lab-etl-job-queue',
-            jobDefinition='etl-cache-invalidation-job',
+            jobQueue=JOB_QUEUE,
+            jobDefinition=CACHE_JOB_DEFINITION,
             retryStrategy={'attempts': JOB_RETRY_ATTEMPTS},
             dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
         )

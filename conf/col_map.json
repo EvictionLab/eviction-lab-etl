@@ -20,5 +20,6 @@
     "renter-occupied-households": "roh",
     "poverty-rate": "pr",
     "eviction-rate": "er",
-    "eviction-filing-rate": "efr"
+    "eviction-filing-rate": "efr",
+    "low-flag": "lf"
 }

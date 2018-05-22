@@ -1,4 +1,3 @@
-s3_bucket = eviction-lab-etl-data
 years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
@@ -25,7 +24,7 @@ help: demographics.mk
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(s3_bucket)/demographics/$$(basename $$f); done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$$(basename $$f); done
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
@@ -89,7 +88,7 @@ census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_g
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights
 census/00/geocorr.csv:
 	mkdir -p $(dir $@)
-	aws s3 cp s3://$(s3_bucket)/relationships/$(notdir $@).gz - | \
+	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/relationships/$(notdir $@).gz - | \
 	gunzip > $@
 
 ## census/00/nhgis_blk2000_blk2010_ge.csv      : Download NHGIS 2000 data crosswalks
