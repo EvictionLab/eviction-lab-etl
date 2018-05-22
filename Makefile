@@ -11,7 +11,8 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
-eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate,low-flag
+sub_eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
+eviction_cols = $(sub_eviction_cols),low-flag
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -217,7 +218,7 @@ data/public/US/national.csv:
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/evictions/us.csv.gz - | \
 	gunzip -c | \
 	python3 scripts/convert_varnames.py | \
-	csvcut -c year,renter-occupied-households,$(eviction_cols) > $@
+	csvcut -c year,renter-occupied-households,$(sub_eviction_cols) > $@
 
 ## data/public/US/%.csv             : For US data, pull demographics and full eviction data
 data/public/US/%.csv: data/demographics/%.csv data/full-evictions/%.csv
