@@ -29,8 +29,8 @@ COUNTY_FIPS_MAP = {
 
 REMOVE_CITY_SUFFIXES = [
     'city (balance)', 'unified government (balance)', 'consolidated government (balance)',
-    'metro government (balance)', 'metropolitan government (balance)', 'town', 'city',
-    'CDP', 'municipality', 'borough', '(balance)', 'village', 'consolidated government',
+    'metro government (balance)', 'metropolitan government (balance)', ' town', ' city',
+    'CDP', 'municipality', ' borough', '(balance)', ' village', 'consolidated government',
     'metro government', 'metropolitan government', 'unified governm', 'unified government'
 ]
 

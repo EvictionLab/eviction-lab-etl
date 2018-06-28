@@ -1,6 +1,7 @@
 CENSUS_API_BASE = 'https://api.census.gov/data/'
 
 END_YEAR = 2017
+RANKINGS_MAX_YEAR = 2016
 
 ACS_VAR_MAP = {
     'NAME': 'name',
