@@ -183,21 +183,6 @@ census/%.geojson:
 			this.properties.north = +this.bounds[3].toFixed(4);" \
 		-o $@
 
-### GENERAL DATA
-
-# Secondary expansion allows processing of source so that states-10.csv comes from states.csv
-## grouped_data/%.csv               : Group data by FIPS code with columns for {ATTR}-{YEAR}
-.SECONDEXPANSION:
-grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
-	mkdir -p $(dir $@)
-	cat $< | \
-	python3 scripts/process_group_data.py $(lastword $(subst -, ,$*)) | \
-	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
-
-## data/%.csv                       : Join evictions and demographics
-data/%.csv: data/demographics/%.csv data/evictions/%.csv
-	python3 utils/csvjoin.py GEOID,year $^ > $@
-
 ### PUBLIC DATA
 
 ## grouped_public/%.csv             : Need to combine full data CSVs for GeoJSON merge
@@ -223,6 +208,21 @@ data/public/US/national.csv:
 ## data/public/US/%.csv             : For US data, pull demographics and full eviction data
 data/public/US/%.csv: data/demographics/%.csv data/full-evictions/%.csv
 	mkdir -p $(dir $@)
+	python3 utils/csvjoin.py GEOID,year $^ > $@
+
+### GENERAL DATA
+
+# Secondary expansion allows processing of source so that states-10.csv comes from states.csv
+## grouped_data/%.csv               : Group data by FIPS code with columns for {ATTR}-{YEAR}
+.SECONDEXPANSION:
+grouped_data/%.csv: data/$$(subst -$$(lastword $$(subst -, ,$$*)),,$$*).csv
+	mkdir -p $(dir $@)
+	cat $< | \
+	python3 scripts/process_group_data.py $(lastword $(subst -, ,$*)) | \
+	perl -ne 'if ($$. == 1) { s/"//g; } print;' > $@
+
+## data/%.csv                       : Join evictions and demographics
+data/%.csv: data/demographics/%.csv data/evictions/%.csv
 	python3 utils/csvjoin.py GEOID,year $^ > $@
 
 ### S3 SOURCE DATA
