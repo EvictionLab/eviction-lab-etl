@@ -40,6 +40,6 @@ RUN git clone https://github.com/EvictionLab/eviction-lab-etl.git
 WORKDIR /eviction-lab-etl/
 
 # Install Python packages
-RUN pip3 install -r /eviction-lab-etl/scripts/requirements.txt
+RUN pip3 install pipenv && pipenv install --system
 
 ENTRYPOINT ["/eviction-lab-etl/docker-entrypoint.sh"]

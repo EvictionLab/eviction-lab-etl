@@ -60,76 +60,40 @@ CENSUS_00_SF3_VAR_MAP = {
 
 CENSUS_10_VAR_MAP = {
     'NAME': 'name',
-    'P0030001': 'population',
-    'H0040001': 'occupied-housing-units',
-    'H0040004': 'renter-occupied-households',
-    'P0040003': 'hispanic-pop',
-    'P0050003': 'white-pop',
-    'P0050004': 'af-am-pop',
-    'P0050005': 'am-ind-pop',
-    'P0050006': 'asian-pop',
-    'P0050007': 'nh-pi-pop',
-    'P0050008': 'other-pop',
-    'P0050009': 'multiple-pop'
+    'P003001': 'population',
+    'H004001': 'occupied-housing-units',
+    'H004004': 'renter-occupied-households',
+    'P004003': 'hispanic-pop',
+    'P005003': 'white-pop',
+    'P005004': 'af-am-pop',
+    'P005005': 'am-ind-pop',
+    'P005006': 'asian-pop',
+    'P005007': 'nh-pi-pop',
+    'P005008': 'other-pop',
+    'P005009': 'multiple-pop'
 }
 
 NUMERIC_COLS = [
-    'population',
-    'poverty-pop',
-    'median-gross-rent',
-    'occupied-housing-units',
-    'renter-occupied-households',
-    'median-household-income',
-    'median-property-value',
-    'rent-burden',
-    'hispanic-pop',
-    'white-pop',
-    'af-am-pop',
-    'am-ind-pop',
-    'asian-pop',
-    'nh-pi-pop',
-    'other-pop',
+    'population', 'poverty-pop', 'median-gross-rent', 'occupied-housing-units',
+    'renter-occupied-households', 'median-household-income',
+    'median-property-value', 'rent-burden', 'hispanic-pop', 'white-pop',
+    'af-am-pop', 'am-ind-pop', 'asian-pop', 'nh-pi-pop', 'other-pop',
     'multiple-pop'
 ]
 
 OUTPUT_COLS = [
-    'GEOID',
-    'name',
-    'parent-location',
-    'year',
-    'population',
-    'poverty-rate',
-    'pct-renter-occupied',
-    'median-gross-rent',
-    'median-household-income',
-    'median-property-value',
-    'rent-burden',
-    'pct-white',
-    'pct-af-am',
-    'pct-hispanic',
-    'pct-am-ind',
-    'pct-asian',
-    'pct-nh-pi',
-    'pct-multiple',
+    'GEOID', 'name', 'parent-location', 'year', 'population', 'poverty-rate',
+    'pct-renter-occupied', 'median-gross-rent', 'median-household-income',
+    'median-property-value', 'rent-burden', 'pct-white', 'pct-af-am',
+    'pct-hispanic', 'pct-am-ind', 'pct-asian', 'pct-nh-pi', 'pct-multiple',
     'pct-other'
 ]
 
 NUMERIC_OUTPUT_COLS = [
-    'population',
-    'poverty-rate',
-    'pct-renter-occupied',
-    'median-gross-rent',
-    'median-household-income',
-    'median-property-value',
-    'rent-burden',
-    'pct-white',
-    'pct-af-am',
-    'pct-hispanic',
-    'pct-am-ind',
-    'pct-asian',
-    'pct-nh-pi',
-    'pct-multiple',
-    'pct-other'
+    'population', 'poverty-rate', 'pct-renter-occupied', 'median-gross-rent',
+    'median-household-income', 'median-property-value', 'rent-burden',
+    'pct-white', 'pct-af-am', 'pct-hispanic', 'pct-am-ind', 'pct-asian',
+    'pct-nh-pi', 'pct-multiple', 'pct-other'
 ]
 
 INT_COLS = ['imputed', 'subbed', 'low-flag']

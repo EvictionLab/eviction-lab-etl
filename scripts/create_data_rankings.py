@@ -1,11 +1,16 @@
-import os
-import re
 import sys
 import numpy as np
 import pandas as pd
 from data_constants import RANKINGS_MAX_YEAR
 
-DATA_COLS = ['GEOID', 'name', 'parent-location', 'population', 'evictions', 'eviction-rate']
+DATA_COLS = [
+    'GEOID',
+    'name',
+    'parent-location',
+    'population',
+    'evictions',
+    'eviction-rate',
+]
 
 LOW_POP_CUTOFF = 20000
 MID_POP_CUTOFF = 100000
@@ -24,23 +29,26 @@ if __name__ == '__main__':
     data_df = pd.read_csv(
         sys.argv[1],
         engine='python',
-        dtype={'GEOID': 'object', 'name': 'object', 'parent-location': 'object'}
-    )
+        dtype={
+            'GEOID': 'object',
+            'name': 'object',
+            'parent-location': 'object'
+        })
     # Get only most recent data, necessary columns
     # FIXME: Uncomment when this lines up
     # max_year = city_data_df['year'].max()
-    data_df = data_df.loc[data_df['year'] == RANKINGS_MAX_YEAR][DATA_COLS].copy()
+    data_df = data_df.loc[data_df['year'] == RANKINGS_MAX_YEAR][
+        DATA_COLS].copy()
 
     center_df = pd.read_csv(
-        sys.argv[2],
-        engine='python',
-        dtype={'properties/GEOID': 'object'}
-    )
-    center_df.rename(columns={
-        'properties/GEOID': 'GEOID',
-        'geometry/coordinates/0': 'lon',
-        'geometry/coordinates/1': 'lat'
-    }, inplace=True)
+        sys.argv[2], engine='python', dtype={'properties/GEOID': 'object'})
+    center_df.rename(
+        columns={
+            'properties/GEOID': 'GEOID',
+            'geometry/coordinates/0': 'lon',
+            'geometry/coordinates/1': 'lat'
+        },
+        inplace=True)
     center_df = center_df[['GEOID', 'lon', 'lat']].copy()
     geoid_len = 7 if 'cities' in sys.argv[1] else 2
     center_df['GEOID'] = center_df['GEOID'].str.zfill(geoid_len)

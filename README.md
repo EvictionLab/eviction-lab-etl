@@ -4,13 +4,15 @@ Data pipeline for [the Eviction Lab map and rankings tool](https://evictionlab.o
 
 ## Setup
 
-You'll need Node, Python 3, GNU Make, `wget`, and the AWS CLI installed. You'll also need the Python packages `pandas`, `boto3`, `census`, and [`csvkit`](https://csvkit.readthedocs.io/en/1.0.2/index.html) (all included in `scripts/requirements.txt`) and the NPM packages [`mapshaper`](https://github.com/mbloch/mapshaper), and [`geojson-polygon-labels`](https://github.com/andrewharvey/geojson-polygon-labels) as well as [`tippecanoe`](https://github.com/mapbox/tippecanoe). To install these dependencies (on Mac) run:
+You'll need Node, Python 3, Pipenv, GNU Make, `wget`, [`tippecanoe`](https://github.com/mapbox/tippecanoe), and the AWS CLI installed. To install Python and Node dependencies (on Mac) run:
 
 ```bash
 npm install -g mapshaper geojson-polygon-labels
-pip install -r scripts/requirements.txt
+pipenv install
 brew install tippecanoe
 ```
+
+To run any `make` commands that involve Python, first run `pipenv shell` to activate the Pipenv virtual environment in a subshell, and then run commands.
 
 To create any individual file (described in the `Makefile`) enter `make` and its name. Otherwise, to generate the full set of files, run `make`. To see a list of all available targets with descriptions in any of the makefiles, run `make -f {FILE} help`.
 
@@ -22,7 +24,7 @@ Deployment is managed by a AWS Batch jobs. If you have an AWS account, you can u
 
 The main `Makefile` pulls Census geography and demographic data that is pre-generated in the necessary format from the main S3 bucket. If any changes are made, you can re-create this data from source. To create the geography data, run `make -f census.mk` before generating tiles, or run `make -f demographics.mk all` to generate the demographics data.
 
-**Note:** To create Census demographic data, you'll need to get a [Census API Key](https://www.census.gov/developers/), copy the `.env.sample` file to `.env`, add the API key in there, and run `source .env`.
+**Note:** To create Census demographic data, you'll need to get a [Census API Key](https://www.census.gov/developers/), copy the `.env.sample` file to `.env`, add the API key in there. When you run `pipenv shell`, all variables defined in `.env` will be loaded into the shell.
 
 ## View Tiles Locally
 

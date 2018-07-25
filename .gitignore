@@ -9,6 +9,7 @@ grouped_data
 grouped_public
 fixtures
 .env
+.venv
 .vscode
 __pycache__
 .DS_Store

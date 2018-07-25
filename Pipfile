@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+boto3 = "*"
+census = "*"
+csvkit = "*"
+numpy = "==1.14.1"
+pandas = "==0.22.0"
+geopandas = "*"
+Rtree = "*"
+awscli = "*"
+
+[requires]
+python_version = "3.5"
+
+[dev-packages]
+"flake8" = "*"

@@ -33,11 +33,13 @@ if __name__ == '__main__':
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)
 
-    if not (len(job_filenames) == 1 and job_filenames[0] in ['deploy_data', 'demographics']):
+    if not (len(job_filenames) == 1
+            and job_filenames[0] in ['deploy_data', 'demographics']):
         client.submit_job(
             jobName='cache-job',
             jobQueue=JOB_QUEUE,
             jobDefinition=CACHE_JOB_DEFINITION,
             retryStrategy={'attempts': JOB_RETRY_ATTEMPTS},
-            dependsOn=[{'jobId': j['jobId']} for j in batch_jobs]
-        )
+            dependsOn=[{
+                'jobId': j['jobId']
+            } for j in batch_jobs])

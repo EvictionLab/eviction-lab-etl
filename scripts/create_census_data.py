@@ -1,12 +1,13 @@
 import os
-import re
 import sys
 import csv
-import json
-import numpy as np
 import pandas as pd
-from census import Census
-from data_constants import *
+from census_patch import CensusPatch as Census
+from data_constants import (COUNTY_CROSSWALK, NUMERIC_COLS, CENSUS_00_SF1_VARS,
+                            CENSUS_00_SF1_VAR_MAP, CENSUS_00_SF3_VARS,
+                            CENSUS_00_SF3_VAR_MAP, CENSUS_10_VARS,
+                            CENSUS_10_VAR_MAP, ACS_VARS, ACS_VAR_MAP,
+                            ACS_12_VARS, ACS_12_VAR_MAP, END_YEAR)
 
 
 if os.getenv('CENSUS_KEY'):
@@ -17,21 +18,27 @@ else:
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
 # Pull data for 50 states
-STATE_FIPS = [r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72']
+STATE_FIPS = [
+    r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72'
+]
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 
 STATE_COUNTY_FIPS = [
-    r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'}) if r['state'] != '72'
+    r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
+    if r['state'] != '72'
 ]
 COUNTY_FIPS_MAP = {
-    str(c['state']).zfill(2) + str(c['county']).zfill(3): c['NAME'] for c in STATE_COUNTY_FIPS
+    str(r['state']).zfill(2) + str(r['county']).zfill(3): r['NAME']
+    for r in STATE_COUNTY_FIPS
 }
 
 REMOVE_CITY_SUFFIXES = [
-    'city (balance)', 'unified government (balance)', 'consolidated government (balance)',
-    'metro government (balance)', 'metropolitan government (balance)', ' town', ' city',
-    'CDP', 'municipality', ' borough', '(balance)', ' village', 'consolidated government',
-    'metro government', 'metropolitan government', 'unified governm', 'unified government'
+    'city (balance)', 'unified government (balance)',
+    'consolidated government (balance)', 'metro government (balance)',
+    'metropolitan government (balance)', ' town', ' city', 'CDP',
+    'municipality', ' borough', '(balance)', ' village',
+    'consolidated government', 'metro government', 'metropolitan government',
+    'unified governm', 'unified government',
 ]
 
 CENSUS_JOIN_KEYS = {
@@ -40,6 +47,7 @@ CENSUS_JOIN_KEYS = {
     'cities': ['state', 'place'],
     'tracts': ['state', 'county', 'tract']
 }
+
 
 # Census tract names follow rules described here:
 # https://www.census.gov/geo/reference/gtc/gtc_ct.html
@@ -50,13 +58,16 @@ def create_tract_name(tract):
     else:
         return tract_name[:-2] + '.' + tract_name[-2:]
 
+
 DATA_CLEANUP_FUNCS = {
     'states': {
         'geoid': lambda x: str(x['state']).zfill(2),
         'parent-location': lambda x: 'USA'
     },
     'counties': {
-        'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3),
+        'geoid': (
+            lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3)
+        ),
         'parent-location': lambda x: STATE_FIPS_MAP[x['state']]
     },
     'cities': {
@@ -64,19 +75,41 @@ DATA_CLEANUP_FUNCS = {
         'parent-location': lambda x: STATE_FIPS_MAP[x['state']]
     },
     'tracts': {
-        'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6),
-        'parent-location': lambda x: COUNTY_FIPS_MAP.get(str(x['state']).zfill(2) + str(x['county']).zfill(3), STATE_FIPS_MAP[str(x['state']).zfill(2)])
+        'geoid': lambda x: (
+            str(x['state']).zfill(2) + str(x['county']).zfill(3) +
+            str(x['tract']).zfill(6)
+        ),
+        'parent-location': lambda x: (
+            COUNTY_FIPS_MAP.get(
+                str(x['state']).zfill(2) + str(x['county']).zfill(3),
+                STATE_FIPS_MAP[str(x['state']).zfill(2)]
+            )
+        )
     },
     'block-groups': {
-        'geoid': lambda x: str(x['state']).zfill(2) + str(x['county']).zfill(3) + str(x['tract']).zfill(6) + str(x['block group']),
-        'parent-location': lambda x: COUNTY_FIPS_MAP.get(str(x['state']).zfill(2) + str(x['county']).zfill(3), STATE_FIPS_MAP[str(x['state']).zfill(2)])
+        'geoid': lambda x: (
+            str(x['state']).zfill(2) + str(x['county']).zfill(3) +
+            str(x['tract']).zfill(6) + str(x['block group'])
+        ),
+        'parent-location': lambda x: (
+            COUNTY_FIPS_MAP.get(
+                str(x['state']).zfill(2) + str(x['county']).zfill(3),
+                STATE_FIPS_MAP[str(x['state']).zfill(2)]
+            )
+        )
     }
 }
 
+
 def crosswalk_county(df):
     for k, v in COUNTY_CROSSWALK.items():
-        if 'name' in df.columns.values and 'parent-location' in df.columns.values:
-            df.loc[df['GEOID'] == k, ['GEOID', 'name', 'parent-location']] = [v['GEOID'], v['name'], v['parent-location']]
+        if (
+            'name' in df.columns.values and
+            'parent-location' in df.columns.values
+        ):
+            df.loc[df['GEOID'] == k, ['GEOID', 'name', 'parent-location']] = (
+                [v['GEOID'], v['name'], v['parent-location']]
+            )
         elif 'GEOID' in df.columns.values:
             df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
     return df
@@ -85,19 +118,28 @@ def crosswalk_county(df):
 def clean_data_df(df, geo_str):
     if geo_str == 'cities':
         for s in REMOVE_CITY_SUFFIXES:
-            df.loc[df['name'].str.endswith(s), 'name'] = df.loc[df['name'].str.endswith(s)]['name'].str.slice(0,-len(s))
+            df.loc[df['name'].str.endswith(s), 'name'] = (
+                df.loc[df['name'].str.endswith(s)]['name'].str.slice(
+                    0, -len(s))
+            )
             df['name'] = df['name'].str.strip()
     elif geo_str == 'tracts':
         df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
-        df['name'] = df['GEOID'].apply(lambda x: create_tract_name(x[5:11]) + '.' + x[11])
+        df['name'] = df['GEOID'].apply(
+            lambda x: create_tract_name(x[5:11]) + '.' + x[11]
+        )
     else:
-        df['name'] = df['name'].apply(lambda x: (str(x).split(',')[0]).lstrip('0'))
+        df['name'] = df['name'].apply(
+            lambda x: (str(x).split(',')[0]).lstrip('0')
+        )
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
     if 'parent-location' not in df.columns.values:
-        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
-    df_numeric = [c for c in NUMERIC_COLS if c in df.columns.values]
+        df['parent-location'] = (
+            df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        )
+    df_numeric = [col for col in NUMERIC_COLS if col in df.columns.values]
     df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
     return df
 
@@ -111,7 +153,9 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
     if geo_str in ['tracts', 'block-groups']:
         lookup_str = geo_str.replace('-', ' ')[:-1]
     else:
-        lookup_str = 'metropolitan statistical area/micropolitan statistical area'
+        lookup_str = (
+            'metropolitan statistical area/micropolitan statistical area'
+        )
     lookup_dict = {'for': '{}:*'.format(lookup_str)}
     for f in fips_list:
         if geo_str == 'tracts':
@@ -119,7 +163,9 @@ def state_county_sub_data(census_obj, geo_str, census_vars, year):
                 f.get('county', '*'), f['state']
             )
         elif geo_str == 'block-groups':
-            lookup_dict['in'] = 'county:{} state:{}'.format(f['county'], f['state'])
+            lookup_dict['in'] = 'county:{} state:{}'.format(
+                f['county'], f['state']
+            )
         geo_df_list.append(pd.DataFrame(census_obj.get(
             census_vars, lookup_dict, year=year
         )))
@@ -158,10 +204,16 @@ def get_00_data(geo_str):
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2009
         ))
         # Handle ACS var difference
-        acs_df['NAME'] = acs_df['NAME'].apply(lambda x: ','.join(x.split(',')[:-1]).strip())
+        acs_df['NAME'] = acs_df['NAME'].apply(
+            lambda x: ','.join(x.split(',')[:-1]).strip()
+        )
     else:
-        census_sf1_df = state_county_sub_data(c.sf1, geo_str, CENSUS_00_SF1_VARS, 2000)
-        census_sf3_df = state_county_sub_data(c.sf3, geo_str, CENSUS_00_SF3_VARS, 2000)
+        census_sf1_df = state_county_sub_data(
+            c.sf1, geo_str, CENSUS_00_SF1_VARS, 2000
+        )
+        census_sf3_df = state_county_sub_data(
+            c.sf3, geo_str, CENSUS_00_SF3_VARS, 2000
+        )
         acs_df = state_county_sub_data(c.acs5, geo_str, ACS_VARS, 2009)
 
     census_sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
@@ -173,7 +225,10 @@ def get_00_data(geo_str):
     census_sf3_df = crosswalk_county(census_sf3_df)
     acs_df = crosswalk_county(acs_df)
 
-    census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=CENSUS_JOIN_KEYS.get(geo_str))
+    census_df = pd.merge(
+        census_sf1_df, census_sf3_df, how='left',
+        on=CENSUS_JOIN_KEYS.get(geo_str)
+    )
     census_df = census_df.loc[census_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
@@ -225,7 +280,9 @@ def get_10_data(geo_str):
             ACS_VARS, {'for': 'place:*', 'in': 'state:*'}, year=2015
         ))
         # Handle ACS var difference
-        acs_df['NAME'] = acs_df['NAME'].apply(lambda x: ','.join(x.split(',')[:-1]).strip())
+        acs_df['NAME'] = acs_df['NAME'].apply(
+            lambda x: ','.join(x.split(',')[:-1]).strip()
+        )
     else:
         census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_10_VARS, 2010)
         acs_12_df = state_county_sub_data(c.acs5, geo_str, ACS_12_VARS, 2012)
@@ -244,7 +301,7 @@ def get_10_data(geo_str):
     elif geo_str == 'cities':
         acs_merge_keys = ['state', 'place']
     elif geo_str == 'tracts':
-        acs_merge_keys  = ['state', 'county', 'tract']
+        acs_merge_keys = ['state', 'county', 'tract']
     census_df = census_df.merge(acs_12_df, on=acs_merge_keys, how='left')
     census_df = census_df.loc[census_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
@@ -264,14 +321,23 @@ def get_block_groups_data(year_str):
     df_list = []
     df_iter = pd.read_csv(
         os.path.join(CENSUS_DIR, year_str, 'block-groups.csv'),
-        dtype={'GEOID': 'object', 'state': 'object', 'county': 'object', 'tract': 'object', 'block group': 'object'},
+        dtype={
+            'GEOID': 'object',
+            'state': 'object',
+            'county': 'object',
+            'tract': 'object',
+            'block group': 'object',
+        },
         encoding='utf-8',
         iterator=True,
         chunksize=50000
     )
     for df in df_iter:
-        df['name'] = df['tract'].apply(create_tract_name) + '.' + df['block group']
-        df['parent-location'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
+        df['name'] = df['tract'].apply(
+            create_tract_name) + '.' + df['block group']
+        df['parent-location'] = df.apply(
+            DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1
+        )
         df = clean_data_df(df, 'block-groups')
         df_list.append(df)
     return pd.concat(df_list)

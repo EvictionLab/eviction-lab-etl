@@ -1,7 +1,6 @@
 import sys
-import json
 import pandas as pd
-from data_constants import *
+from data_constants import INT_COLS
 
 EVICTION_COLS = [
     'GEOID',
@@ -17,7 +16,7 @@ EVICTION_COLS = [
     'eviction-filing-rate',
     'imputed',
     'subbed',
-    'low-flag'
+    'low-flag',
 ]
 
 VARNAME_CROSSWALK = {
@@ -41,14 +40,16 @@ VARNAME_CROSSWALK = {
 }
 
 if __name__ == '__main__':
-    df = pd.read_csv(sys.stdin, dtype={
-        'st_fips': 'object',
-        'co_fips': 'object',
-        'placefips': 'object',
-        'pl_fips': 'object',
-        'trt_fips': 'object',
-        'bkg_fips': 'object'
-    })
+    df = pd.read_csv(
+        sys.stdin,
+        dtype={
+            'st_fips': 'object',
+            'co_fips': 'object',
+            'placefips': 'object',
+            'pl_fips': 'object',
+            'trt_fips': 'object',
+            'bkg_fips': 'object'
+        })
     df.rename(columns=VARNAME_CROSSWALK, inplace=True)
     output_cols = [c for c in EVICTION_COLS if c in df.columns.values]
     # Add imputed and subbed if not included and not non-imputed data

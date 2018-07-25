@@ -1,13 +1,12 @@
 import os
-import re
 import sys
 import csv
-import json
-import numpy as np
 import pandas as pd
-from census import Census
-from data_constants import *
-
+from census_patch import CensusPatch as Census
+from data_constants import (CENSUS_00_SF1_VARS, CENSUS_00_SF1_VAR_MAP,
+                            CENSUS_00_SF3_VARS, CENSUS_00_SF3_VAR_MAP,
+                            CENSUS_10_VARS, CENSUS_10_VAR_MAP, ACS_VARS,
+                            ACS_VAR_MAP, ACS_12_VARS, ACS_12_VAR_MAP, END_YEAR)
 
 if os.getenv('CENSUS_KEY'):
     c = Census(os.getenv('CENSUS_KEY'))
@@ -16,24 +15,39 @@ else:
 
 
 def block_groups_00(state, county):
-    census_sf1_df = pd.DataFrame(c.sf1.get(
-        CENSUS_00_SF1_VARS, {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)}, year=2000
-    ))
-    census_sf3_df = pd.DataFrame(c.sf3.get(
-        CENSUS_00_SF3_VARS, {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)}, year=2000
-    ))
-    acs_df = pd.DataFrame(c.acs5.get(
-        ACS_VARS,
-        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
-        year=2009
-    ))
+    census_sf1_df = pd.DataFrame(
+        c.sf1.get(
+            CENSUS_00_SF1_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2000))
+    census_sf3_df = pd.DataFrame(
+        c.sf3.get(
+            CENSUS_00_SF3_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2000))
+    acs_df = pd.DataFrame(
+        c.acs5.get(
+            ACS_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2009))
 
     census_sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
     census_sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
 
-    if not len(census_sf1_df.columns.values) or not len(census_sf3_df.columns.values):
+    if not len(census_sf1_df.columns.values) or not len(
+            census_sf3_df.columns.values):
         return
-    census_df = pd.merge(census_sf1_df, census_sf3_df, how='left', on=['name', 'state', 'county', 'tract', 'block group'])
+    census_df = pd.merge(
+        census_sf1_df,
+        census_sf3_df,
+        how='left',
+        on=['name', 'state', 'county', 'tract', 'block group'])
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
     census_df_list = []
@@ -52,28 +66,37 @@ def block_groups_00(state, county):
 
 
 def block_groups_10(state, county):
-    census_df = pd.DataFrame(c.sf1.get(
-        CENSUS_10_VARS,
-        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
-        year=2010
-    ))
-    acs_12_df = pd.DataFrame(c.acs5.get(
-        ACS_12_VARS,
-        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
-        year=2012
-    ))
-    acs_df = pd.DataFrame(c.acs5.get(
-        ACS_VARS,
-        {'for': 'block group:*', 'in': 'county:{} state:{}'.format(county, state)},
-        year=2015
-    ))
+    census_df = pd.DataFrame(
+        c.sf1.get(
+            CENSUS_10_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2010))
+    acs_12_df = pd.DataFrame(
+        c.acs5.get(
+            ACS_12_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2012))
+    acs_df = pd.DataFrame(
+        c.acs5.get(
+            ACS_VARS, {
+                'for': 'block group:*',
+                'in': 'county:{} state:{}'.format(county, state)
+            },
+            year=2015))
 
     census_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
     acs_12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
 
     if len(acs_12_df.columns.values):
         # Merge vars that are only in ACS to 2010 census
-        census_df = census_df.merge(acs_12_df, on=['state', 'county', 'tract', 'block group'], how='left')
+        census_df = census_df.merge(
+            acs_12_df,
+            on=['state', 'county', 'tract', 'block group'],
+            how='left')
     census_df['year'] = 2010
 
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
@@ -96,5 +119,6 @@ if __name__ == '__main__':
         raise ValueError('Invalid year suffix supplied')
 
     if df is not None and 'state' in df.columns.values:
-        df['GEOID'] = df['state'].str.zfill(2) + df['county'].str.zfill(3) + df['tract'].str.zfill(6) + df['block group']
+        df['GEOID'] = df['state'].str.zfill(2) + df['county'].str.zfill(
+            3) + df['tract'].str.zfill(6) + df['block group']
         df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
