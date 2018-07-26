@@ -146,23 +146,18 @@ def clean_data_df(df, geo_str):
 
 def state_county_sub_data(census_obj, geo_str, census_vars, year):
     geo_df_list = []
-    if geo_str != 'block-groups':
-        fips_list = STATE_FIPS
-    else:
-        fips_list = STATE_COUNTY_FIPS
     if geo_str in ['tracts', 'block-groups']:
+        fips_list = STATE_COUNTY_FIPS
         lookup_str = geo_str.replace('-', ' ')[:-1]
     else:
+        fips_list = STATE_FIPS
         lookup_str = (
             'metropolitan statistical area/micropolitan statistical area'
         )
+
     lookup_dict = {'for': '{}:*'.format(lookup_str)}
     for f in fips_list:
-        if geo_str == 'tracts':
-            lookup_dict['in'] = 'county:{} state:{}'.format(
-                f.get('county', '*'), f['state']
-            )
-        elif geo_str == 'block-groups':
+        if geo_str in ['tracts', 'block-groups']:
             lookup_dict['in'] = 'county:{} state:{}'.format(
                 f['county'], f['state']
             )
@@ -220,7 +215,7 @@ def get_00_data(geo_str):
     census_sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
     if 'name' in census_sf3_df.columns.values:
         census_sf3_df.drop('name', axis=1, inplace=True)
-    
+
     census_sf1_df = crosswalk_county(census_sf1_df)
     census_sf3_df = crosswalk_county(census_sf3_df)
     acs_df = crosswalk_county(acs_df)

@@ -36,8 +36,9 @@ $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom) --maximum
 $(foreach g, $(geo_years), $(eval $(g)_center_cols = GEOID,n))
 cities-10_center_cols = GEOID,n,p-10
 
-# Edit mapshaper command to use additional memory
+# Edit node commands to use additional memory
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
+geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labels)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/search/locations.csv data/avg/us.json data/us/national.csv
@@ -169,7 +170,7 @@ census/%.mbtiles: census/%.geojson
 ## centers/%.geojson                : GeoJSON centers
 centers/%.geojson: census/%.geojson
 	mkdir -p $(dir $@)
-	geojson-polygon-labels --style largest $< > $@
+	$(geojson_label_cmd) --style largest $< > $@
 
 ## census/%.geojson                 : Census GeoJSON from S3 bucket
 census/%.geojson:
