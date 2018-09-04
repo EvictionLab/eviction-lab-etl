@@ -43,6 +43,7 @@ if __name__ == '__main__':
     df = pd.read_csv(
         sys.stdin,
         dtype={
+            'GEOID': 'object',
             'st_fips': 'object',
             'co_fips': 'object',
             'placefips': 'object',
