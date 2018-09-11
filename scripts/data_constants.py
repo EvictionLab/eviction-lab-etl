@@ -96,6 +96,35 @@ NUMERIC_OUTPUT_COLS = [
     'pct-nh-pi', 'pct-multiple', 'pct-other'
 ]
 
+COLUMN_ORDER = [
+    'GEOID',
+    'year',
+    'name',
+    'parent-location',
+    'population',
+    'poverty-rate',
+    'pct-renter-occupied',
+    'median-gross-rent',
+    'median-household-income',
+    'median-property-value',
+    'rent-burden',
+    'pct-white',
+    'pct-af-am',
+    'pct-hispanic',
+    'pct-am-ind',
+    'pct-asian',
+    'pct-nh-pi',
+    'pct-multiple',
+    'pct-other',
+    'eviction-filings',
+    'evictions',
+    'eviction-rate',
+    'eviction-filing-rate',
+    'low-flag',
+    'imputed',
+    'subbed',
+]
+
 INT_COLS = ['imputed', 'subbed', 'low-flag']
 
 COUNTY_CROSSWALK = {
