@@ -43,6 +43,7 @@ geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labe
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/search/locations.csv data/avg/us.json data/us/national.csv
 public_data = data/public/US/all.csv data/public/US/national.csv conf/DATA_DICTIONARY.txt $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv data/non-imputed/$(g).csv) 
+validate_data = $(foreach g, $(geo_types), validate/$(g).csv)
 
 # For comma-delimited list
 null :=
@@ -50,11 +51,16 @@ space := $(null) $(null)
 comma := ,
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles data/search/%.csv
-.PHONY: all clean deploy deploy_public_data deploy_data submit_jobs help
+.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles data/search/%.csv data/demographics/%.csv data/full-evictions/%.csv
+.PHONY: all data clean deploy deploy_public_data deploy_data submit_jobs help
 
 ## all                              : Create all output data
 all: $(output_tiles)
+
+## data
+data: $(public_data)
+
+validate: $(validate_data)
 
 ## clean                            : Remove created files
 clean:
