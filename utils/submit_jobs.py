@@ -7,6 +7,7 @@ LARGE_MEM_JOBS = ['block-groups', 'deploy_public_data']
 JOB_QUEUE = os.getenv('JOB_QUEUE')
 JOB_DEFINITION = os.getenv('JOB_DEFINITION')
 CACHE_JOB_DEFINITION = os.getenv('CACHE_JOB_DEFINITION')
+S3_VALIDATION_BUCKET = os.getenv('S3_VALIDATION_BUCKET')
 
 if __name__ == '__main__':
     client = boto3.client('batch')
@@ -23,12 +24,20 @@ if __name__ == '__main__':
             },
             'parameters': {
                 'filename': filename
+            },
+            'containerOverrides': {
+                'environment': [
+                    {
+                        'name': 'S3_VALIDATION_BUCKET',
+                        'value': S3_VALIDATION_BUCKET
+                    }
+                ]
             }
         }
 
         # Override container memory for specific jobs
         if any([j in filename for j in LARGE_MEM_JOBS]):
-            job_kwargs['containerOverrides'] = {'memory': 15000}
+            job_kwargs['containerOverrides']['memory'] = 15000
 
         res = client.submit_job(**job_kwargs)
         batch_jobs.append(res)

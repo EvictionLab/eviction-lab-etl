@@ -1,6 +1,11 @@
 ###
 # Generate breakdown of missing data by `group_col`
 ###
+# Output:
+#
+# | location             | total             | missing                    | missing_percent              |
+# | -------------------- | ----------------- | -------------------------- | ---------------------------- |
+# | state name           | count of all rows | count of rows missing data | percent of rows missing data |
 
 import sys
 import csv
