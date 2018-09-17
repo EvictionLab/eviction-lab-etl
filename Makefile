@@ -43,7 +43,7 @@ geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labe
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/search/locations.csv data/avg/us.json data/us/national.csv
 public_data = data/public/US/all.csv data/public/US/national.csv conf/DATA_DICTIONARY.txt $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv data/non-imputed/$(g).csv) 
-validation_data = $(foreach g, $(geo_types), data/validation/by-state/$(g).csv data/validation/by-field/$(g).csv data/validation/joins/$(g).csv)
+validation_data = data/validation/missing_geoids.csv $(foreach g, $(geo_types), data/validation/by-state/$(g).csv data/validation/by-field/$(g).csv data/validation/joins/$(g).csv)
 
 # For comma-delimited list
 null :=
@@ -292,3 +292,13 @@ data/validation/by-field/%.csv: data/public/US/%.csv
 data/validation/joins/%.csv: data/public/US/%.csv
 	mkdir -p $(dir $@)
 	python3 scripts/validation/create_join_summary.py $* > $@
+
+.INTERMEDIATE: $(foreach g, $(geo_types), data/validation/$(g).csv)
+data/validation/%.csv: data/demographics/%.csv data/full-evictions/%.csv
+	mkdir -p $(dir $@)
+	python3 scripts/validation/create_missing_geoids.py $* > $@
+
+## data/validatio/missing_geoids.csv : Report GEOIDs in eviction records that are not in demographics
+data/validation/missing_geoids.csv: $(foreach g, $(geo_types), data/validation/$(g).csv)
+	mkdir -p $(dir $@)
+	csvstack $^ | sed '1s/.*/GEOID,type/' > $@
