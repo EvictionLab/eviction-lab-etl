@@ -55,11 +55,15 @@ comma := ,
 .PHONY: all data clean deploy deploy_public_data deploy_data submit_jobs help
 
 ## all                              : Create all output data
-all: $(output_tiles)
+all: tiles data validation
+
+## tiles
+tiles: $(output_tiles)
 
 ## data
 data: $(public_data)
 
+## validation
 validation: $(validation_data)
 
 ## clean                            : Remove created files
@@ -88,8 +92,8 @@ deploy:
 deploy_data: $(tool_data)
 	for f in $^; do aws s3 cp $$f s3://$(S3_TOOL_DATA_BUCKET)/$$f --acl=public-read --cache-control max-age=2628000; done
 	aws s3 rm s3://$(S3_EXPORTS_BUCKET) --recursive
-	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths /*
-	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths /*
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths "/*"
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths "/*"
 
 ## deploy_public_data               : Create and deploy public data
 deploy_public_data: $(public_data)
@@ -97,7 +101,7 @@ deploy_public_data: $(public_data)
 	aws s3 cp ./data/public s3://$(S3_DATA_DOWNLOADS_BUCKET) --recursive --acl=public-read
 	aws s3 cp ./data/non-imputed s3://$(S3_DATA_DOWNLOADS_BUCKET)/non-imputed --recursive --acl=public-read
 	aws s3 cp ./conf/DATA_DICTIONARY.txt s3://$(S3_DATA_DOWNLOADS_BUCKET)/DATA_DICTIONARY.txt --acl=public-read
-	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
+	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths "/*"
 
 ## deploy_validation_data			: Deploys the validation data to S3
 deploy_validation_data: validation

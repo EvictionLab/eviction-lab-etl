@@ -19,9 +19,6 @@ if __name__ == '__main__':
     }
   )
 
-  # column name to group by
-  group_col = 'parent-location'
-
   # get total number of rows
   row_count=df.shape[0]
 
@@ -33,6 +30,9 @@ if __name__ == '__main__':
 
   # create data frame for missing data
   missing_df=pd.DataFrame({'missing': null_count})
+
+  # add column for total records
+  missing_df['total']=row_count
 
   # add column for percent missing
   missing_df['missing_percent']=missing_df['missing']/row_count
