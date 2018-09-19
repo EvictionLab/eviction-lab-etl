@@ -101,6 +101,8 @@ deploy_public_data: $(public_data)
 	aws s3 cp ./data/public s3://$(S3_DATA_DOWNLOADS_BUCKET) --recursive --acl=public-read
 	aws s3 cp ./data/non-imputed s3://$(S3_DATA_DOWNLOADS_BUCKET)/non-imputed --recursive --acl=public-read
 	aws s3 cp ./conf/DATA_DICTIONARY.txt s3://$(S3_DATA_DOWNLOADS_BUCKET)/DATA_DICTIONARY.txt --acl=public-read
+	aws s3 cp ./conf/CHANGELOG.txt s3://$(S3_DATA_DOWNLOADS_BUCKET)/CHANGELOG.txt --acl=public-read
+	aws s3 cp ./conf/changes s3://$(S3_DATA_DOWNLOADS_BUCKET)/changes --recursive --acl=public-read
 	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths "/*"
 
 ## deploy_validation_data			: Deploys the validation data to S3
