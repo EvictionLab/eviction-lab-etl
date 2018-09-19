@@ -209,7 +209,8 @@ data/public/US/national.csv:
 ## data/public/US/%.csv             : For US data, pull demographics and full eviction data
 data/public/US/%.csv: data/demographics/%.csv data/full-evictions/%.csv
 	mkdir -p $(dir $@)
-	python3 utils/csvjoin.py GEOID,year $^ > $@
+	python3 utils/csvjoin.py GEOID,year $^ | \
+	python3 scripts/convert_col_order.py > $@
 
 ### GENERAL DATA
 
