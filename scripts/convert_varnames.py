@@ -19,6 +19,10 @@ EVICTION_COLS = [
     'low-flag',
 ]
 
+NATIONAL_COLS = [
+    'year','tenure','cases','evictions','caserate','evictrate'
+]
+
 VARNAME_CROSSWALK = {
     'st_fips': 'GEOID',
     'co_fips': 'GEOID',
@@ -46,8 +50,10 @@ ID_KEYS = [
 
 if __name__ == '__main__':
     df = pd.read_csv(sys.stdin, dtype={key: 'object' for key in ID_KEYS})
-    # Assert at least one of the ID keys is in the input file
-    assert any([key in df.columns.values for key in ID_KEYS])
+    is_national = df.columns.values.tolist() == NATIONAL_COLS
+    # Assert at least one of the ID keys is in the input file if not national
+    if not is_national:
+        assert any([key in df.columns.values for key in ID_KEYS])
     df.rename(columns=VARNAME_CROSSWALK, inplace=True)
     output_cols = [c for c in EVICTION_COLS if c in df.columns.values]
     # Add imputed and subbed if not included and not non-imputed data
@@ -60,5 +66,6 @@ if __name__ == '__main__':
         if col in df.columns:
             df[col] = df[col].fillna(0).astype(int)
     # Fail if GEOID len not one of allowed values, which would prevent join
-    assert df['GEOID'].str.len().mean() in [2, 5, 7, 11, 12]
+    if not is_national:
+        assert df['GEOID'].str.len().mean() in [2, 5, 7, 11, 12]
     df[output_cols].to_csv(sys.stdout, index=False)
