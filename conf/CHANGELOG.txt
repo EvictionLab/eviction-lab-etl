@@ -1,0 +1,7 @@
+# 2018-09-19
+  - Fixed an issue where eviction data was dropped for certain years where demographic data was unavailable. [View the full list of impacted places](LINK_TO_CSV)
+  - Files impacted: all.csv, counties.csv, cities,csv, tracts.csv, block-groups.csv
+
+# 2018-09-07
+  - Fixed an issue where eviction data was not present for cities in the following states: AL, AK, AZ, AR, CA, CO, and CT
+  - Files impacted: all.csv, cities.csv for the above states

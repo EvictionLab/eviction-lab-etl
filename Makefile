@@ -43,6 +43,7 @@ geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labe
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
 tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv data/search/counties.csv data/search/locations.csv data/avg/us.json data/us/national.csv
 public_data = data/public/US/all.csv data/public/US/national.csv conf/DATA_DICTIONARY.txt $(foreach g, $(geo_types), census/$(g).geojson grouped_public/$(g).csv data/non-imputed/$(g).csv) 
+validation_data = data/validation/missing_geoids.csv $(foreach g, $(geo_types), data/validation/by-state/$(g).csv data/validation/by-field/$(g).csv data/validation/joins/$(g).csv)
 
 # For comma-delimited list
 null :=
@@ -50,11 +51,20 @@ space := $(null) $(null)
 comma := ,
 
 # Don't delete files created throughout on completion
-.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles data/search/%.csv
-.PHONY: all clean deploy deploy_public_data deploy_data submit_jobs help
+.PRECIOUS: tilesets/%.mbtiles tiles/%.mbtiles census/%.geojson census/%.mbtiles centers/%.mbtiles data/search/%.csv data/full-evictions/%.csv data/demographics/%.csv
+.PHONY: all data clean deploy deploy_public_data deploy_data submit_jobs help
 
 ## all                              : Create all output data
-all: $(output_tiles)
+all: tiles data validation
+
+## tiles
+tiles: $(output_tiles)
+
+## data
+data: $(public_data)
+
+## validation
+validation: $(validation_data)
 
 ## clean                            : Remove created files
 clean:
@@ -82,8 +92,8 @@ deploy:
 deploy_data: $(tool_data)
 	for f in $^; do aws s3 cp $$f s3://$(S3_TOOL_DATA_BUCKET)/$$f --acl=public-read --cache-control max-age=2628000; done
 	aws s3 rm s3://$(S3_EXPORTS_BUCKET) --recursive
-	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths /*
-	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths /*
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_DEV) --paths "/*"
+	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths "/*"
 
 ## deploy_public_data               : Create and deploy public data
 deploy_public_data: $(public_data)
@@ -91,7 +101,13 @@ deploy_public_data: $(public_data)
 	aws s3 cp ./data/public s3://$(S3_DATA_DOWNLOADS_BUCKET) --recursive --acl=public-read
 	aws s3 cp ./data/non-imputed s3://$(S3_DATA_DOWNLOADS_BUCKET)/non-imputed --recursive --acl=public-read
 	aws s3 cp ./conf/DATA_DICTIONARY.txt s3://$(S3_DATA_DOWNLOADS_BUCKET)/DATA_DICTIONARY.txt --acl=public-read
-	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths /*
+	aws s3 cp ./conf/CHANGELOG.txt s3://$(S3_DATA_DOWNLOADS_BUCKET)/CHANGELOG.txt --acl=public-read
+	aws s3 cp ./conf/changes s3://$(S3_DATA_DOWNLOADS_BUCKET)/changes --recursive --acl=public-read
+	aws cloudfront create-invalidation --distribution-id $(PUBLIC_DATA_CLOUDFRONT_ID) --paths "/*"
+
+## deploy_validation_data			: Deploys the validation data to S3
+deploy_validation_data: validation
+	aws s3 cp ./data/validation s3://$(S3_VALIDATION_BUCKET) --recursive --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --acl=public-read
 
 ## data/avg/us.json                 : Averages of US data
 data/avg/us.json: data/us/national.csv
@@ -264,3 +280,32 @@ data/demographics/%.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(notdir $@).gz - | \
 	gunzip -c > $@
+
+### DATA VALIDATION
+
+## data/validation/by-state/%.csv	: Report missing data by state for each geography
+data/validation/by-state/%.csv: data/public/US/%.csv
+	mkdir -p $(dir $@)
+	cat data/public/US/$*.csv | \
+	python3 scripts/validation/create_missing_locations.py > $@
+
+## data/validation/by-field/%.csv	: Report missing data by field for each geography
+data/validation/by-field/%.csv: data/public/US/%.csv
+	mkdir -p $(dir $@)
+	cat data/public/US/$*.csv | \
+	python3 scripts/validation/create_missing_columns.py > $@
+
+## data/validation/joins/%.csv		: Report count of records for evictions, demographics, and joined data by state
+data/validation/joins/%.csv: data/public/US/%.csv
+	mkdir -p $(dir $@)
+	python3 scripts/validation/create_join_summary.py $* > $@
+
+.INTERMEDIATE: $(foreach g, $(geo_types), data/validation/$(g).csv)
+data/validation/%.csv: data/demographics/%.csv data/full-evictions/%.csv
+	mkdir -p $(dir $@)
+	python3 scripts/validation/create_missing_geoids.py $* > $@
+
+## data/validatio/missing_geoids.csv : Report GEOIDs in eviction records that are not in demographics
+data/validation/missing_geoids.csv: $(foreach g, $(geo_types), data/validation/$(g).csv)
+	mkdir -p $(dir $@)
+	csvstack $^ | sed '1s/.*/GEOID,type/' > $@
