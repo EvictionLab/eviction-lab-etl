@@ -59,10 +59,20 @@ if __name__ == '__main__':
   # sort by population, drop duplicate GEOID rows
   out_df = ordered_pop_df.drop_duplicates(['GEOID']).sort_values(by=['population'],ascending=False)
 
+  # breakdown by state
+  state_fips_df = pd.read_csv(
+        os.path.join(BASE_DIR, 'conf', 'state_fips.csv'),
+        dtype={'fips': 'object'})
+  state_fips = {
+      s[0]: s[1].upper()
+      for s in zip(state_fips_df.fips, state_fips_df.usps)
+  }
+  out_df['state'] = out_df['GEOID'].apply(lambda x: state_fips[x[:2]])
+
   # add missed eviction record count, strip out where no evictions were missed
-  out_df.set_index('GEOID', inplace=True)
-  out_df['missed_eviction_records'] = occ_count
-  out_df = out_df[out_df['missed_eviction_records'].notnull() & (out_df['missed_eviction_records'] > 0)]
-  
-  out_df.to_csv(sys.stdout)
+  # out_df.set_index('GEOID', inplace=True)
+  # out_df['missed_eviction_records'] = occ_count
+  # out_df = out_df[out_df['missed_eviction_records'].notnull() & (out_df['missed_eviction_records'] > 0)]
+
+  out_df.to_csv(sys.stdout, index=False, quoting=csv.QUOTE_NONNUMERIC)
   
