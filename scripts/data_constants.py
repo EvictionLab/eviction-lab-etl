@@ -103,6 +103,7 @@ COLUMN_ORDER = [
     'parent-location',
     'population',
     'poverty-rate',
+    'renter-occupied-households',
     'pct-renter-occupied',
     'median-gross-rent',
     'median-household-income',

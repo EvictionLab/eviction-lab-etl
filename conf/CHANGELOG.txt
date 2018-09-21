@@ -1,3 +1,7 @@
+# 2018-09-21
+  - Fixed an issue where the renter-occupied-households variable had been dropped
+  - Files impacted: all.csv, counties.csv, cities,csv, tracts.csv, block-groups.csv
+
 # 2018-09-19
   - Fixed an issue where eviction data was dropped for certain years where demographic data was unavailable.  A full list of impacted places can be viewed here: https://eviction-lab-data-downloads.s3.amazonaws.com/changes/2018-09-19_places_impacted.csv
   - Files impacted: all.csv, counties.csv, cities,csv, tracts.csv, block-groups.csv
