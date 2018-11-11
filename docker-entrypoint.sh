@@ -15,4 +15,3 @@ else
     make $1
     make deploy
 fi
-make deploy_validation_data
