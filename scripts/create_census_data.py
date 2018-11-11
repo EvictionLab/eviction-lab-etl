@@ -1,3 +1,22 @@
+"""
+Creates demographics data pulled from the Census API for the
+provided geography level and year.
+
+Arguments
+----------
+argv[1] : str
+    The geography level with the two-digit year code to create data for (e.g. tracts-00)
+
+Outputs
+-------
+str
+    a string of CSV data containing the demographics data
+
+Example output ():
+
+
+"""
+
 import os
 import sys
 import csv
@@ -17,12 +36,13 @@ else:
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
-# Pull data for 50 states
+# Create map from state FIPS code to state name
 STATE_FIPS = [
     r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72'
 ]
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 
+# Create map from county FIPS code to county name
 STATE_COUNTY_FIPS = [
     r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
     if r['state'] != '72'
@@ -32,6 +52,7 @@ COUNTY_FIPS_MAP = {
     for r in STATE_COUNTY_FIPS
 }
 
+# List of suffixes to remove from place names
 REMOVE_CITY_SUFFIXES = [
     'city (balance)', 'unified government (balance)',
     'consolidated government (balance)', 'metro government (balance)',
@@ -41,13 +62,13 @@ REMOVE_CITY_SUFFIXES = [
     'unified governm', 'unified government',
 ]
 
+# Map of geography level to column names to user for join
 CENSUS_JOIN_KEYS = {
     'states': ['state'],
     'counties': ['state', 'county'],
     'cities': ['state', 'place'],
     'tracts': ['state', 'county', 'tract']
 }
-
 
 # Census tract names follow rules described here:
 # https://www.census.gov/geo/reference/gtc/gtc_ct.html
@@ -58,7 +79,8 @@ def create_tract_name(tract):
     else:
         return tract_name[:-2] + '.' + tract_name[-2:]
 
-
+# Cleanup functions for each geography level to ensure proper
+# geoid values and parent locations.
 DATA_CLEANUP_FUNCS = {
     'states': {
         'geoid': lambda x: str(x['state']).zfill(2),
@@ -100,7 +122,9 @@ DATA_CLEANUP_FUNCS = {
     }
 }
 
-
+# Checks the data frame for any GEOIDs in the COUNTY_CROSSWALK data constant
+# If there are matches, update the GEOID, name, parent-location with the
+# mapped values.
 def crosswalk_county(df):
     for k, v in COUNTY_CROSSWALK.items():
         if (
@@ -114,9 +138,10 @@ def crosswalk_county(df):
             df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
     return df
 
-
+# Perform some cleaning tasks on the data frame based on geography level
 def clean_data_df(df, geo_str):
     if geo_str == 'cities':
+        # remove unwanted city suffixes
         for s in REMOVE_CITY_SUFFIXES:
             df.loc[df['name'].str.endswith(s), 'name'] = (
                 df.loc[df['name'].str.endswith(s)]['name'].str.slice(
@@ -124,22 +149,33 @@ def clean_data_df(df, geo_str):
             )
             df['name'] = df['name'].str.strip()
     elif geo_str == 'tracts':
+        # generate proper tract name
         df['name'] = df['tract'].apply(create_tract_name)
     elif geo_str == 'block-groups':
+        # generate proper block group name
         df['name'] = df['GEOID'].apply(
             lambda x: create_tract_name(x[5:11]) + '.' + x[11]
         )
     else:
+        # take the first chunk before a comma, strip any leading zeros for other geography levels
         df['name'] = df['name'].apply(
             lambda x: (str(x).split(',')[0]).lstrip('0')
         )
+    
+    # add GEOID column if it's not already present
     if 'GEOID' not in df.columns.values:
         df['GEOID'] = df.apply(DATA_CLEANUP_FUNCS[geo_str]['geoid'], axis=1)
+
+    # add parent-location column if it's not already present
     if 'parent-location' not in df.columns.values:
         df['parent-location'] = (
             df.apply(DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1)
         )
+    
+    # get all numeric columns in the data frame
     df_numeric = [col for col in NUMERIC_COLS if col in df.columns.values]
+
+    # convert all numeric columns to numeric values
     df[df_numeric] = df[df_numeric].apply(pd.to_numeric)
     return df
 
@@ -339,8 +375,11 @@ def get_block_groups_data(year_str):
 
 
 if __name__ == '__main__':
+    # first argument is {{GEO_LEVEL}}-{{2_DIGIT_YEAR}}
     data_str = sys.argv[1]
+    # pull geography level from first argument
     geo_str = '-'.join(data_str.split('-')[:-1])
+    # pull year from first argument
     year_str = data_str.split('-')[-1]
 
     if year_str == '00':

@@ -65,26 +65,26 @@ def block_groups_00(state, county):
     return pd.concat(census_df_list + acs_df_list)
 
 
-def block_groups_10(state, county):
+def block_groups_10(state, county, tract):
     census_df = pd.DataFrame(
         c.sf1.get(
             CENSUS_10_VARS, {
                 'for': 'block group:*',
-                'in': 'county:{} state:{}'.format(county, state)
+                'in': 'county:{} state:{} tract:{}'.format(county, state, tract)
             },
             year=2010))
     acs_12_df = pd.DataFrame(
         c.acs5.get(
             ACS_12_VARS, {
                 'for': 'block group:*',
-                'in': 'county:{} state:{}'.format(county, state)
+                'in': 'county:{} state:{} tract:{}'.format(county, state, tract)
             },
             year=2012))
     acs_df = pd.DataFrame(
         c.acs5.get(
             ACS_VARS, {
                 'for': 'block group:*',
-                'in': 'county:{} state:{}'.format(county, state)
+                'in': 'county:{} state:{} tract:{}'.format(county, state, tract)
             },
             year=2015))
 
@@ -109,12 +109,13 @@ def block_groups_10(state, county):
 
 
 if __name__ == '__main__':
-    state, county = sys.argv[1][:2], sys.argv[1][2:]
-
+    
     if sys.argv[2] == '00':
+        state, county = sys.argv[1][:2], sys.argv[1][2:]
         df = block_groups_00(state, county)
     elif sys.argv[2] == '10':
-        df = block_groups_10(state, county)
+        state, county, tract = sys.argv[1][:2], sys.argv[1][2:5], sys.argv[1][5:]
+        df = block_groups_10(state, county, tract)
     else:
         raise ValueError('Invalid year suffix supplied')
 
