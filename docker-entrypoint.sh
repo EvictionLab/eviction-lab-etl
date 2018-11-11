@@ -14,4 +14,5 @@ elif [[ $1 == *demographics* ]]; then
 else
     make $1
     make deploy
+    make deploy_validation_data
 fi

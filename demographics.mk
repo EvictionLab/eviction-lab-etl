@@ -7,7 +7,7 @@ tract_fips = $(shell cat conf/tract-fips.txt)
 
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
-.PRECIOUS: $(foreach y, $(years), data/demographics/years/%-$(y).csv) census/00/%.csv data/demographics/%.csv
+.PRECIOUS: data/demographics/raw/%.csv census/00/%.csv data/demographics/%.csv
 .SECONDARY: $(foreach f, $(county_fips), census/00/block-groups/$(f).csv) $(foreach f, $(tract_fips), census/10/block-groups/$(f).csv)
 .PHONY: all clean deploy
 
