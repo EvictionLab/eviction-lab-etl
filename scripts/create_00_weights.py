@@ -73,15 +73,6 @@ if __name__ == '__main__':
     else:
         raise ValueError('Invalid geography string supplied')
 
-    # recalculate allocation factors for geocorr data frame
-    # total_pop_df = pd.DataFrame(geocorr_df.groupby('GEOID')['pop2k'].sum()).reset_index()
-    # total_pop_df.rename(columns={'pop2k': 'total_pop'}, inplace=True)
-    # geocorr_df = geocorr_df.merge(total_pop_df, on='GEOID', how='left')
-    # geocorr_df['afact_new'] = geocorr_df['pop2k'] / geocorr_df['total_pop']
-    # geocorr_df.to_csv(sys.stdout, index=False)
-
-    # exit()
-    
     # create dataframe containing total population for the provided geography level
     total_pop_df = pd.DataFrame(geocorr_df.groupby('GEOID')['pop2k'].sum()).reset_index()
     total_pop_df.rename(
