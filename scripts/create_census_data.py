@@ -20,6 +20,7 @@ Example output ():
 import os
 import sys
 import csv
+import time
 import pandas as pd
 from census_patch import CensusPatch as Census
 from data_constants import (COUNTY_CROSSWALK, NUMERIC_COLS, CENSUS_00_SF1_VARS,
@@ -315,7 +316,17 @@ def get_10_data(geo_str):
             lambda x: ','.join(x.split(',')[:-1]).strip()
         )
     else:
-        census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_10_VARS, 2010)
+        for attempt in range(10):
+            try:
+                census_df = state_county_sub_data(c.sf1, geo_str, CENSUS_10_VARS, 2010)
+            except:
+                print("failed to get data from census, waiting 60 seconds")
+                time.sleep(60)
+            else:
+                break
+        else: 
+            # we failed all the attempts - deal with the consequences.
+            sys.exit("could not retrieve data from census")
         acs_12_df = state_county_sub_data(c.acs5, geo_str, ACS_12_VARS, 2012)
         acs_df = state_county_sub_data(c.acs5, geo_str, ACS_VARS, 2015)
 

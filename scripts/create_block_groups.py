@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import time
 import pandas as pd
 from census_patch import CensusPatch as Census
 from data_constants import (CENSUS_00_SF1_VARS, CENSUS_00_SF1_VAR_MAP,
@@ -66,13 +67,24 @@ def block_groups_00(state, county):
 
 
 def block_groups_10(state, county, tract):
-    census_df = pd.DataFrame(
-        c.sf1.get(
-            CENSUS_10_VARS, {
+    for attempt in range(10):
+        try:
+            census_df = pd.DataFrame(
+            c.sf1.get(
+                CENSUS_10_VARS, {
                 'for': 'block group:*',
                 'in': 'county:{} state:{} tract:{}'.format(county, state, tract)
-            },
-            year=2010))
+                },
+                year=2010))
+        except:
+            print("failed to get data from census, waiting 60 seconds")
+            time.sleep(60)
+        else:
+            break
+    else: 
+        # we failed all the attempts - deal with the consequences.
+        sys.exit("could not retrieve data from census")
+
     acs_12_df = pd.DataFrame(
         c.acs5.get(
             ACS_12_VARS, {
