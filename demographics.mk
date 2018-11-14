@@ -7,7 +7,7 @@ tract_fips = $(shell cat conf/tract-fips.txt)
 
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
-.PRECIOUS: data/demographics/raw/%.csv census/00/%.csv data/demographics/%.csv
+.PRECIOUS: census/00/block-groups-afacts.csv census/00/%.csv data/demographics/raw/%.csv data/demographics/%.csv
 .SECONDARY: $(foreach f, $(county_fips), census/00/block-groups/$(f).csv) $(foreach f, $(tract_fips), census/10/block-groups/$(f).csv)
 .PHONY: all clean deploy
 
@@ -43,7 +43,7 @@ data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).c
 ## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
 data/demographics/raw/%.csv:
 	mkdir -p $(dir $@)
-	python3 scripts/create_census_data.py $* > $@
+	python3 scripts/fetch_raw_census_data.py $* > $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv: data/demographics/raw/%.csv
@@ -82,19 +82,23 @@ census/10/block-groups.csv: $(foreach f, $(tract_fips), census/10/block-groups/$
 census/10/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/create_block_groups.py $* $(y) > $@
+	python3 scripts/fetch_raw_block_groups.py $* $(y) > $@
 
 ## census/00/block-groups/%.csv                : Create 2000 block groups files
 census/00/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/create_block_groups.py $* $(y) > $@
+	python3 scripts/fetch_raw_block_groups.py $* $(y) > $@
 
 ### WEIGHTS
 
+## census/00/%-afacts.csv
+census/00/%-afacts.csv: census/00/geocorr.csv
+	python3 scripts/create_00_afacts.py $* $^ > $@
+
 ## census/00/%-weights.csv                     : Generate weights for 2000 census geographies
-census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_ge.csv
-	python3 scripts/create_00_weights.py $* $^ > $@
+census/00/%-weights.csv: census/00/%-afacts.csv census/00/nhgis_blk2000_blk2010_ge.csv
+	python3 scripts/create_00_linked_allocation.py $* $^ > $@
 
 # Uses estimates of geography breakdown from Missouri Census Data Center http://mcdc2.missouri.edu/websas/geocorr2k.html
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights

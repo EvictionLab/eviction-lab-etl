@@ -11,13 +11,7 @@ import sys
 import csv
 import pandas as pd
 
-if __name__ == '__main__':
-  df = pd.read_csv(
-    sys.stdin,
-    dtype = {
-      'GEOID': 'object'
-    }
-  )
+def get_missing_summary(df):
 
   # get total number of rows
   row_count=df.shape[0]
@@ -37,5 +31,17 @@ if __name__ == '__main__':
   # add column for percent missing
   missing_df['missing_percent']=missing_df['missing']/row_count
 
+  return missing_df
+
+
+if __name__ == '__main__':
+  df = pd.read_csv(
+    sys.stdin,
+    dtype = {
+      'GEOID': 'object'
+    }
+  )
+  missing = get_missing_summary(df)
+  
   # output as csv
   missing_df.to_csv(sys.stdout, index=True, index_label='field', quoting=csv.QUOTE_NONNUMERIC)
