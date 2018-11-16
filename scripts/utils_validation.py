@@ -14,21 +14,30 @@ def is_clean_left_merge(df_left, df_right, col):
     return False
 
 # Gets stats on left merge
-def get_left_merge_stats(df_left, df_right, cols):
-    if isinstance(cols, str):
-        # if single column is provided to merge on, set it as the key
-        key = cols
-    elif isinstance(cols,(list,)):
-        # if multiple columns create a merge key by joining all provided columns
-        key = 'merge_key'
-        df_left = df_left[cols].copy()
-        df_right = df_right[cols].copy()
-        df_left[key] = df_left[cols].apply(lambda row: ''.join(row.values.astype(str)), axis=1)
-        df_right[key] = df_right[cols].apply(lambda row: ''.join(row.values.astype(str)), axis=1)
-    else:
-        raise ValueError('column name(s) for merge stats must be a string or list of strings')
-    set1 = set(df_left[key])
-    set2 = set(df_right[key])
+def get_left_merge_stats(df_left, df_right, **kwargs):
+
+    if 'on' in kwargs:
+        cols = kwargs.get('on')
+        if isinstance(cols, str):
+            # if single column is provided to merge on, set it as the key
+            left_key = cols
+            right_key = cols
+        elif isinstance(cols,(list,)):
+            # if multiple columns create a merge key by joining all provided columns
+            left_key = right_key = 'merge_key'
+            df_left = df_left[cols].copy()
+            df_right = df_right[cols].copy()
+            df_left[left_key] = df_left[cols].apply(lambda row: ''.join(row.values.astype(str)), axis=1)
+            df_right[right_key] = df_right[cols].apply(lambda row: ''.join(row.values.astype(str)), axis=1)
+        else:
+            raise ValueError('column name(s) for merge stats must be a string or list of strings')
+    
+    if 'left_on' in kwargs and 'right_on' in kwargs:
+        left_key = kwargs.get('left_on')
+        right_key = kwargs.get('right_on')
+
+    set1 = set(df_left[left_key])
+    set2 = set(df_right[right_key])
 
     matchedEntries = set2.intersection(set1)
     unmatchedEntries = set2.difference(set1)
@@ -52,14 +61,16 @@ def log_merge_stats(name, stats):
     
     if len(unmatched) > 0:
         logger.warn(name + ': merged ' + str(matched) + ' of ' + str(total) + ' rows ('+ str(percent) + '%)')
-        logger.warn(name + ': ' + stats['unmatched'] + ' unmatched rows: ' + ','.join(str(e) for e in unmatched))
+        if len(unmatched) > 20:
+            unmatched = unmatched[:20]
+        logger.warn(name + ': ' + str(stats['unmatched']) + ' unmatched rows: ' + ','.join(str(e) for e in unmatched))
     else:
         logger.info(name + ': merge successful')
-        
+
 # Performs a data frame merge with the given data frames, keys, and join method.
 # Logs the statistics of the merge to console and file
-def merge_with_stats(df_left, df_right, keys, how, name):
-    merge_stats = get_left_merge_stats(df_left, df_right, keys)
+def merge_with_stats(name, df_left, df_right, **kwargs):
+    merge_stats = get_left_merge_stats(df_left, df_right, **kwargs)
     log_merge_stats(name, merge_stats)
-    return df_left.merge(df_right, on=keys, how=how)
+    return df_left.merge(df_right, **kwargs)
 

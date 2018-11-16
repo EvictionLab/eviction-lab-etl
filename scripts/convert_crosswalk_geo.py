@@ -52,12 +52,10 @@ if __name__ == '__main__':
     elif geo in ['tracts', 'block-groups']:
         for k, v in COUNTY_CROSSWALK.items():
             if 'parent-location' in df.columns.values:
-                df.loc[df['GEOID'].str.startswith(k),
-                       ['GEOID', 'parent-location']] = [
-                           v['GEOID'] + df.loc[df['GEOID'].str.startswith(k),
-                                               'GEOID'].str.slice(5),
-                           v['name'] + ', ' + v['parent-location']
-                       ]
+                df.loc[df['GEOID'].str.startswith(k), ['GEOID', 'parent-location']] = [
+                    v['GEOID'] + df.loc[df['GEOID'].str.startswith(k), 'GEOID'].str.slice(5),
+                    v['name'] + ', ' + v['parent-location']
+                ]
             else:
                 df.loc[
                     df['GEOID'].str.startswith(k),

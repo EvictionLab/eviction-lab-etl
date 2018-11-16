@@ -26,7 +26,7 @@ from census_patch import CensusPatch as Census
 from data_constants import NUMERIC_COLS
 from utils_census import (CensusDataStore, postProcessData2000, 
                             postProcessData2010, STATE_FIPS_MAP,
-                            COUNTY_FIPS_MAP)
+                            COUNTY_FIPS_MAP, create_tract_name)
 
 
 CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
@@ -40,15 +40,6 @@ REMOVE_CITY_SUFFIXES = [
     'consolidated government', 'metro government', 'metropolitan government',
     'unified governm', 'unified government',
 ]
-
-# Census tract names follow rules described here:
-# https://www.census.gov/geo/reference/gtc/gtc_ct.html
-def create_tract_name(tract):
-    tract_name = str(tract).lstrip('0')
-    if tract_name[-2:] == '00':
-        return tract_name[:-2]
-    else:
-        return tract_name[:-2] + '.' + tract_name[-2:]
 
 # Cleanup functions for each geography level to ensure proper
 # geoid values and parent locations.

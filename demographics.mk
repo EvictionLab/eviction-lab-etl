@@ -8,7 +8,7 @@ tract_fips = $(shell cat conf/tract-fips.txt)
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
 .PRECIOUS: census/00/block-groups-afacts.csv census/00/%.csv data/demographics/raw/%.csv data/demographics/%.csv
-.SECONDARY: $(foreach f, $(county_fips), census/00/block-groups/$(f).csv) $(foreach f, $(tract_fips), census/10/block-groups/$(f).csv)
+.SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 .PHONY: all clean deploy
 
 ## all                                         : Create all demographics data
@@ -70,12 +70,8 @@ data/demographics/years/block-groups-10.csv: census/10/block-groups.csv data/dem
 	cat data/demographics/raw/block-groups-10.csv | \
 	python3 scripts/convert_census_vars.py > $@
 
-## census/00/block-groups.csv                   : Consolidate block groups by county
-census/00/block-groups.csv: $(foreach f, $(county_fips), census/00/block-groups/$(f).csv)
-	csvstack $^ > $@
-
-## census/10/block-groups.csv                   : Consolidate block groups by county
-census/10/block-groups.csv: $(foreach f, $(tract_fips), census/10/block-groups/$(f).csv)
+## census/%/block-groups.csv                   : Consolidate block groups by county
+census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 	csvstack $^ > $@
 
 ## census/10/block-groups/%.csv                : Create 2010 block groups files
@@ -97,8 +93,9 @@ census/00/%-afacts.csv: census/00/geocorr.csv
 	python3 scripts/create_00_afacts.py $* $^ > $@
 
 ## census/00/%-weights.csv                     : Generate weights for 2000 census geographies
-census/00/%-weights.csv: census/00/%-afacts.csv census/00/nhgis_blk2000_blk2010_ge.csv
-	python3 scripts/create_00_linked_allocation.py $* $^ > $@
+census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_ge.csv
+	python3 scripts/create_00_weights.py $* $^ > census/00/$*-full-weights.csv
+	cat census/00/$*-full-weights.csv | csvcut -c GEOID00,GEOID10,weight_2010 > $@
 
 # Uses estimates of geography breakdown from Missouri Census Data Center http://mcdc2.missouri.edu/websas/geocorr2k.html
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights

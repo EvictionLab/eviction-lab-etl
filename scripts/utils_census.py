@@ -46,11 +46,17 @@ CENSUS_JOIN_KEYS = {
     'cities': ['state', 'place'],
     'tracts': ['state', 'county', 'tract'],
     'block-groups': ['state', 'county', 'tract', 'block group'],
-    'block-groups-00': ['name', 'state', 'county', 'tract', 'block group']
+    'block-groups-00': [ 'state', 'county', 'tract', 'block group']
 }
 
-def saveRawData(data, source, geostr, parent, year):
-    return
+# Census tract names follow rules described here:
+# https://www.census.gov/geo/reference/gtc/gtc_ct.html
+def create_tract_name(tract):
+    tract_name = str(tract).lstrip('0')
+    if tract_name[-2:] == '00':
+        return tract_name[:-2]
+    else:
+        return tract_name[:-2] + '.' + tract_name[-2:]
 
 # Checks the data frame for any GEOIDs in the COUNTY_CROSSWALK data constant
 # If there are matches, update the GEOID, name, parent-location with the
@@ -104,7 +110,7 @@ def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
     # update geo string so it grabs the join keys for 2000 block groups
     if geo_str == 'block-groups':
         geo_str = 'block-groups-00'
-    census_df = merge_with_stats(sf1_df, sf3_df, CENSUS_JOIN_KEYS.get(geo_str), 'left', log_label)
+    census_df = merge_with_stats(log_label, sf1_df, sf3_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
     census_df = census_df.loc[census_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
@@ -121,7 +127,7 @@ def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
 
     # Merge vars that are only in ACS to 2010 census
     log_label = '2010 ' + geo_str + ' sf1_df <- acs12_df'
-    sf1_df = merge_with_stats(sf1_df, acs12_df, CENSUS_JOIN_KEYS.get(geo_str), 'left', log_label)
+    sf1_df = merge_with_stats(log_label, sf1_df, acs12_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
 
     sf1_df = sf1_df.loc[sf1_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()

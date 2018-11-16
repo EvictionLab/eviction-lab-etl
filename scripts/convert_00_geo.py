@@ -27,7 +27,8 @@ Example output ():
 import sys
 import csv
 import pandas as pd
-from create_census_data import create_tract_name
+from utils_validation import (merge_with_stats, logger)
+from utils_census import create_tract_name
 from data_constants import NUMERIC_COLS
 
 if __name__ == '__main__':
@@ -46,9 +47,13 @@ if __name__ == '__main__':
             'GEOID10': 'object'
         })
 
+    weight_df = pd.DataFrame(weight_df.groupby(['GEOID00', 'GEOID10'])['weight_2010'].sum()).reset_index()
+    weight_df.fillna(0, inplace=True)
+
     # merge the census data with the weights for each GEOID
-    output_df = weight_df.merge(
-        data_df, left_on='GEOID00', right_on='GEOID', how='left')
+    # output_df = weight_df.merge(
+    #     data_df, left_on='GEOID00', right_on='GEOID', how='left')
+    output_df = merge_with_stats(sys.argv[1]+' weights <- data', weight_df, data_df, left_on='GEOID00', right_on='GEOID', how='left')
 
     # create data frame with unique GEOID10 and associated name and parent-location
     context_df = output_df[['GEOID10', 'name', 'parent-location']].copy()
@@ -56,7 +61,7 @@ if __name__ == '__main__':
 
     # multiply all numeric columns by the weight
     output_df[NUMERIC_COLS] = output_df[NUMERIC_COLS].multiply(
-        output_df['weight'], axis=0)
+        output_df['weight_2010'], axis=0)
 
     # group all data by GEOIDs / year, and sum values together 
     output_df = pd.DataFrame(
