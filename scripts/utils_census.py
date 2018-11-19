@@ -112,8 +112,9 @@ def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
     log_label = '2000 ' + geo_str + ' sf1 <- sf3'
     census_df = merge_with_stats(log_label, sf1_df, sf3_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
     # drop Puerto Rico
-    census_df = census_df.loc[census_df['state'] != '72'].copy()
-    acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
+    if geo_str != 'block-groups': 
+        census_df = census_df.loc[census_df['state'] != '72'].copy()
+        acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
 
     census_df_list = addDataFrameYears(census_df, 2000, 2005)
