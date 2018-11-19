@@ -1,21 +1,23 @@
 import logging
 
-# Creates a logger for use with building demographics
-def create_logger(name, filename):
+# Provides a simple logger for logging to the console and/or file
+def create_logger(name, console_lvl='DEBUG', file_lvl=None):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(filename)
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
+    if file_lvl:
+      fh = logging.FileHandler(name+'_log.txt')
+      fh.setLevel(getattr(logging, file_lvl))
+      fh.setFormatter(formatter)
+      logger.addHandler(fh)
 
     # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    if console_lvl:
+      ch = logging.StreamHandler()
+      ch.setLevel(getattr(logging, console_lvl))
+      ch.setFormatter(formatter)
+      logger.addHandler(ch)
 
     return logger

@@ -1,9 +1,11 @@
 import sys
+import time
 import numpy as np
 import pandas as pd
 from utils_logging import create_logger
 
-logger = create_logger('merge_stats', 'log_merge.txt')
+log_name = 'merge_' + str(time.time()).split('.')[0]
+logger = create_logger(log_name, console_lvl='INFO', file_lvl='DEBUG')
 
 # Checks if all items in the right data frame will merge into the left
 def is_clean_left_merge(df_left, df_right, col):
@@ -61,8 +63,8 @@ def log_merge_stats(name, stats):
     
     if len(unmatched) > 0:
         logger.warn(name + ': merged ' + str(matched) + ' of ' + str(total) + ' rows ('+ str(percent) + '%)')
-        if len(unmatched) > 20:
-            unmatched = unmatched[:20]
+        if len(unmatched) > 1000:
+            unmatched = unmatched[:1000]
         logger.warn(name + ': ' + str(stats['unmatched']) + ' unmatched rows: ' + ','.join(str(e) for e in unmatched))
     else:
         logger.info(name + ': merge successful')

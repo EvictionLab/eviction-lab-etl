@@ -73,13 +73,29 @@ CENSUS_10_VAR_MAP = {
     'P005009': 'multiple-pop'
 }
 
-NUMERIC_COLS = [
-    'population', 'poverty-pop', 'median-gross-rent', 'occupied-housing-units',
-    'renter-occupied-households', 'median-household-income',
-    'median-property-value', 'rent-burden', 'hispanic-pop', 'white-pop',
-    'af-am-pop', 'am-ind-pop', 'asian-pop', 'nh-pi-pop', 'other-pop',
+COUNT_COLS = [
+    'population', 
+    'poverty-pop', 
+    'occupied-housing-units',
+    'renter-occupied-households', 
+    'hispanic-pop', 
+    'white-pop',
+    'af-am-pop', 
+    'am-ind-pop', 
+    'asian-pop', 
+    'nh-pi-pop', 
+    'other-pop',
     'multiple-pop'
 ]
+
+RATE_COLS = [
+    'median-household-income',
+    'median-property-value', 
+    'rent-burden', 
+    'median-gross-rent'
+]
+
+NUMERIC_COLS = COUNT_COLS + RATE_COLS
 
 OUTPUT_COLS = [
     'GEOID', 'name', 'parent-location', 'year', 'population', 'poverty-rate',

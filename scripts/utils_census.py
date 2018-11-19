@@ -9,7 +9,7 @@ import json
 from utils_validation import (merge_with_stats)
 from utils_logging import create_logger
 from census_patch import CensusPatch as Census
-from data_constants import (COUNTY_CROSSWALK, NUMERIC_COLS,
+from data_constants import (COUNTY_CROSSWALK,
                             CENSUS_00_SF1_VARS, CENSUS_00_SF1_VAR_MAP,
                             CENSUS_00_SF3_VARS, CENSUS_00_SF3_VAR_MAP,
                             CENSUS_10_VARS, CENSUS_10_VAR_MAP, ACS_VARS,
@@ -20,20 +20,22 @@ if os.getenv('CENSUS_KEY'):
 else:
     raise Exception('Environment variable CENSUS_KEY not specified')
 
-logger = create_logger('census_fetch', 'log_data_fetch.txt')
+# create a logger to log fetches to the console
+logger = create_logger('census_fetch')
 
-
-# Create map from state FIPS code to state name
+# all state names (except Puerto Rico)
 STATE_FIPS = [
     r for r in c.acs5.get(('NAME'), {'for': 'state:*'}) if r['state'] != '72'
 ]
+# map from state FIPS code to state name
 STATE_FIPS_MAP = {s['state']: s['NAME'] for s in STATE_FIPS}
 
-# Create map from county FIPS code to county name
+# all county names in the US (except Puerto Rico)
 STATE_COUNTY_FIPS = [
     r for r in c.acs5.get(('NAME'), {'for': 'county:*', 'in': 'state:*'})
     if r['state'] != '72'
 ]
+# map from county fips code to county name
 COUNTY_FIPS_MAP = {
     str(r['state']).zfill(2) + str(r['county']).zfill(3): r['NAME']
     for r in STATE_COUNTY_FIPS
@@ -46,7 +48,6 @@ CENSUS_JOIN_KEYS = {
     'cities': ['state', 'place'],
     'tracts': ['state', 'county', 'tract'],
     'block-groups': ['state', 'county', 'tract', 'block group'],
-    'block-groups-00': [ 'state', 'county', 'tract', 'block group']
 }
 
 # Census tract names follow rules described here:
@@ -83,7 +84,8 @@ def addDataFrameYears(df, start, end):
         df_list.append(df_copy)
     return df_list
 
-
+# Handles merging and processing data fetched from the census API
+# for the years 2000-2010
 def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
     sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
     sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
@@ -106,11 +108,10 @@ def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
     sf3_df = crosswalk_county(sf3_df)
     acs_df = crosswalk_county(acs_df)
 
+    # merge sf3 results into sf1 results
     log_label = '2000 ' + geo_str + ' sf1 <- sf3'
-    # update geo string so it grabs the join keys for 2000 block groups
-    if geo_str == 'block-groups':
-        geo_str = 'block-groups-00'
     census_df = merge_with_stats(log_label, sf1_df, sf3_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
+    # drop Puerto Rico
     census_df = census_df.loc[census_df['state'] != '72'].copy()
     acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
     acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
@@ -119,6 +120,8 @@ def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
     acs_df_list = addDataFrameYears(acs_df, 2005, 2010)
     return pd.concat(census_df_list + acs_df_list)
 
+# Handles merging and processing data fetched from the census API
+# for the years 2010-current
 def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
     sf1_df.rename(columns=CENSUS_10_VAR_MAP, inplace=True)
     acs12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
@@ -172,12 +175,6 @@ class CensusDataStore:
         lookup_dict = { 'for': 'block group:*', 'in': parent }
         return self.fetchData(source, items, lookup_dict, year)
 
-    # Fetch data for block groups within a given county
-    def fetchBlockGroupsByCounty(self, source, items, county, year):
-        parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
-        lookup_dict = { 'for': 'block group:*', 'in': parent }
-        return self.fetchData(source, items, lookup_dict, year)
-
     # Fetch data for tracts within a given county
     def fetchTractsByCounty(self, source, items, county, year):
         parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
@@ -208,11 +205,16 @@ class CensusDataStore:
             geo_df_list.append(self.fetchTractsByCounty(source, items, county, year))
         return pd.concat(geo_df_list)
 
+    # Fetch data for block groups within a given county
+    def fetchBlockGroupsByCounty(self, source, items, county, year):
+        parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
+        lookup_dict = { 'for': 'block group:*', 'in': parent }
+        return self.fetchData(source, items, lookup_dict, year)
+
     # Fetch data for all 2010 block groups in a county
     # The 2010 queries require tract to be specified, where 2000 queries do not
     def fetchBlockGroupsByCounty10(self, source, items, county, year):
         geo_df_list = []
-
         lookup_dict =  {
             'for': 'tract:*', 
             'in': 'county:' + county[2:] + ' state:' + county[0:2] 
@@ -224,6 +226,7 @@ class CensusDataStore:
 
         return pd.concat(geo_df_list)
 
+    # Fetches data for all states for 2000-2009
     def fetchAllStateData2000(self):
         logger.debug('starting fetch for all state level data for 2000-2009')
         census_sf1_df = self.fetchStates('sf1', CENSUS_00_SF1_VARS, 2000)
@@ -231,6 +234,7 @@ class CensusDataStore:
         acs_df = self.fetchStates('acs5', ACS_VARS, 2009)
         return postProcessData2000(census_sf1_df, census_sf3_df, acs_df, 'states')
 
+    # Fetches data for all states for 2010-current
     def fetchAllStateData2010(self):
         logger.debug('starting fetch for all state level data for 2010-current')
         census_df = self.fetchStates('sf1', CENSUS_10_VARS, 2010)
@@ -238,6 +242,7 @@ class CensusDataStore:
         acs_df = self.fetchStates('acs5', ACS_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'states')
 
+    # Fetches data for all counties for 2000-2009
     def fetchAllCountyData2000(self):
         logger.debug('starting fetch for all county level data for 2000-2009')
         census_sf1_df = self.fetchCounties('sf1', CENSUS_00_SF1_VARS, 2000)
@@ -245,6 +250,7 @@ class CensusDataStore:
         acs_df = self.fetchCounties('acs5', ACS_VARS, 2009)
         return postProcessData2000(census_sf1_df, census_sf3_df, acs_df, 'counties')
 
+    # Fetches data for all counties for 2010-current
     def fetchAllCountyData2010(self):
         logger.debug('starting fetch for all county level data for 2010-current')
         census_df = self.fetchCounties('sf1', CENSUS_10_VARS, 2010)

@@ -7,7 +7,11 @@ tract_fips = $(shell cat conf/tract-fips.txt)
 
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
-.PRECIOUS: census/00/block-groups-afacts.csv census/00/%.csv data/demographics/raw/%.csv data/demographics/%.csv
+build_date := $(shell date +%F)
+THIS_FILE := $(lastword $(MAKEFILE_LIST))
+
+
+.PRECIOUS: census/00/%.csv data/demographics/raw/%.csv data/demographics/%.csv log/%_merge_log.txt
 .SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 .PHONY: all clean deploy
 
@@ -17,6 +21,7 @@ all: $(output_files)
 ## clean                                       : Remove created demographics files
 clean:
 	rm -rf data/demographics
+	rm -rf log/
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help
@@ -26,9 +31,10 @@ help: demographics.mk
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$$(basename $$f); done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$$(basename $$f); done
 	for f in data/demographics/raw/*.csv; do gzip $$f; done
-	for f in data/demographics/raw/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/raw/$$(basename $$f); done
+	for f in data/demographics/raw/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/raw/$$(basename $$f); done
+	for f in log/*.txt; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/log/$$(basename $$f); done
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
@@ -39,6 +45,13 @@ submit_jobs:
 ## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
+	@$(MAKE) -f $(THIS_FILE) log/$*_merge_log.txt
+
+## log/%_merge_log.txt
+log/%_merge_log.txt: 
+	mkdir -p $(dir $@)
+	cat merge_* >> $@
+	rm merge_*
 
 ## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
 data/demographics/raw/%.csv:
@@ -88,14 +101,13 @@ census/00/block-groups/%.csv:
 
 ### WEIGHTS
 
-## census/00/%-afacts.csv
-census/00/%-afacts.csv: census/00/geocorr.csv
-	python3 scripts/create_00_afacts.py $* $^ > $@
+## census/00/%-geocorr.csv                     : Calculate allocation factors for geography level
+census/00/%-geocorr.csv: census/00/geocorr.csv
+	python3 scripts/recalc_afacts.py $* $^ > census/00/$*-geocorr.csv
 
 ## census/00/%-weights.csv                     : Generate weights for 2000 census geographies
-census/00/%-weights.csv: census/00/geocorr.csv census/00/nhgis_blk2000_blk2010_ge.csv
-	python3 scripts/create_00_weights.py $* $^ > census/00/$*-full-weights.csv
-	cat census/00/$*-full-weights.csv | csvcut -c GEOID00,GEOID10,weight_2010 > $@
+census/00/%-weights.csv: census/00/%-geocorr.csv census/00/nhgis_blk2000_blk2010_ge.csv
+	python3 scripts/create_00_weights.py $* $^ > $@
 
 # Uses estimates of geography breakdown from Missouri Census Data Center http://mcdc2.missouri.edu/websas/geocorr2k.html
 ## census/00/geocorr.csv                       : Download Missouri Census Data Center geography weights

@@ -1,5 +1,5 @@
 """
-Creates weights (allocation factors) for the provided geography level
+Creates weights (rate and count) for the provided geography level
 for mapping 2000 demographics data to 2010 geographies based on the
 geographic correspondence file
 
@@ -19,13 +19,7 @@ Outputs
 str
     a string of CSV data containing the weights
 
-Example output (tracts):
-
-GEOID00,        GEOID10,        weight
-01001020100,    01001020100,    0.9994897601882233
-01001020100,    01001020600,    0.0
-01001020100,    01001020802,    0.0005102398117768544
-01001020200,    01001020200,    1.0
+Output has header row: GEOID00,GEOID10,rate_weight,count_weight 
 
 """
 
@@ -37,11 +31,9 @@ if __name__ == '__main__':
     geocorr_df = pd.read_csv(
         sys.argv[2],
         dtype={
-            'county': 'object',
-            'tract': 'object',
-            'bg': 'object',
-            'block': 'object',
-            'pop2k': 'float64'
+            'GEOID00': 'object',
+            'pop2k': 'float64',
+            'afact': 'float64'
         })
     crosswalk_df = pd.read_csv(
         sys.argv[3], dtype={
@@ -50,38 +42,27 @@ if __name__ == '__main__':
         })
     crosswalk_df.drop(['PAREA'], axis=1, inplace=True)
 
-    # combine geography levels in the 2000 geo correspondence file to create
-    # block level GEOIDs for all entries
-    geocorr_df['GEOID00'] = (
-        geocorr_df['county'] + geocorr_df['tract'].str.replace(
-            '.', '') + geocorr_df['block'])
-
     # Create GEOID for the provided geography level (tracts or block groups)
     if sys.argv[1] == 'tracts':
-        geocorr_df['GEOID'] = (
-            geocorr_df['county'] + geocorr_df['tract'].str.replace(
-                '.', ''))
         # Slice the last 4 characters off of block GEOID to get tract GEOID
         geoid_slice = -4
     elif sys.argv[1] == 'block-groups':
-        geocorr_df['GEOID'] = (
-            geocorr_df['county'] + geocorr_df['tract'].str.replace(
-                '.', '') + geocorr_df['bg'])
         # Slice the last 3 characters off of block GEOID to get block group GEOID
         geoid_slice = -3
     else:
         raise ValueError('Invalid geography string supplied')
 
     # join crosswalk dataframe with geo correspondence file using the year 2000 full block GEOID
-  
-    geocorr_join = geocorr_df[['GEOID00', 'pop2k']].copy()
+    crosswalk_join = crosswalk_df.merge(geocorr_df, on='GEOID00', how='left')
     del geocorr_df
-    crosswalk_join = crosswalk_df.merge(geocorr_join, on='GEOID00', how='left')
-    del geocorr_join
     crosswalk_join.fillna(0, inplace=True)
 
     # calculate 2010 block populations by multiplying 2000 population by weight
-    crosswalk_join['pop10'] = crosswalk_join['pop2k'] * crosswalk_join['WEIGHT']
+    crosswalk_join['pop_10'] = crosswalk_join['pop2k'] * crosswalk_join['WEIGHT']
+
+    # calculate weight to use when crosswalking counts
+    crosswalk_join['count_weight'] = crosswalk_join['WEIGHT'] * crosswalk_join['afact']
+    crosswalk_join.drop(['pop2k', 'afact', 'WEIGHT'], axis=1, inplace=True)
 
     # create an int column for block drop the GEOID object columns for memory purposes
     # crosswalk_join['block_00'] = crosswalk_join['GEOID00'].str.slice(-4).astype(int)
@@ -92,8 +73,8 @@ if __name__ == '__main__':
     crosswalk_join['GEOID10'] = crosswalk_join['GEOID10'].str[:geoid_slice]
 
     # sum the populations for the provided geography level
-    total_pop_2010 = pd.DataFrame(crosswalk_join.groupby('GEOID10')['pop10'].sum()).reset_index()
-    total_pop_2010.rename(columns={'pop10': 'total_pop_10'}, inplace=True)
+    total_pop_2010 = pd.DataFrame(crosswalk_join.groupby('GEOID10')['pop_10'].sum()).reset_index()
+    total_pop_2010.rename(columns={'pop_10': 'total_pop_10'}, inplace=True)
     
     # merge to add the total population (year 2000) for the provided geographys
     geo_crosswalk = crosswalk_join.merge(total_pop_2010, on=['GEOID10'], how='left')
@@ -101,8 +82,13 @@ if __name__ == '__main__':
     del total_pop_2010
 
     # calculate weights for the provided geography
-    geo_crosswalk['weight_2010'] = geo_crosswalk['pop10'] / geo_crosswalk['total_pop_10']
-    # geo_crosswalk.fillna(0, inplace=True)
+    geo_crosswalk['rate_weight'] = geo_crosswalk['pop_10'] / geo_crosswalk['total_pop_10']
+    geo_crosswalk.drop(['pop_10', 'total_pop_10'], axis=1, inplace=True)
+    geo_crosswalk.fillna(0, inplace=True)
+
+    geo_crosswalk = pd.DataFrame(
+        geo_crosswalk.groupby(
+            ['GEOID00', 'GEOID10'])['rate_weight', 'count_weight'].sum()).reset_index()
 
     # output to stdout
     geo_crosswalk.to_csv(sys.stdout, index=False)
