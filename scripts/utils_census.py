@@ -157,13 +157,13 @@ class CensusDataStore:
                     return getattr(c, source).get(items, lookup_dict)
             except:
                 logger.warn(traceback.format_exc())
-                logger.warn('received error fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry in two minutes')
-                time.sleep(120)
+                logger.warn('received error fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
+                time.sleep(180)
             else:
                 break
         else: 
             # could not retrieve data after 10 attempts (20 min)
-            logger.error("could not retrieve " + year + " " + source + " data for: " + json.dumps(lookup_dict))
+            logger.error("could not retrieve " + str(year) + " " + source + " data for: " + json.dumps(lookup_dict))
             return None
 
     # Returns a dataframe with the results or empty dataframe if error
