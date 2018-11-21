@@ -151,6 +151,14 @@ def get_10_data(c, geo_str):
     else:
         raise ValueError('Invalid geography type for 2010 data fetch.')
 
+def create_parent_name(row):
+    try:
+        return DATA_CLEANUP_FUNCS[geo_str]['parent-location'](row)
+    except KeyError:
+        print(row, file=sys.stderr)
+        raise
+
+
 # Load block groups data and perform cleanup
 def get_block_groups_data(year_str):
     df_list = []
@@ -170,9 +178,7 @@ def get_block_groups_data(year_str):
     for df in df_iter:
         df['name'] = df['tract'].apply(
             create_tract_name) + '.' + df['block group']
-        df['parent-location'] = df.apply(
-            DATA_CLEANUP_FUNCS[geo_str]['parent-location'], axis=1
-        )
+        df['parent-location'] = df.apply(create_parent_name, axis=1)
         df = clean_data_df(df, 'block-groups')
         df_list.append(df)
     return pd.concat(df_list)
