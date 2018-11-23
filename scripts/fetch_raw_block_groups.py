@@ -4,7 +4,9 @@ import csv
 import time
 import pandas as pd
 import sys
-from utils_census import CensusDataStore
+from utils_census import logger,CensusDataStore
+
+CENSUS_COLS = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,median-gross-rent,median-household-income,median-property-value,multiple-pop,name,nh-pi-pop,occupied-housing-units,other-pop,population,poverty-pop,rent-burden,renter-occupied-households,state,total-poverty-pop,tract,white-pop,year,GEOID'
 
 if __name__ == '__main__':
 
@@ -16,6 +18,12 @@ if __name__ == '__main__':
         df = c.fetchAllBlockGroupData2010(sys.argv[1])
     else:
         raise ValueError('Invalid year suffix supplied')
+
+    if df.empty:
+        logger.warn('Received no census data for block groups in county: ' + sys.argv[1])
+        # output header row, but no data
+        print(CENSUS_COLS)
+        exit()
 
     if df is not None and 'state' in df.columns.values:
         df['GEOID'] = df['state'].str.zfill(2) + df['county'].str.zfill(

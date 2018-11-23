@@ -21,7 +21,7 @@ else:
     raise Exception('Environment variable CENSUS_KEY not specified')
 
 # create a logger to log fetches to the console
-logger = create_logger('census_fetch', console_lvl='DEBUG')
+logger = create_logger('census_fetch', console_lvl='INFO')
 
 # all state names (except Puerto Rico)
 STATE_FIPS = [
@@ -66,17 +66,43 @@ def split_geoid(geoid):
         parts['block'] = geoid[12:]
     return parts
 
-def get_acs_bg_crosswalk():
+# Updates the tract and block group in the census dataframe passed.
+# Tracts and block groups are mapped based on columns in the map_df.
+#
+# - df: dataframe containing results from the Census API
+# - map_df: dataframe containing two columns with a mapping of
+#       source block group to target block group
+# - fromField: the column name that contains the source block group ids
+# - toField: the column name that contains the target block group ids 
+def changeBlockGroupsInCensusData(df, map_df, fromField, toField):
+    # get a map of columns `fromField` : `toField`
+    bg_dict = pd.Series(map_df[toField].values, index=map_df[fromField]).to_dict()
+    # loop through the map and update the data frame if needed
+    for fromBg, toBg in bg_dict.items():
+        from_parts = split_geoid(fromBg) 
+        to_parts = split_geoid(toBg)
+        # update the data frame where conditions are met
+        df.loc[
+            (df['tract'] == from_parts['tract']) & (df['block group'] == from_parts['bg']), 
+            ['county', 'tract', 'block group']] = [ to_parts['county'], to_parts['tract'], to_parts['bg'] ]
+
+    return df
+
+# Loads a block group crosswalk file from the `conf` directory and 
+# removes any rows that should not be compared
+def get_block_group_crosswalk_df(filename):
     conf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'conf')
     cw_df = pd.read_csv(
-        os.path.join(conf_dir, 'changes_09acs_to_10cen.csv'),
+        os.path.join(conf_dir, filename),
         dtype={
                 'cofips': 'object',
                 'bkg09': 'object',
                 'bkg10': 'object'
             }
     )
-    cw_df = cw_df.loc[cw_df['nocompare'] == 0]
+    # filter out entries where values should not be copied
+    if 'nocompare' in cw_df.columns:
+        cw_df = cw_df.loc[cw_df['nocompare'] == 0]
     return cw_df
 
 # Census tract names follow rules described here:
@@ -177,8 +203,15 @@ def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
 
 class CensusDataStore:
     def __init__(self):
-        self.key = os.getenv('CENSUS_KEY')
-        self.acs_crosswalk = get_acs_bg_crosswalk()
+        self.crosswalks = {
+            'acs_09_00': get_block_group_crosswalk_df('changes_09acs_to_00cen.csv'),
+            'acs_09_10': get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
+        }
+
+    # Get the crosswalk for a specific county
+    def getCountyBlockGroupCrosswalk(self, cw_name, county):
+        cw_df = self.crosswalks[cw_name]
+        return cw_df.loc[cw_df['cofips'] == county]
 
     # Fetches results from the provided Census API source
     def fetchResults(self, source, items, lookup_dict, year=None):
@@ -335,38 +368,18 @@ class CensusDataStore:
         acs_df = self.fetchTracts('acs5', ACS_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'tracts')
 
-
-
-    # updates the tract and block group for any 2009 ACS data
-    # with updated identifiers that maps to 2010 geography
-    def update2000AcsBlockGroups(self, df, county):
-        # get a map of bg_09 : bg_10
-        bg_dict = pd.Series(
-            self.acs_crosswalk['bkg10'].values,
-            index=self.acs_crosswalk['bkg09']
-        ).to_dict()
-        # loop through the map and update the data frame if needed
-        for bg09, bg10 in bg_dict.items():
-            bg09_parts = split_geoid(bg09) 
-            if bg09_parts['county'] == county:
-                bg10_parts = split_geoid(bg10)
-                # update the data frame where conditions are met
-                df.loc[
-                    (df['tract'] == bg09_parts['tract']) & (df['block group'] == bg09_parts['bg']), 
-                    ['tract', 'block group']
-                        ] = [ bg10_parts['tract'], bg10_parts['bg'] ]
-
-        return df
-
     def fetchAllBlockGroupData2000(self, county):
         logger.debug('starting fetch block group level data for 2000-2009')
         # fetch the data
         census_sf1_df = self.fetchBlockGroupsByCounty('sf1', CENSUS_00_SF1_VARS, county, 2000)
         census_sf3_df = self.fetchBlockGroupsByCounty('sf3', CENSUS_00_SF3_VARS, county, 2000)
         acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_VARS, county, 2009)
-        # update ACS block groups if needed
-        if county in self.acs_crosswalk['cofips'].values:
-            acs_df = self.update2000AcsBlockGroups(acs_df, county)
+        # translate ACS 2009 -> 2000 block groups if needed
+        # NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens after
+        # `convert_00_geo.py` is run
+        acs_09_00_cw_df = self.getCountyBlockGroupCrosswalk('acs_09_00', county)
+        if not acs_09_00_cw_df.empty:
+            acs_df = changeBlockGroupsInCensusData(acs_df, acs_09_00_cw_df, 'bg09', 'bg00')
         return postProcessData2000(census_sf1_df, census_sf3_df, acs_df, 'block-groups')
     
     def fetchAllBlockGroupData2010(self, county):

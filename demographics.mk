@@ -112,7 +112,7 @@ census/00/block-groups/%.csv:
 	mkdir -p $(dir $@)
 	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
 	python3 scripts/fetch_raw_block_groups.py $* $(y) | \
-	csvcut $(census_cols) > $@ 
+	csvcut -c $(census_cols) > $@ 
 
 ### WEIGHTS
 
