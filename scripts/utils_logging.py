@@ -8,7 +8,7 @@ def create_logger(name, console_lvl='DEBUG', file_lvl=None):
 
     # create file handler which logs even debug messages
     if file_lvl:
-      fh = logging.FileHandler(name+'_log.txt')
+      fh = logging.FileHandler('log/'+name+'.txt')
       fh.setLevel(getattr(logging, file_lvl))
       fh.setFormatter(formatter)
       logger.addHandler(fh)
@@ -21,3 +21,6 @@ def create_logger(name, console_lvl='DEBUG', file_lvl=None):
       logger.addHandler(ch)
 
     return logger
+
+# create a logger for the process
+logger = create_logger('build_log', console_lvl='DEBUG', file_lvl='WARN')

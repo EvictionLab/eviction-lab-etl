@@ -7,7 +7,7 @@ import pandas as pd
 import sys
 import json
 from utils_validation import (merge_with_stats)
-from utils_logging import create_logger
+from utils_logging import logger
 from census_patch import CensusPatch as Census
 from data_constants import (COUNTY_CROSSWALK,
                             CENSUS_00_SF1_VARS, CENSUS_00_SF1_VAR_MAP,
@@ -19,9 +19,6 @@ if os.getenv('CENSUS_KEY'):
     c = Census(os.getenv('CENSUS_KEY'))
 else:
     raise Exception('Environment variable CENSUS_KEY not specified')
-
-# create a logger to log fetches to the console
-logger = create_logger('census_fetch', console_lvl='INFO')
 
 # all state names (except Puerto Rico)
 STATE_FIPS = [
@@ -223,8 +220,8 @@ class CensusDataStore:
                 else:
                     return getattr(c, source).get(items, lookup_dict)
             except:
-                logger.warn('received error fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
-                logger.info(traceback.format_exc())
+                exctype, value = sys.exc_info()[:2]
+                logger.info('received ' + str(exctype) + ' fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
                 time.sleep(180)
             else:
                 break

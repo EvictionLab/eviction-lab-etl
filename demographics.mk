@@ -12,7 +12,7 @@ output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 build_date := $(shell date +%F)
 THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
-.PRECIOUS: census/00/%.csv census/10/block-groups/%.csv data/demographics/raw/%.csv data/demographics/%.csv log/%_merge_log.txt
+.PRECIOUS: census/00/%.csv census/10/block-groups/%.csv data/demographics/raw/%.csv data/demographics/%.csv log/%.txt
 .SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 .PHONY: all clean deploy deploy_raw deploy_logs deploy_years
 
@@ -30,7 +30,7 @@ help: demographics.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## deploy                                      : Compress demographic data and deploy to S3
-deploy: deploy_raw deploy_logs deploy_years
+deploy: deploy_raw deploy_logs
 	for f in data/demographics/*.csv; do gzip $$f; done
 	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$$(basename $$f); done
 
@@ -40,10 +40,6 @@ deploy_raw:
 
 deploy_logs:
 	for f in log/*.txt; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/log/$$(basename $$f); done
-
-deploy_years:
-	for f in data/demographics/years/*.csv; do gzip $$f; done
-	for f in data/demographics/years/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/years/$$(basename $$f); done
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
@@ -55,14 +51,22 @@ submit_jobs:
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
-## log/%_merge_log.txt
-log/%_merge_log.txt: 
-	mkdir -p $(dir $@)
-	cat merge_* >> $@
-	rm merge_*
+## log/%.txt
+log/%.txt: 
+	mv ./log/build_log.txt $@
 
 ## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
 data/demographics/raw/%.csv:
+	mkdir -p $(dir $@)
+	python3 scripts/fetch_raw_census_data.py $* > $@
+
+## data/demographics/raw/block-groups-00.csv:
+data/demographics/raw/block-groups-00.csv:  census/00/block-groups.csv
+	mkdir -p $(dir $@)
+	python3 scripts/fetch_raw_census_data.py $* > $@
+
+## data/demographics/raw/block-groups-10.csv:
+data/demographics/raw/block-groups-00.csv:  census/10/block-groups.csv
 	mkdir -p $(dir $@)
 	python3 scripts/fetch_raw_census_data.py $* > $@
 
@@ -70,7 +74,7 @@ data/demographics/raw/%.csv:
 data/demographics/years/%.csv: data/demographics/raw/%.csv
 	mkdir -p $(dir $@)
 	cat $< | python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/$*_merge_log.txt
+	@$(MAKE) -f $(THIS_FILE) log/$*.txt
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv data/demographics/raw/tracts-00.csv
@@ -78,23 +82,23 @@ data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv data/demogra
 	cat data/demographics/raw/tracts-00.csv | \
 	python3 scripts/convert_00_geo.py tracts census/00/tracts-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/tracts-00_merge_log.txt
+	@$(MAKE) -f $(THIS_FILE) log/tracts-00.txt
 
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
-data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv census/00/block-groups.csv data/demographics/raw/block-groups-00.csv
+data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv data/demographics/raw/block-groups-00.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-00.csv | \
 	python3 scripts/convert_00_geo.py block-groups $< | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/block-groups-00_merge_log.txt
+	@$(MAKE) -f $(THIS_FILE) log/block-groups-00.txt
 
 ## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
-data/demographics/years/block-groups-10.csv: census/10/block-groups.csv data/demographics/raw/block-groups-10.csv
+data/demographics/years/block-groups-10.csv: data/demographics/raw/block-groups-10.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-10.csv | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/block-groups-10_merge_log.txt
+	@$(MAKE) -f $(THIS_FILE) log/block-groups-10.txt
 
 ## census/%/block-groups.csv                   : Consolidate block groups by county
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)

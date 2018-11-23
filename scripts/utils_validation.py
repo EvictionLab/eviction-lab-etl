@@ -2,11 +2,7 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-from utils_logging import create_logger
-
-# log_name = 'merge_' + str(time.time()).split('.')[0]
-log_name = 'merge_log'
-logger = create_logger(log_name, console_lvl='WARN')
+from utils_logging import logger
 
 # Checks if all items in the right data frame will merge into the left
 def is_clean_left_merge(df_left, df_right, col):
