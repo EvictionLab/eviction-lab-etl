@@ -222,6 +222,7 @@ class CensusDataStore:
             except:
                 exctype, value = sys.exc_info()[:2]
                 logger.info('received ' + str(exctype) + ' fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
+                logger.debug(value)
                 time.sleep(180)
             else:
                 break
@@ -237,65 +238,10 @@ class CensusDataStore:
             logger.info('received empty result for query: ' + str(year) + ' ' + source + ' data ' + str(lookup_dict))
         return results_df
 
-    # Fetch data for block groups within a given tract
-    def fetchBlockGroupsByTract(self, source, items, tract, year):
-        parent  = 'county:{} state:{} tract:{}'.format(tract[2:5], tract[0:2], tract[5:])
-        lookup_dict = { 'for': 'block group:*', 'in': parent }
-        return self.fetchData(source, items, lookup_dict, year)
-
-    # Fetch data for tracts within a given county
-    def fetchTractsByCounty(self, source, items, county, year):
-        parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
-        lookup_dict = { 'for': 'tract:*', 'in': parent }
-        return self.fetchData(source, items, lookup_dict, year)
-
     # Fetch data for all states in the US
     def fetchStates(self, source, items, year):
         lookup_dict = { 'for': 'state:*' }
         return self.fetchData(source, items, lookup_dict, year)
-
-    # Fetch data for all counties in the US
-    def fetchCounties(self, source, items, year):
-        lookup_dict = { 'for': 'county:*', 'in': 'state:*' }
-        return self.fetchData(source, items, lookup_dict, year)
-
-    # Fetch data for all cities in the US
-    def fetchCities(self, source, items, year):
-        lookup_dict = { 'for': 'place:*', 'in': 'state:*' }
-        return self.fetchData(source, items, lookup_dict , year)
-
-    # Fetch data for all tracts in the US
-    def fetchTracts(self, source, items, year):
-        geo_df_list = []
-        fips_list = STATE_COUNTY_FIPS
-        for f in fips_list:
-            county = f['state'] + f['county']
-            geo_df_list.append(self.fetchTractsByCounty(source, items, county, year))
-        return pd.concat(geo_df_list)
-
-    # Fetch data for block groups within a given county
-    def fetchBlockGroupsByCounty(self, source, items, county, year):
-        parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
-        lookup_dict = { 'for': 'block group:*', 'in': parent }
-        return self.fetchData(source, items, lookup_dict, year)
-
-    # Fetch data for all 2010 block groups in a county
-    # The 2010 queries require tract to be specified, where 2000 queries do not
-    def fetchBlockGroupsByCounty10(self, source, items, county, year):
-        geo_df_list = []
-        lookup_dict =  {
-            'for': 'tract:*', 
-            'in': 'county:' + county[2:] + ' state:' + county[0:2] 
-        }
-        tract_fips = [ r for r in self.fetchResults('acs5', ('NAME'), lookup_dict) ]
-        for f in tract_fips:
-            tract = f['state'] + f['county'] + f['tract']
-            geo_df_list.append(self.fetchBlockGroupsByTract(source, items, tract, year))
-
-        if len(geo_df_list) > 0:
-            return pd.concat(geo_df_list)
-        return pd.DataFrame()
-        
 
     # Fetches data for all states for 2000-2009
     def fetchAllStateData2000(self):
@@ -313,6 +259,11 @@ class CensusDataStore:
         acs_df = self.fetchStates('acs5', ACS_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'states')
 
+    # Fetch data for all counties in the US
+    def fetchCounties(self, source, items, year):
+        lookup_dict = { 'for': 'county:*', 'in': 'state:*' }
+        return self.fetchData(source, items, lookup_dict, year)
+
     # Fetches data for all counties for 2000-2009
     def fetchAllCountyData2000(self):
         logger.debug('starting fetch for all county level data for 2000-2009')
@@ -328,6 +279,11 @@ class CensusDataStore:
         acs_12_df = self.fetchCounties('acs5', ACS_12_VARS, 2012)
         acs_df = self.fetchCounties('acs5', ACS_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'counties')
+
+    # Fetch data for all cities in the US
+    def fetchCities(self, source, items, year):
+        lookup_dict = { 'for': 'place:*', 'in': 'state:*' }
+        return self.fetchData(source, items, lookup_dict , year)
 
     def fetchAllCityData2000(self):
         logger.debug('starting fetch for all city level data for 2000-2009')
@@ -351,6 +307,22 @@ class CensusDataStore:
         )
         return postProcessData2010(census_df, acs_12_df, acs_df, 'cities')
 
+    # Fetch data for tracts within a given county
+    def fetchTractsByCounty(self, source, items, county, year):
+        parent  = 'county:{} state:{}'.format(county[2:], county[0:2])
+        lookup_dict = { 'for': 'tract:*', 'in': parent }
+        return self.fetchData(source, items, lookup_dict, year)
+
+    # Fetch data for all tracts in the US by looping through counties and fetching
+    # tracts for each
+    def fetchTracts(self, source, items, year):
+        geo_df_list = []
+        fips_list = STATE_COUNTY_FIPS
+        for f in fips_list:
+            county = f['state'] + f['county']
+            geo_df_list.append(self.fetchTractsByCounty(source, items, county, year))
+        return pd.concat(geo_df_list)
+
     def fetchAllTractData2000(self):
         logger.debug('starting fetch for all tract level data for 2000-2009')
         census_sf1_df = self.fetchTracts('sf1', CENSUS_00_SF1_VARS, 2000)
@@ -365,15 +337,48 @@ class CensusDataStore:
         acs_df = self.fetchTracts('acs5', ACS_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'tracts')
 
+    # Fetch data for block groups within a given tract
+    def fetchBlockGroupsByTract(self, source, items, tract, year):
+        parent  = 'county:{} state:{} tract:{}'.format(tract[2:5], tract[0:2], tract[5:])
+        lookup_dict = { 'for': 'block group:*', 'in': parent }
+        return self.fetchData(source, items, lookup_dict, year)
+
+    def getTractsList(self, county):
+        lookup_dict =  {
+            'for': 'tract:*', 
+            'in': 'county:' + county[2:] + ' state:' + county[0:2] 
+        }
+        tract_fips = [ (r['state'] + r['county'] + r['tract']) for r in self.fetchResults('acs5', ('NAME'), lookup_dict) ]
+
+
+    # Fetch data for all 2010 block groups in a county by fetching all of
+    # the tracts within a county, and then looping through those tracts.
+    def fetchBlockGroupsByCounty(self, source, items, county, year):
+        geo_df_list = []
+        lookup_dict =  {
+            'for': 'tract:*', 
+            'in': 'county:' + county[2:] + ' state:' + county[0:2] 
+        }
+        # NOTE: need to double check this is an appropriate way to get all of the tracts in
+        #   a county.  It is querying ACS5, but does that have all of the tracts in
+        #   SF1, SF3, and ACS?
+        tract_fips = [ r for r in self.fetchResults(source, ('NAME'), lookup_dict, year=year) ]
+        for f in tract_fips:
+            tract = f['state'] + f['county'] + f['tract']
+            geo_df_list.append(self.fetchBlockGroupsByTract(source, items, tract, year))
+
+        if len(geo_df_list) > 0:
+            return pd.concat(geo_df_list)
+        return pd.DataFrame()
+
     def fetchAllBlockGroupData2000(self, county):
         logger.debug('starting fetch block group level data for 2000-2009')
-        # fetch the data
         census_sf1_df = self.fetchBlockGroupsByCounty('sf1', CENSUS_00_SF1_VARS, county, 2000)
         census_sf3_df = self.fetchBlockGroupsByCounty('sf3', CENSUS_00_SF3_VARS, county, 2000)
         acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_VARS, county, 2009)
         # translate ACS 2009 -> 2000 block groups if needed
-        # NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens after
-        # `convert_00_geo.py` is run
+        # NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens when
+        # `convert_00_geo.py` is run using the a weight of 1
         acs_09_00_cw_df = self.getCountyBlockGroupCrosswalk('acs_09_00', county)
         if not acs_09_00_cw_df.empty:
             acs_df = changeBlockGroupsInCensusData(acs_df, acs_09_00_cw_df, 'bg09', 'bg00')
@@ -381,8 +386,7 @@ class CensusDataStore:
     
     def fetchAllBlockGroupData2010(self, county):
         logger.debug('starting fetch block group level data for 2010-current')
-        # fetch the data
-        census_df = self.fetchBlockGroupsByCounty10('sf1', CENSUS_10_VARS, county, 2010)
-        acs_12_df = self.fetchBlockGroupsByCounty10('acs5', ACS_12_VARS, county, 2012)
-        acs_df = self.fetchBlockGroupsByCounty10('acs5', ACS_VARS, county, 2015)
+        census_df = self.fetchBlockGroupsByCounty('sf1', CENSUS_10_VARS, county, 2010)
+        acs_12_df = self.fetchBlockGroupsByCounty('acs5', ACS_12_VARS, county, 2012)
+        acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_VARS, county, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'block-groups')
