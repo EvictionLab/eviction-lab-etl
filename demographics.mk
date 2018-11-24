@@ -6,7 +6,6 @@ county_fips = $(shell cat conf/fips_codes.txt)
 
 census_cols = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,median-gross-rent,median-household-income,median-property-value,multiple-pop,name,nh-pi-pop,occupied-housing-units,other-pop,population,poverty-pop,rent-burden,renter-occupied-households,state,total-poverty-pop,tract,white-pop,year,GEOID'
 
-
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
 build_date := $(shell date +%F)
@@ -30,7 +29,7 @@ help: demographics.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## deploy                                      : Compress demographic data and deploy to S3
-deploy: deploy_raw deploy_logs
+deploy: deploy_raw
 	for f in data/demographics/*.csv; do gzip $$f; done
 	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$$(basename $$f); done
 
@@ -66,7 +65,7 @@ data/demographics/raw/block-groups-00.csv:  census/00/block-groups.csv
 	python3 scripts/fetch_raw_census_data.py $* > $@
 
 ## data/demographics/raw/block-groups-10.csv:
-data/demographics/raw/block-groups-00.csv:  census/10/block-groups.csv
+data/demographics/raw/block-groups-10.csv:  census/10/block-groups.csv
 	mkdir -p $(dir $@)
 	python3 scripts/fetch_raw_census_data.py $* > $@
 
@@ -74,7 +73,6 @@ data/demographics/raw/block-groups-00.csv:  census/10/block-groups.csv
 data/demographics/years/%.csv: data/demographics/raw/%.csv
 	mkdir -p $(dir $@)
 	cat $< | python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/$*.txt
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
 data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv data/demographics/raw/tracts-00.csv
@@ -82,8 +80,6 @@ data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv data/demogra
 	cat data/demographics/raw/tracts-00.csv | \
 	python3 scripts/convert_00_geo.py tracts census/00/tracts-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/tracts-00.txt
-
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
 data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv data/demographics/raw/block-groups-00.csv
@@ -91,14 +87,12 @@ data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv 
 	cat data/demographics/raw/block-groups-00.csv | \
 	python3 scripts/convert_00_geo.py block-groups $< | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/block-groups-00.txt
 
 ## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
 data/demographics/years/block-groups-10.csv: data/demographics/raw/block-groups-10.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-10.csv | \
 	python3 scripts/convert_census_vars.py > $@
-	@$(MAKE) -f $(THIS_FILE) log/block-groups-10.txt
 
 ## census/%/block-groups.csv                   : Consolidate block groups by county
 census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
