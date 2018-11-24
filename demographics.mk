@@ -9,9 +9,10 @@ census_cols = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,me
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
 build_date := $(shell date +%F)
+ts := $(shell date "+%H%M%S")
 THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
-.PRECIOUS: census/00/%.csv census/10/block-groups/%.csv data/demographics/raw/%.csv data/demographics/%.csv log/%.txt
+.PRECIOUS: census/00/%.csv census/10/block-groups/%.csv data/demographics/raw/%.csv data/demographics/%.csv
 .SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
 .PHONY: all clean deploy deploy_raw deploy_logs deploy_years
 
@@ -38,7 +39,7 @@ deploy_raw:
 	for f in data/demographics/raw/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/raw/$$(basename $$f); done
 
 deploy_logs:
-	for f in log/*.txt; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/log/$$(basename $$f); done
+	for f in log/*.txt; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/log/$(ts)_$$(basename $$f); done
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
@@ -49,10 +50,6 @@ submit_jobs:
 ## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
-
-## log/%.txt
-log/%.txt: 
-	mv ./log/build_log.txt $@
 
 ## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
 data/demographics/raw/%.csv:

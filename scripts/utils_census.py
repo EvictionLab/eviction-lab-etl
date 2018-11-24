@@ -221,7 +221,7 @@ class CensusDataStore:
                     return getattr(c, source).get(items, lookup_dict)
             except:
                 exctype, value = sys.exc_info()[:2]
-                logger.info('received ' + str(exctype) + ' fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
+                logger.debug('received ' + str(exctype.__name__) + ' fetching ' + str(year) + ' ' + source + ' data ' + str(lookup_dict) + ', will retry shortly')
                 logger.debug(value)
                 time.sleep(180)
             else:
