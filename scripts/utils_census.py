@@ -360,9 +360,6 @@ class CensusDataStore:
             'for': 'tract:*', 
             'in': 'county:' + county[2:] + ' state:' + county[0:2] 
         }
-        # NOTE: need to double check this is an appropriate way to get all of the tracts in
-        #   a county.  It is querying ACS5, but does that have all of the tracts in
-        #   SF1, SF3, and ACS?
         tract_fips = [ r for r in self.fetchResults(source, ('NAME'), lookup_dict, year=year) ]
         for f in tract_fips:
             tract = f['state'] + f['county'] + f['tract']
