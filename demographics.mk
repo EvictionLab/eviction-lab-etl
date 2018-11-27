@@ -56,16 +56,6 @@ data/demographics/raw/%.csv:
 	mkdir -p $(dir $@)
 	python3 scripts/fetch_raw_census_data.py $* > $@
 
-## data/demographics/raw/block-groups-00.csv:
-data/demographics/raw/block-groups-00.csv:  census/00/block-groups.csv
-	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py $* > $@
-
-## data/demographics/raw/block-groups-10.csv:
-data/demographics/raw/block-groups-10.csv:  census/10/block-groups.csv
-	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py $* > $@
-
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv: data/demographics/raw/%.csv
 	mkdir -p $(dir $@)
