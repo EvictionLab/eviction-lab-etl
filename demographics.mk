@@ -22,7 +22,7 @@ all: $(output_files)
 ## clean                                       : Remove created demographics files
 clean:
 	rm -rf data/demographics
-	rm -rf log/
+	rm -rf log/*.txt
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help

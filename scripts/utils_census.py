@@ -93,6 +93,7 @@ def get_block_group_crosswalk_df(filename):
         os.path.join(conf_dir, filename),
         dtype={
                 'cofips': 'object',
+                'bkg00': 'object',
                 'bkg09': 'object',
                 'bkg10': 'object'
             }
@@ -381,7 +382,7 @@ class CensusDataStore:
         # `convert_00_geo.py` is run using the a weight of 1
         acs_09_00_cw_df = self.getCountyBlockGroupCrosswalk('acs_09_00', county)
         if not acs_09_00_cw_df.empty:
-            acs_df = changeBlockGroupsInCensusData(acs_df, acs_09_00_cw_df, 'bg09', 'bg00')
+            acs_df = changeBlockGroupsInCensusData(acs_df, acs_09_00_cw_df, 'bkg09', 'bkg00')
         return postProcessData2000(census_sf1_df, census_sf3_df, acs_df, 'block-groups')
     
     def fetchAllBlockGroupData2010(self, county):
