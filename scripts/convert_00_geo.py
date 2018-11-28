@@ -46,8 +46,8 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'block-groups':
         # add ACS 09 -> 10 rows to weights dataframe with weight of 1
-        acs_09_10_cw_df = get_block_group_crosswalk_df('acs_09_10')
-        acs_09_10_cw_df.drop(['county', 'cofips', 'nocompare'], inplace=True)
+        acs_09_10_cw_df = get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
+        acs_09_10_cw_df.drop(['county', 'cofips', 'nocompare'], axis=1, inplace=True)
         acs_09_10_cw_df.rename(columns={
             'bkg09': 'GEOID00',
             'bkg10': 'GEOID10'

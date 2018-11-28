@@ -202,8 +202,7 @@ def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
 class CensusDataStore:
     def __init__(self):
         self.crosswalks = {
-            'acs_09_00': get_block_group_crosswalk_df('changes_09acs_to_00cen.csv'),
-            'acs_09_10': get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
+            'acs_09_00': get_block_group_crosswalk_df('changes_09acs_to_00cen.csv')
         }
 
     # Get the crosswalk for a specific county

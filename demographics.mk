@@ -6,6 +6,7 @@ county_fips = $(shell cat conf/fips_codes.txt)
 
 census_cols = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,median-gross-rent,median-household-income,median-property-value,multiple-pop,name,nh-pi-pop,occupied-housing-units,other-pop,population,poverty-pop,rent-burden,renter-occupied-households,state,total-poverty-pop,tract,white-pop,year,GEOID'
 
+raw_files = $(foreach f,$(geo_years), data/demographics/raw/$(f).csv)
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 
 build_date := $(shell date +%F)
@@ -18,6 +19,8 @@ THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
 ## all                                         : Create all demographics data
 all: $(output_files)
+
+raw: $(raw_files)
 
 ## clean                                       : Remove created demographics files
 clean:
@@ -55,6 +58,14 @@ data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).c
 data/demographics/raw/%.csv:
 	mkdir -p $(dir $@)
 	python3 scripts/fetch_raw_census_data.py $* > $@
+
+data/demographics/raw/block-groups-00.csv: census/00/block-groups.csv
+	mkdir -p $(dir $@)
+	python3 scripts/fetch_raw_census_data.py block-groups-00 > $@
+
+data/demographics/raw/block-groups-10.csv: census/10/block-groups.csv
+	mkdir -p $(dir $@)
+	python3 scripts/fetch_raw_census_data.py block-groups-10 > $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv: data/demographics/raw/%.csv
