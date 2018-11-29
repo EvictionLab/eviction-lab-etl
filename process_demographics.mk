@@ -1,31 +1,22 @@
+# Tasks to processes raw census data and map 2000 data to 2010 geography
+
 years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
-
-county_fips = $(shell cat conf/fips_codes.txt)
-
-census_cols = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,median-gross-rent,median-household-income,median-property-value,multiple-pop,name,nh-pi-pop,occupied-housing-units,other-pop,population,poverty-pop,rent-burden,renter-occupied-households,state,total-poverty-pop,tract,white-pop,year,GEOID'
-
-raw_files = $(foreach f,$(geo_years), data/demographics/raw/$(f).csv)
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
-
 build_date := $(shell date +%F)
 ts := $(shell date "+%H%M%S")
-THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
-.PRECIOUS: census/00/%.csv census/10/block-groups/%.csv data/demographics/raw/%.csv data/demographics/%.csv
-.SECONDARY: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
-.PHONY: all clean deploy deploy_raw deploy_logs deploy_years
+.PRECIOUS: census/00/%.csv data/demographics/%.csv
+.PHONY: all clean deploy deploy_logs
 
 ## all                                         : Create all demographics data
 all: $(output_files)
 
-raw: $(raw_files)
-
 ## clean                                       : Remove created demographics files
 clean:
-	rm -rf data/demographics
-	rm -rf log/*.txt
+	rm -f data/demographics/*.csv
+	rm -f log/*.txt
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help
@@ -33,16 +24,14 @@ help: demographics.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## deploy                                      : Compress demographic data and deploy to S3
-deploy: deploy_raw
+deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
 	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$$(basename $$f); done
 
-deploy_raw:
-	for f in data/demographics/raw/*.csv; do gzip $$f; done
-	for f in data/demographics/raw/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/raw/$$(basename $$f); done
-
 deploy_logs:
-	for f in log/*.txt; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/log/$(ts)_$$(basename $$f); done
+	cat log/*.txt > log/$(ts)_process_log.txt
+	aws s3 cp log/$(ts)_process_log.txt s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$(ts)_process_log.txt
+	rm -f log/*.txt
 
 ## submit_jobs                                 : Submit jobs to AWS Batch
 submit_jobs:
@@ -54,61 +43,24 @@ submit_jobs:
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
-## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
-data/demographics/raw/%.csv:
-	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py $* > $@
-
-data/demographics/raw/block-groups-00.csv: census/00/block-groups.csv
-	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py block-groups-00 > $@
-
-data/demographics/raw/block-groups-10.csv: census/10/block-groups.csv
-	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py block-groups-10 > $@
-
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
-data/demographics/years/%.csv: data/demographics/raw/%.csv
+data/demographics/years/%.csv:
 	mkdir -p $(dir $@)
-	cat $< | python3 scripts/convert_census_vars.py > $@
+	cat data/demographics/raw/$*.csv | python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
-data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv data/demographics/raw/tracts-00.csv
+data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/tracts-00.csv | \
 	python3 scripts/convert_00_geo.py tracts census/00/tracts-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
-data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv data/demographics/raw/block-groups-00.csv
+data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-00.csv | \
 	python3 scripts/convert_00_geo.py block-groups $< | \
 	python3 scripts/convert_census_vars.py > $@
-
-## data/demographics/years/block-groups-10.csv : Create block-groups-10 demographics
-data/demographics/years/block-groups-10.csv: data/demographics/raw/block-groups-10.csv
-	mkdir -p $(dir $@)
-	cat data/demographics/raw/block-groups-10.csv | \
-	python3 scripts/convert_census_vars.py > $@
-
-## census/%/block-groups.csv                   : Consolidate block groups by county
-census/%/block-groups.csv: $(foreach f, $(county_fips), census/%/block-groups/$(f).csv)
-	csvstack $^ > $@
-
-## census/10/block-groups/%.csv                : Create 2010 block groups files
-census/10/block-groups/%.csv:
-	mkdir -p $(dir $@)
-	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/fetch_raw_block_groups.py $* $(y) | \
-	csvcut -c $(census_cols) > $@ 
-
-## census/00/block-groups/%.csv                : Create 2000 block groups files
-census/00/block-groups/%.csv:
-	mkdir -p $(dir $@)
-	$(eval y=$(subst census/,,$(subst /block-groups/$(notdir $@),,$@)))
-	python3 scripts/fetch_raw_block_groups.py $* $(y) | \
-	csvcut -c $(census_cols) > $@ 
 
 ### WEIGHTS
 

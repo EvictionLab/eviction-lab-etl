@@ -11,6 +11,9 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
+# determines the demographics build to use
+demographics_data_date = 2018-11-28
+
 sub_eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
 eviction_cols = $(sub_eviction_cols),low-flag
 
@@ -278,7 +281,7 @@ data/evictions/%.csv:
 ## data/demographics/%.csv          : Pull demographic data
 data/demographics/%.csv:
 	mkdir -p $(dir $@)
-	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(notdir $@).gz - | \
+	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(demographics_data_date)/$(notdir $@).gz - | \
 	gunzip -c > $@
 
 ### DATA VALIDATION
