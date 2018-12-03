@@ -28,8 +28,8 @@ $: docker pull evictionlab/eviction-lab-etl
 All tasks will be run within the docker container.  You can run the docker container with your envionment variable configuration with the following command:
 
 ```bash
-$: docker run --env-file .env -it -v ${PWD}:/App \
-    --entrypoint /App/run-task.sh evictionlab/eviction-lab-etl
+$: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
+    --entrypoint /bin/bash evictionlab/eviction-lab-etl
 ```
 
 You are now ready to run any of the tasks in the pipeline, all of the valid task names are provided below:
@@ -77,10 +77,14 @@ These tasks take the raw demographics from the previous step, perform required c
 For example, to fetch all of the tract level demographics data for 2000-2016, with 2000-2009 data crosswalked to fit census 2010 geography:
 
 ```bash
-$: docker run --env-file .env evictionlab/eviction-lab-etl data/demographics/tracts.csv
+$: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
+    --entrypoint ./run-task.sh evictionlab/eviction-lab-etl \
+    data/demographics/tracts.csv
 ```
 
 ### 4. Merge Eviction Lab Data with Crosswalked Demographics (`create_eviction_data.mk`)
+
+> **Note:** Eviction data must be uploaded to the S3_SOURCE_DATA_BUCKET inside a folder corresponding to the BUILD_ID for this build step.
 
 These tasks merge the crosswalked demographics files with the Eviction Lab data.  The valid targets include:
 
@@ -89,6 +93,14 @@ These tasks merge the crosswalked demographics files with the Eviction Lab data.
   - `data/cities.csv`
   - `data/tracts.csv`
   - `data/block-groups.csv`
+
+For example, get the merged Eviction Lab data with crosswalked demographics for states with:
+
+```bash
+$: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
+    --entrypoint ./run-task.sh evictionlab/eviction-lab-etl \
+    data/states.csv
+```
 
 #### 4a. Deploy Map and Rankings Data
 
@@ -113,23 +125,39 @@ These tasks take the Eviction Lab data and demographics from step 4 and create t
   - `tiles/block-groups-00.mbtiles`
   - `tiles/block-groups-10.mbtiles`
 
-## Deployment
+  After generating these files you can preview tiles at http://localhost:8080/ with:
 
-Deployment is managed by a AWS Batch jobs. If you have an AWS account, you can use the `conf/batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). Once this is set up, you can run `make submit_jobs` to schedule a deployment.
+  ```
+  $: docker run -it -v $(pwd):/data -p 8080:80 \
+        klokantech/tileserver-gl tiles/GEOGRAPHY.mbtiles
+  ```
 
-## Build Census Data from Source
+## Building and Deploying with AWS Batch
 
-The main `Makefile` pulls Census geography and demographic data that is pre-generated in the necessary format from the main S3 bucket. If any changes are made, you can re-create this data from source. To create the geography data, run `make -f census.mk` before generating tiles, or run `make -f demographics.mk all` to generate the demographics data.
+Deployment is managed by a AWS Batch jobs. If you have an AWS account, you can use the `conf/batch_cfn.yml` CloudFormation template to create an AWS Batch job based on the Dockerfile (with the Docker image `evictionlab/eviction-lab-etl` on Docker Hub). 
 
-**Note:** To create Census demographic data, you'll need to get a [Census API Key](https://www.census.gov/developers/), copy the `.env.sample` file to `.env`, add the API key in there. When you run `pipenv shell`, all variables defined in `.env` will be loaded into the shell.
+Once this is set up, you can run any of the following make commands to have the pipeline step run on AWS batch.
 
-## View Tiles Locally
+```
+# Step 1: Get census demographics
+$: make census_geographies
 
-With Docker installed, run:
+# Step 2: Get census demographics
+$: make census_demographics
 
-`docker run -it -v $(pwd):/data -p 8080:80 klokantech/tileserver-gl GEOGRAPHY.mbtiles`
+# Step 3: Crosswalk 2000-2009 data to 2010 census geography
+$: make crosswalked_demographics
 
-You'll be able to view a UI for tiles at `localhost:8080`
+# Step 4: Merge eviction and demographics data
+$: make eviction_lab_data
+
+# Step 5: Build tilesets and deploy
+$: make tiles
+
+# Deploy Tasks
+$: make deploy_app_data
+$: make deploy_public_data
+```
 
 ## License
 

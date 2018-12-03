@@ -10,20 +10,25 @@
 # This script determines which makefile is used to make the requested
 # file, and also deploys it if needed.
 
-git fetch origin master
-git reset --hard FETCH_HEAD
-git clean -df
-
 if [[ -z "${AWS_ACCESS_ID}" ]]; then
-    echo "skipping AWS configuration"
+    # running on AWS batch, get master from source control
+    git fetch origin master
+    git reset --hard FETCH_HEAD
+    git clean -df
 else
+    # running locally in docker container, configure aws
     aws configure set aws_access_key_id $AWS_ACCESS_ID
     aws configure set aws_secret_access_key $AWS_SECRET_KEY
     aws configure set default.region us-east-1
+fi
 
 if [[ $1 == deploy_public_data ]] || [[ $1 == deploy_app_data ]]; then
     # job is a deploy
     make -f create_eviction_data.mk $1
+elif [[ $1 == *census* ]]; then
+    # job is to create census geography
+    make -f fetch_census_geography.mk $1
+    make -f fetch_census_geography.mk deploy
 elif [[ $1 == *data/demographics/raw* ]]; then
     # job is to fetch demographics from census api
     # if building block groups, get the census data first and run 10 jobs at a time
@@ -41,12 +46,12 @@ elif [[ $1 == *data/demographics* ]]; then
     make -f process_demographics.mk $1
     make -f process_demographics.mk deploy_logs
     make -f process_demographics.mk deploy
-elif [[ $1 == *data/*]]; then
+elif [[ $1 == *data* ]]; then
     # job is to merge eviction and demographic data
     make -f create_eviction_data.mk $1
     make -f create_eviction_data.mk deploy_logs
     make -f create_eviction_data.mk deploy
-elif [[ $1 == *tiles*]]; then
+elif [[ $1 == *tiles* ]]; then
     # job is to create and deploy tilesets
     make -f create_eviction_tilesets.mk $1
     make -f create_eviction_tilesets.mk deploy

@@ -40,7 +40,7 @@ help: create_eviction_data.mk
 # DEPLOY TASKS
 
 ## deploy                           : Deploy gzipped eviction / demographics data to S3
-deploy: $(output_files)
+deploy:
 	for f in data/*.csv; do gzip $$f; done
 	for f in data/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/$$(basename $$f); done
 
