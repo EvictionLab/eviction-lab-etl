@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     if df is None or df.empty:
         logger.warn('Received no census data for block groups in county: ' + sys.argv[1])
-        # output header row, but no data
+        # output header row to file, but no data
         print(CENSUS_COLS)
         exit()
 

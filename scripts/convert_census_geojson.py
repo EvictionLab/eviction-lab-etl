@@ -1,3 +1,7 @@
+# Loops through all of the features in the geojson if it is county level
+# or lower and updates the county if it matches any of the counties in
+# COUNTY_CROSSWALK
+
 import sys
 import json
 from data_constants import COUNTY_CROSSWALK

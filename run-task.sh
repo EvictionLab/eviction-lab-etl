@@ -14,10 +14,17 @@ git fetch origin master
 git reset --hard FETCH_HEAD
 git clean -df
 
-if [[ $1 == deploy_public_data ]] || [[ $1 == deploy_data ]]; then
+if [[ -z "${AWS_ACCESS_ID}" ]]; then
+    echo "skipping AWS configuration"
+else
+    aws configure set aws_access_key_id $AWS_ACCESS_ID
+    aws configure set aws_secret_access_key $AWS_SECRET_KEY
+    aws configure set default.region us-east-1
+
+if [[ $1 == deploy_public_data ]] || [[ $1 == deploy_app_data ]]; then
     # job is a deploy
-    make $1
-elif [[ $1 == *demographics/raw* ]]; then
+    make -f create_eviction_data.mk $1
+elif [[ $1 == *data/demographics/raw* ]]; then
     # job is to fetch demographics from census api
     # if building block groups, get the census data first and run 10 jobs at a time
     if [[ $1 == *block-groups-00* ]]; then
@@ -29,16 +36,21 @@ elif [[ $1 == *demographics/raw* ]]; then
     make -f fetch_raw_census_api.mk $1
     make -f fetch_raw_census_api.mk deploy_logs
     make -f fetch_raw_census_api.mk deploy
-elif [[ $1 == *demographics* ]]; then
-    # job is to process demographics, fetch from S3 for the provided fetch date
-    make -f fetch_raw_s3.mk DATE=2018-11-28
+elif [[ $1 == *data/demographics* ]]; then
+    # job is to process and crosswalk demographics
     make -f process_demographics.mk $1
     make -f process_demographics.mk deploy_logs
     make -f process_demographics.mk deploy
+elif [[ $1 == *data/*]]; then
+    # job is to merge eviction and demographic data
+    make -f create_eviction_data.mk $1
+    make -f create_eviction_data.mk deploy_logs
+    make -f create_eviction_data.mk deploy
+elif [[ $1 == *tiles*]]; then
+    # job is to create and deploy tilesets
+    make -f create_eviction_tilesets.mk $1
+    make -f create_eviction_tilesets.mk deploy
 else
-    # job is a non-deploy and non-demographics task
-    make $1
-    make deploy
-    # deploy the generated validation data
-    make deploy_validation_data
+    printf '%s\n' "Invalid target for submit jobs." >&2
+    exit 1
 fi

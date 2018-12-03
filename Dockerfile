@@ -42,4 +42,4 @@ WORKDIR /eviction-lab-etl/
 # Install Python packages
 RUN pip3 install pipenv && pipenv install --system
 
-ENTRYPOINT ["/eviction-lab-etl/docker-entrypoint.sh"]
+ENTRYPOINT ["/eviction-lab-etl/run-task.sh"]

@@ -4,38 +4,39 @@ years = 00 10
 geo_types = states counties cities tracts block-groups
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
-build_date := $(shell date +%F)
+BUILD_ID?=2018-11-28
 ts := $(shell date "+%H%M%S")
 
 .PRECIOUS: census/00/%.csv data/demographics/%.csv
-.PHONY: all clean deploy deploy_logs
+.PHONY: all clean deploy deploy_logs help
 
 ## all                                         : Create all demographics data
 all: $(output_files)
 
 ## clean                                       : Remove created demographics files
 clean:
-	rm -f data/demographics/*.csv
+	rm -rf data/demographics
 	rm -f log/*.txt
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help
-help: demographics.mk
+help: process_demographics.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## deploy                                      : Compress demographic data and deploy to S3
 deploy:
 	for f in data/demographics/*.csv; do gzip $$f; done
-	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$$(basename $$f); done
+	for f in data/demographics/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/demographics/$$(basename $$f); done
 
 deploy_logs:
-	cat log/*.txt > log/$(ts)_process_log.txt
-	aws s3 cp log/$(ts)_process_log.txt s3://$(S3_SOURCE_DATA_BUCKET)/demographics/$(build_date)/$(ts)_process_log.txt
+	cat log/*.txt > log/crosswalk_log.txt
+	aws s3 cp log/crosswalk_log.txt s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/demographics/crosswalk_log_$(ts).txt
 	rm -f log/*.txt
 
-## submit_jobs                                 : Submit jobs to AWS Batch
-submit_jobs:
-	python3 utils/submit_jobs.py $(output_files)
+## data/demographics/raw/%.csv                 : Fetch raw demographics data fetched from Census API
+.SECONDARY:
+data/demographics/raw/%.csv:
+	$(MAKE) -f fetch_s3_source.mk $@
 
 ### DEMOGRAPHIC DATA
 
@@ -44,7 +45,7 @@ data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).c
 	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
-data/demographics/years/%.csv:
+data/demographics/years/%.csv: data/demographics/raw/%.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/$*.csv | python3 scripts/convert_census_vars.py > $@
 
@@ -77,7 +78,7 @@ census/00/%-weights.csv: census/00/%-geocorr.csv census/00/nhgis_blk2000_blk2010
 census/00/geocorr.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/relationships/geocorr.pop2k.gsv.gz - | \
-	gunzip > $@
+	gunzip -c > $@
 
 ## census/00/nhgis_blk2000_blk2010_ge.csv      : Download NHGIS 2000 data crosswalks
 census/00/nhgis_blk2000_blk2010_ge.csv: census/00/crosswalks.zip

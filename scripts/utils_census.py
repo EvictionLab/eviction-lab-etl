@@ -47,14 +47,13 @@ CENSUS_JOIN_KEYS = {
     'block-groups': ['state', 'county', 'tract', 'block group'],
 }
 
-
 # splits a geoid into parts (state, county, tract, block group, block)
 def split_geoid(geoid):
     parts = {}
     if len(geoid) > 1:
         parts['state'] = geoid[:2]
     if len(geoid) > 4:
-        parts['county'] = geoid[0:5]
+        parts['county'] = geoid[2:5]
     if len(geoid) > 10:
         parts['tract'] = geoid[5:11]
     if len(geoid) > 11:
@@ -63,7 +62,7 @@ def split_geoid(geoid):
         parts['block'] = geoid[12:]
     return parts
 
-# Updates the tract and block group in the census dataframe passed.
+# Updates the county, tract, and block group in the census dataframe passed.
 # Tracts and block groups are mapped based on columns in the map_df.
 #
 # - df: dataframe containing results from the Census API
@@ -74,6 +73,7 @@ def split_geoid(geoid):
 def changeBlockGroupsInCensusData(df, map_df, fromField, toField):
     # get a map of columns `fromField` : `toField`
     bg_dict = pd.Series(map_df[toField].values, index=map_df[fromField]).to_dict()
+
     # loop through the map and update the data frame if needed
     for fromBg, toBg in bg_dict.items():
         from_parts = split_geoid(fromBg) 
@@ -82,8 +82,51 @@ def changeBlockGroupsInCensusData(df, map_df, fromField, toField):
         df.loc[
             (df['tract'] == from_parts['tract']) & (df['block group'] == from_parts['bg']), 
             ['county', 'tract', 'block group']] = [ to_parts['county'], to_parts['tract'], to_parts['bg'] ]
-
     return df
+
+# Updates the county and tract in the census dataframe passed.
+# Tracts and block groups are mapped based on columns in the map_df.
+def changeTractsInCensusData(df, map_df, fromField, toField):
+    bg_dict = pd.Series(map_df[toField].values, index=map_df[fromField]).to_dict()
+    # loop through the map and update the data frame if needed
+    for fromTract, toTract in bg_dict.items():
+        from_parts = split_geoid(fromTract) 
+        to_parts = split_geoid(toTract)
+        # update the data frame where conditions are met
+        df.loc[
+            (df['tract'] == from_parts['tract']) & (df['county'] == from_parts['county']), 
+            ['county', 'tract']] = [ to_parts['county'], to_parts['tract'] ]
+    return df
+
+# Grab tracts from the block group 09 -> 00 changes and also add
+# any additional tracts from the tracts file.  Returns a dataframe
+# that contains trt09 -> trt00 mappings.
+def get_tract_crosswalk_09_00_df():
+    block_groups_df = get_block_group_crosswalk_df('changes_09acs_to_00cen.csv')
+    block_groups_df['trt09'] = block_groups_df['bkg09'].str[:-1]
+    block_groups_df['trt00'] = block_groups_df['bkg00'].str[:-1]
+    block_groups_df.drop(['county', 'bkg09', 'bkg00'], axis=1, inplace=True)
+    block_groups_df.drop_duplicates(inplace=True)
+    conf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'conf')
+    cw_df = pd.read_csv(
+        os.path.join(conf_dir, 'changes_09acs_to_00cen_tract.csv'),
+        dtype={'cofips': 'object', 'trt09': 'object', 'trt00': 'object'}
+    )
+    return pd.concat([cw_df, block_groups_df])
+
+
+def get_tract_crosswalk_09_10_df():
+    block_groups_df = get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
+    block_groups_df['trt09'] = block_groups_df['bkg09'].str[:-1]
+    block_groups_df['trt10'] = block_groups_df['bkg10'].str[:-1]
+    block_groups_df.drop(['county', 'bkg09', 'bkg10'], axis=1, inplace=True)
+    block_groups_df.drop_duplicates(inplace=True)
+    conf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'conf')
+    cw_df = pd.read_csv(
+        os.path.join(conf_dir, 'changes_09acs_to_10cen_tract.csv'),
+        dtype={'cofips': 'object', 'trt09': 'object', 'trt10': 'object'}
+    )
+    return pd.concat([ cw_df, block_groups_df ])
 
 # Loads a block group crosswalk file from the `conf` directory and 
 # removes any rows that should not be compared
@@ -101,6 +144,7 @@ def get_block_group_crosswalk_df(filename):
     # filter out entries where values should not be copied
     if 'nocompare' in cw_df.columns:
         cw_df = cw_df.loc[cw_df['nocompare'] == 0]
+        cw_df.drop(['nocompare'], axis=1, inplace=True)
     return cw_df
 
 # Census tract names follow rules described here:
@@ -128,6 +172,24 @@ def crosswalk_county(df):
             df.loc[df['GEOID'] == k, 'GEOID'] = v['GEOID']
     return df
 
+# translate ACS 2009 -> 2000 block groups if needed
+# NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens when
+# `convert_00_geo.py` is run using the a weight of 1
+def crosswalk_acs_block_groups(df):
+    acs_09_00_cw_df = get_block_group_crosswalk_df('changes_09acs_to_00cen.csv')
+    if not acs_09_00_cw_df.empty:
+        df = changeBlockGroupsInCensusData(df, acs_09_00_cw_df, 'bkg09', 'bkg00')
+    return df
+
+# translate ACS 2009 -> 2000 tracts if needed
+# NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens when
+# `convert_00_geo.py` is run using the a weight of 1
+def crosswalk_acs_tracts(df):
+    acs_09_00_cw_df = get_tract_crosswalk_09_00_df()
+    if not acs_09_00_cw_df.empty:
+        df = changeTractsInCensusData(df, acs_09_00_cw_df, 'trt09', 'trt00')
+    return df
+
 # Add years column to data frame
 def addDataFrameYears(df, start, end):
     df_list = []
@@ -140,39 +202,46 @@ def addDataFrameYears(df, start, end):
 # Handles merging and processing data fetched from the census API
 # for the years 2000-2010
 def postProcessData2000(sf1_df, sf3_df, acs_df, geo_str):
+    if not len(sf1_df.columns.values) and not len(sf3_df.columns.values) and not len(acs_df.columns.values):
+        return
     sf1_df.rename(columns=CENSUS_00_SF1_VAR_MAP, inplace=True)
     sf3_df.rename(columns=CENSUS_00_SF3_VAR_MAP, inplace=True)
     if 'name' in sf3_df.columns.values:
         sf3_df.drop('name', axis=1, inplace=True)
 
-    # exit function if there are is no data
-    early_exit = False
-    if not len(sf1_df.columns.values):
-        logger.warn('no data from sf1 query')
-        early_exit = True
-    if not len(sf3_df.columns.values):
-        logger.warn('no data from sf3 query')
-        early_exit = True
-    if early_exit:
-        return
-
-    # update with county crosswalk data if needed
-    sf1_df = crosswalk_county(sf1_df)
-    sf3_df = crosswalk_county(sf3_df)
-    acs_df = crosswalk_county(acs_df)
-
-    # merge sf3 results into sf1 results
-    log_label = '2000 ' + geo_str + ' sf1 <- sf3'
-    census_df = merge_with_stats(log_label, sf1_df, sf3_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
-    # drop Puerto Rico
-    if geo_str != 'block-groups': 
+    # Merge SF1 and SF3 results, then add years 2000-2005
+    if len(sf1_df.columns.values) and len(sf3_df.columns.values):
+        sf1_df = crosswalk_county(sf1_df)
+        sf3_df = crosswalk_county(sf3_df)
+        # merge sf3 results into sf1 results
+        log_label = '2000 ' + geo_str + ' sf1 <- sf3'
+        census_df = merge_with_stats(log_label, sf1_df, sf3_df, on=CENSUS_JOIN_KEYS.get(geo_str), how='left')
         census_df = census_df.loc[census_df['state'] != '72'].copy()
-        acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
-    acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
+        census_df_list = addDataFrameYears(census_df, 2000, 2005)
+    else:
+        census_df_list = None
 
-    census_df_list = addDataFrameYears(census_df, 2000, 2005)
-    acs_df_list = addDataFrameYears(acs_df, 2005, 2010)
-    return pd.concat(census_df_list + acs_df_list)
+    # Crosswalk the ACS data, then add years 2005-2010
+    if len(acs_df.columns.values):
+        if geo_str == 'block-groups':
+            acs_df = crosswalk_acs_block_groups(acs_df)
+        elif geo_str == 'tracts':
+            acs_df = crosswalk_acs_tracts(acs_df)
+        
+        acs_df = crosswalk_county(acs_df)
+        acs_df = acs_df.loc[acs_df['state'] != '72'].copy()
+        acs_df.rename(columns=ACS_VAR_MAP, inplace=True)
+        acs_df_list = addDataFrameYears(acs_df, 2005, 2010)
+    else:
+        acs_df_list = None
+
+    # return concated data
+    if census_df_list and acs_df_list:
+        return pd.concat(census_df_list + acs_df_list)
+    elif acs_df_list:
+        return pd.concat(acs_df_list)
+    elif census_df_list:
+        return pd.concat(census_df_list)
 
 # Handles merging and processing data fetched from the census API
 # for the years 2010-current
@@ -317,7 +386,9 @@ class CensusDataStore:
     # tracts for each
     def fetchTracts(self, source, items, year):
         geo_df_list = []
-        fips_list = STATE_COUNTY_FIPS
+        # fips_list = [ { 'state': '08', 'county': '014' } ]
+        # fips_list = STATE_COUNTY_FIPS
+        fips_list = [ r for r in self.fetchResults(source, ('NAME'),  {'for': 'county:*', 'in': 'state:*'}, year=year) if r['state'] != '72' ]
         for f in fips_list:
             county = f['state'] + f['county']
             geo_df_list.append(self.fetchTractsByCounty(source, items, county, year))
@@ -343,14 +414,6 @@ class CensusDataStore:
         lookup_dict = { 'for': 'block group:*', 'in': parent }
         return self.fetchData(source, items, lookup_dict, year)
 
-    def getTractsList(self, county):
-        lookup_dict =  {
-            'for': 'tract:*', 
-            'in': 'county:' + county[2:] + ' state:' + county[0:2] 
-        }
-        tract_fips = [ (r['state'] + r['county'] + r['tract']) for r in self.fetchResults('acs5', ('NAME'), lookup_dict) ]
-
-
     # Fetch data for all 2010 block groups in a county by fetching all of
     # the tracts within a county, and then looping through those tracts.
     def fetchBlockGroupsByCounty(self, source, items, county, year):
@@ -359,7 +422,7 @@ class CensusDataStore:
             'for': 'tract:*', 
             'in': 'county:' + county[2:] + ' state:' + county[0:2] 
         }
-        tract_fips = [ r for r in self.fetchResults(source, ('NAME'), lookup_dict, year=year) ]
+        tract_fips = [ r for r in self.fetchResults(source, ('NAME'), lookup_dict, year=year) if r['state'] != '72' ]
         for f in tract_fips:
             tract = f['state'] + f['county'] + f['tract']
             geo_df_list.append(self.fetchBlockGroupsByTract(source, items, tract, year))
@@ -373,12 +436,6 @@ class CensusDataStore:
         census_sf1_df = self.fetchBlockGroupsByCounty('sf1', CENSUS_00_SF1_VARS, county, 2000)
         census_sf3_df = self.fetchBlockGroupsByCounty('sf3', CENSUS_00_SF3_VARS, county, 2000)
         acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_VARS, county, 2009)
-        # translate ACS 2009 -> 2000 block groups if needed
-        # NOTE: Some entries are also translate from ACS 2009 -> 2010, this happens when
-        # `convert_00_geo.py` is run using the a weight of 1
-        acs_09_00_cw_df = self.getCountyBlockGroupCrosswalk('acs_09_00', county)
-        if not acs_09_00_cw_df.empty:
-            acs_df = changeBlockGroupsInCensusData(acs_df, acs_09_00_cw_df, 'bkg09', 'bkg00')
         return postProcessData2000(census_sf1_df, census_sf3_df, acs_df, 'block-groups')
     
     def fetchAllBlockGroupData2010(self, county):
