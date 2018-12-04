@@ -35,10 +35,6 @@ if __name__ == '__main__':
                     {
                         'name': 'BUILD_ID',
                         'value': BUILD_ID
-                    },
-                    {
-                        'name': 'AWS_BUILD',
-                        'value': 1
                     }
                 ]
             }
