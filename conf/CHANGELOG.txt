@@ -9,3 +9,7 @@
 # 2018-09-07
   - Fixed an issue where eviction data was not present for cities in the following states: AL, AK, AZ, AR, CA, CO, and CT
   - Files impacted: all.csv, cities.csv for the above states
+
+# 2018-12-03
+  - Updates procedure for crosswalking 2000 data to 2010 census geography.  Demographics data for 2000-2009 should now be more accurate.
+  - Files impacted: all.csv, tracts.csv, block-groups.csv for 2000-2009 demographics data.

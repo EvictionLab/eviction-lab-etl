@@ -16,6 +16,9 @@ states-geoid =  "this.properties.GEOID = this.properties.STATE"
 geo_types = states counties cities tracts block-groups
 GENERATED_FILES = $(foreach t, $(geo_types), census/$(t).geojson)
 
+# build ID to use for source data
+BUILD_ID?=2018-11-28
+
 .PHONY: all deploy help
 
 ## all                 : Create all census GeoJSON
@@ -27,12 +30,9 @@ help: census.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## deploy              : Deploy gzipped census data to S3
-deploy: $(foreach f, $(GENERATED_FILES), $(f).gz)
-	for f in $^; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/$$f --acl=public-read; done
-
-## census/%.geojson.gz : Gzip census GeoJSON
-census/%.geojson.gz: census/%.geojson
-	gzip $<
+deploy:
+	for f in census/*.geojson; do gzip $$f; done
+	for f in census/*.gz; do aws s3 cp $$f s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/census/$$(basename $$f) --acl=public-read; done
 
 ## census/%.geojson    : Download and clean census GeoJSON
 .SECONDARY:

@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 from functools import reduce
+from utils_validation import log_dem_eviction_comparison
 
 INT_COLS = ['imputed', 'subbed', 'low-flag']
 
@@ -23,6 +24,7 @@ if __name__ == '__main__':
     # eviction dataframe
     ev_df = pd.read_csv(sys.argv[3], dtype=dtypes)
 
+    log_dem_eviction_comparison('demographics <- eviction data', dem_df, ev_df, on=join_keys)
     # join demographics with evictions
     ev_df.set_index(join_keys, inplace=True)
     dem_df.set_index(join_keys, inplace=True)

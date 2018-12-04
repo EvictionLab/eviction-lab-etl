@@ -25,7 +25,8 @@ import sys
 import csv
 import pandas as pd
 from utils_validation import (merge_with_stats, logger)
-from utils_census import create_tract_name, get_block_group_crosswalk_df
+from utils_census import (create_tract_name, get_block_group_crosswalk_df,
+                        get_tract_crosswalk_09_10_df)
 from data_constants import (COUNT_COLS, RATE_COLS)
 
 if __name__ == '__main__':
@@ -44,18 +45,24 @@ if __name__ == '__main__':
             'GEOID10': 'object'
         })
 
+    # add ACS 09 -> 10 rows to weights dataframe with weight of 1
     if sys.argv[1] == 'block-groups':
-        # add ACS 09 -> 10 rows to weights dataframe with weight of 1
         acs_09_10_cw_df = get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
-        acs_09_10_cw_df.drop(['county', 'cofips', 'nocompare'], axis=1, inplace=True)
+        acs_09_10_cw_df.drop(['county', 'cofips'], axis=1, inplace=True)
         acs_09_10_cw_df.rename(columns={
             'bkg09': 'GEOID00',
             'bkg10': 'GEOID10'
         }, inplace=True)
-        acs_09_10_cw_df['count_weight'] = 1
-        acs_09_10_cw_df['rate_weight'] = 1
-        weight_df = pd.concat([weight_df, acs_09_10_cw_df])
-
+    if sys.argv[1] == 'tracts':
+        acs_09_10_cw_df = get_tract_crosswalk_09_10_df()
+        acs_09_10_cw_df.rename(columns={
+            'trt09': 'GEOID00',
+            'trt10': 'GEOID10'
+        }, inplace=True)
+    acs_09_10_cw_df['count_weight'] = 1
+    acs_09_10_cw_df['rate_weight'] = 1
+    weight_df = pd.concat([weight_df, acs_09_10_cw_df])
+    
     # merge the census data with the weights for each GEOID
     log_label = sys.argv[1]+' weights <- data'
     output_df = merge_with_stats(

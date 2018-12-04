@@ -8,6 +8,7 @@ JOB_QUEUE = os.getenv('JOB_QUEUE')
 JOB_DEFINITION = os.getenv('JOB_DEFINITION')
 CACHE_JOB_DEFINITION = os.getenv('CACHE_JOB_DEFINITION')
 S3_VALIDATION_BUCKET = os.getenv('S3_VALIDATION_BUCKET')
+BUILD_ID = os.getenv('BUILD_ID')
 
 if __name__ == '__main__':
     client = boto3.client('batch')
@@ -30,6 +31,10 @@ if __name__ == '__main__':
                     {
                         'name': 'S3_VALIDATION_BUCKET',
                         'value': S3_VALIDATION_BUCKET
+                    },
+                    {
+                        'name': 'BUILD_ID',
+                        'value': BUILD_ID
                     }
                 ]
             }

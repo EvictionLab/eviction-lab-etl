@@ -67,6 +67,23 @@ def log_merge_stats(name, stats):
     else:
         logger.debug(name + ': merge successful')
 
+def log_dem_eviction_comparison(name, df_left, df_right, **kwargs):
+    stats = get_left_merge_stats(df_left, df_right, **kwargs)
+    matched = stats['matched']
+    unmatched = stats['unmatchedEntries']
+    total = stats['df2_entries']
+    percent = (matched/total)*100
+    
+    if len(unmatched) > 0:
+        logger.warn(
+            name + ' comparison: matched ' + str(matched) + ' of ' + str(total) + 
+            ' rows ('+ str(percent) + '%). There are ' + str(stats['unmatched']) + 
+            ' eviction data entries without matching demographics records: ' + 
+            ','.join((str(e)[:-4] + '-' + str(e)[-4:]) for e in unmatched)
+        )
+    else:
+        logger.debug(name + ' comparison: clean merge')
+
 # Performs a data frame merge with the given data frames, keys, and join method.
 # Logs the statistics of the merge to console and file
 def merge_with_stats(name, df_left, df_right, **kwargs):
