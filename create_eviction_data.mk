@@ -29,7 +29,7 @@ all: $(output_files) $(tool_data) $(public_data)
 clean:
 	rm -f data/*.csv
 	rm -f data/*.gz
-	rm $(tool_data)
+	rm -f $(tool_data)
 	rm -f log/*.txt
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/

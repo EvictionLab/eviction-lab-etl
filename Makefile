@@ -9,7 +9,11 @@ raw_demographics = $(foreach f,$(geo_years), data/demographics/raw/$(f).csv)
 crosswalked_demographics = $(foreach f,$(geo_types), data/demographics/$(f).csv)
 eviction_lab_data = $(foreach f,$(geo_types), data/$(f).csv)
 
-.PHONY: help census_geographies census_demographics crosswalked_demographics eviction_lab_data deploy_app_data deploy_public_data tiles
+.PHONY: help clean census_geographies census_demographics crosswalked_demographics eviction_lab_data deploy_app_data deploy_public_data tiles
+
+clean:
+	rm -rf census census_data centers centers_data grouped_data tiles tilesets data
+	rm -f log/*.txt
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help

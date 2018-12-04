@@ -7,7 +7,7 @@ output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 BUILD_ID?=2018-11-28
 ts := $(shell date "+%H%M%S")
 
-.PRECIOUS: census/00/%.csv data/demographics/%.csv
+.PRECIOUS: data/demographics/%.csv
 .PHONY: all clean deploy deploy_logs help
 
 ## all                                         : Create all demographics data
