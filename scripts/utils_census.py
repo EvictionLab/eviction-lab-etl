@@ -80,7 +80,7 @@ def changeBlockGroupsInCensusData(df, map_df, fromField, toField):
         to_parts = split_geoid(toBg)
         # update the data frame where conditions are met
         df.loc[
-            (df['tract'] == from_parts['tract']) & (df['block group'] == from_parts['bg']), 
+            (df['tract'] == from_parts['tract']) & (df['block group'] == from_parts['bg']) & (df['county'] == from_parts['county']), 
             ['county', 'tract', 'block group']] = [ to_parts['county'], to_parts['tract'], to_parts['bg'] ]
     return df
 
@@ -190,6 +190,28 @@ def crosswalk_acs_tracts(df):
         df = changeTractsInCensusData(df, acs_09_00_cw_df, 'trt09', 'trt00')
     return df
 
+def update_acs12_block_groups(df):
+    conf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'conf')
+    filename = 'changes_12acs_10cen_bkg.csv'
+    map_df = pd.read_csv(
+        os.path.join(conf_dir, filename),
+        dtype={ 'bkg10': 'object', 'bkg12': 'object' }
+    )
+    if not map_df.empty:
+        df = changeBlockGroupsInCensusData(df, map_df, 'bkg12', 'bkg10')
+    return df
+
+def update_acs12_tracts(df):
+    conf_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'conf')
+    filename = 'changes_12acs_10cen_tract.csv'
+    map_df = pd.read_csv(
+        os.path.join(conf_dir, filename),
+        dtype={ 'trt10': 'object', 'trt12': 'object' }
+    )
+    if not map_df.empty:
+        df = changeTractsInCensusData(df, map_df, 'trt12', 'trt10')
+    return df
+
 # Add years column to data frame
 def addDataFrameYears(df, start, end):
     df_list = []
@@ -250,6 +272,12 @@ def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
     acs12_df.rename(columns=ACS_12_VAR_MAP, inplace=True)
     if 'name' in acs12_df.columns.values:
         acs12_df.drop('name', axis=1, inplace=True)
+
+    # update ACS12 entries that map to 2010 geography
+    if geo_str == 'block-groups':
+        acs12_df = update_acs12_block_groups(acs12_df)
+    if geo_str == 'tracts':
+        acs12_df = update_acs12_tracts(acs12_df)
 
     if not sf1_df.empty and not acs12_df.empty:
         # Merge vars that are only in ACS to 2010 census

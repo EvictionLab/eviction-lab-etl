@@ -75,7 +75,8 @@ CENSUS_10_VAR_MAP = {
 
 COUNT_COLS = [
     'population', 
-    'poverty-pop', 
+    'poverty-pop',
+    'total-poverty-pop',
     'occupied-housing-units',
     'renter-occupied-households', 
     'hispanic-pop', 

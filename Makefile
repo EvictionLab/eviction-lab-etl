@@ -17,7 +17,7 @@ clean:
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 ## help                                        : Print help
-help: process_demographics.mk
+help: Makefile
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## census_geographies         : Submit job to create 2010 census GeoJSON

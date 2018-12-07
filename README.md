@@ -32,6 +32,12 @@ $: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
     --entrypoint /bin/bash evictionlab/eviction-lab-etl
 ```
 
+If you are going to run any of the make files directly, you will need to configure the AWS CLI first.  Make sure there are values for the `AWS_ACCESS_ID` and `AWS_SECRET_KEY` environment variables in your `.env` file and run the following command from within the docker container:
+
+```
+$: ./run-task.sh config
+```
+
 You are now ready to run any of the tasks in the pipeline, all of the valid task names are provided below:
 
 ## Data Pipeline Tasks
@@ -40,7 +46,9 @@ You are now ready to run any of the tasks in the pipeline, all of the valid task
 For example, to build the geojson for states:
 
 ```bash
-$: docker run --env-file .env evictionlab/eviction-lab-etl census/states.geojson
+$: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
+    --entrypoint ./run-task.sh evictionlab/eviction-lab-etl \ 
+    census/states.geojson
 ```
 
 ### 2. Fetch Demographics Data (`fetch_raw_census_api.mk`)
@@ -61,7 +69,9 @@ These tasks fetch all demogaphics data from the Census API.  The valid targets i
 For example, to fetch all block group demographics for the years 2000-2009:
 
 ```bash
-$: docker run --env-file .env evictionlab/eviction-lab-etl data/demographics/raw/block-groups-00.csv
+$: docker run --env-file .env -it -v ${PWD}:/App -w="/App" \
+    --entrypoint ./run-task.sh evictionlab/eviction-lab-etl \ 
+    data/demographics/raw/block-groups-00.csv
 ```
 
 ### 3. Crosswalk 2000 Demographics Data to 2010 Census Geography (`process_demographics.mk`)
@@ -138,23 +148,32 @@ Deployment is managed by a AWS Batch jobs. If you have an AWS account, you can u
 
 Once this is set up, you can run any of the following make commands to have the pipeline step run on AWS batch.
 
+### Step 1: Get census demographics
 ```
-# Step 1: Get census demographics
 $: make census_geographies
+```
 
-# Step 2: Get census demographics
+### Step 2: Get census demographics
+```
 $: make census_demographics
+```
 
-# Step 3: Crosswalk 2000-2009 data to 2010 census geography
+### Step 3: Crosswalk 2000-2009 data to 2010 census geography
+```
 $: make crosswalked_demographics
+```
 
-# Step 4: Merge eviction and demographics data
+### Step 4: Merge eviction and demographics data
+```
 $: make eviction_lab_data
+```
 
-# Step 5: Build tilesets and deploy
+### Step 5: Build tilesets and deploy
+```
 $: make tiles
-
-# Deploy Tasks
+```
+### Deploy Tasks
+```
 $: make deploy_app_data
 $: make deploy_public_data
 ```
