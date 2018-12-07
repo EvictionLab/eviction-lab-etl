@@ -273,11 +273,12 @@ def postProcessData2010(sf1_df, acs12_df, acs_df, geo_str):
     if 'name' in acs12_df.columns.values:
         acs12_df.drop('name', axis=1, inplace=True)
 
-    # update ACS12 entries that map to 2010 geography
-    if geo_str == 'block-groups':
-        acs12_df = update_acs12_block_groups(acs12_df)
-    if geo_str == 'tracts':
-        acs12_df = update_acs12_tracts(acs12_df)
+    if len(acs12_df.columns.values) and not acs12_df.empty:
+        # update ACS12 entries that map to 2010 geography
+        if geo_str == 'block-groups':
+            acs12_df = update_acs12_block_groups(acs12_df)
+        if geo_str == 'tracts':
+            acs12_df = update_acs12_tracts(acs12_df)
 
     if not sf1_df.empty and not acs12_df.empty:
         # Merge vars that are only in ACS to 2010 census
