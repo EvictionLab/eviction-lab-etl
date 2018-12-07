@@ -62,6 +62,8 @@ if __name__ == '__main__':
     acs_09_10_cw_df['count_weight'] = 1
     acs_09_10_cw_df['rate_weight'] = 1
     weight_df = pd.concat([weight_df, acs_09_10_cw_df])
+    # Drop duplicates in case weight_df and acs_09_10_cw_df have the same entries
+    weight_df.drop_duplicates(subset=['GEOID00', 'GEOID10'], inplace=True)
     
     # merge the census data with the weights for each GEOID
     log_label = sys.argv[1]+' weights <- data'

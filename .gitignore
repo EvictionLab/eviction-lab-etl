@@ -7,6 +7,8 @@ tiles
 tilesets
 grouped_data
 grouped_public
+tmp
+validation
 log_*
 fixtures
 .env

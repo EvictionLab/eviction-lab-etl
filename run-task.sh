@@ -10,16 +10,23 @@
 # This script determines which makefile is used to make the requested
 # file, and also deploys it if needed.
 
-if [[ -z "${AWS_ACCESS_ID}" ]]; then
+if [[ ( -z "${AWS_ACCESS_ID}" ) && ( $1 != config ) ]]; then
     # running on AWS batch, get master from source control
     git fetch origin master
     git reset --hard FETCH_HEAD
     git clean -df
 else
     # running locally in docker container, configure aws
-    aws configure set aws_access_key_id $AWS_ACCESS_ID
-    aws configure set aws_secret_access_key $AWS_SECRET_KEY
-    aws configure set default.region us-east-1
+    if [[ -z "${AWS_ACCESS_ID}" ]]; then
+        printf '%s\n' "Missing AWS_ACCESS_ID environment variable, could not configure AWS CLI." >&2
+    elif [[ -z "${AWS_SECRET_KEY}" ]]; then
+        printf '%s\n' "Missing AWS_SECRET_KEY environment variable, could not configure AWS CLI." >&2
+    else
+        aws configure set aws_access_key_id $AWS_ACCESS_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_KEY
+        aws configure set default.region us-east-1
+        printf '%s\n' "AWS configured."
+    fi
 fi
 
 if [[ $1 == deploy_public_data ]] || [[ $1 == deploy_app_data ]]; then
@@ -56,6 +63,9 @@ elif [[ $1 == *tiles* ]]; then
     make -f create_eviction_tilesets.mk $1
     make -f create_eviction_tilesets.mk deploy
 else
-    printf '%s\n' "Invalid target for submit jobs." >&2
-    exit 1
+    if [[ $1 != config ]]; then
+        printf '%s\n' "Invalid target for submit jobs." >&2
+        exit 1
+    fi
 fi
+exit
