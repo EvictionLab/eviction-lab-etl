@@ -40,14 +40,9 @@ data/demographics/raw/%.csv:
 
 ### DEMOGRAPHIC DATA
 
-## validation/bad-values-list.csv              : Create a list of bad values
-conf/bad-values-list.csv:
-	$(MAKE) -f check_values.mk $@
-
 ## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* | \
-	python3 scripts/remove_bad_values.py conf/bad-values-list.csv > $@
+	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv: data/demographics/raw/%.csv
@@ -55,17 +50,17 @@ data/demographics/years/%.csv: data/demographics/raw/%.csv
 	cat data/demographics/raw/$*.csv | python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
-data/demographics/years/tracts-00.csv: data/demographics/raw/tracts-00.csv census/00/tracts-weights.csv
+data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/tracts-00.csv | \
 	python3 scripts/convert_00_geo.py tracts census/00/tracts-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
-data/demographics/years/block-groups-00.csv: data/demographics/raw/block-groups-00.csv census/00/block-groups-weights.csv
+data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-00.csv | \
-	python3 scripts/convert_00_geo.py block-groups census/00/block-groups-weights.csv | \
+	python3 scripts/convert_00_geo.py block-groups $< | \
 	python3 scripts/convert_census_vars.py > $@
 
 ### WEIGHTS

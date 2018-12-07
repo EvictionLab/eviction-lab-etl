@@ -212,7 +212,6 @@ def update_acs12_tracts(df):
         df = changeTractsInCensusData(df, map_df, 'trt12', 'trt10')
     return df
 
-
 # Add years column to data frame
 def addDataFrameYears(df, start, end):
     df_list = []
