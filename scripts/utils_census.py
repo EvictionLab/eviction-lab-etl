@@ -415,8 +415,6 @@ class CensusDataStore:
     # tracts for each
     def fetchTracts(self, source, items, year):
         geo_df_list = []
-        # fips_list = [ { 'state': '08', 'county': '014' } ]
-        # fips_list = STATE_COUNTY_FIPS
         fips_list = [ r for r in self.fetchResults(source, ('NAME'),  {'for': 'county:*', 'in': 'state:*'}, year=year) if r['state'] != '72' ]
         for f in fips_list:
             county = f['state'] + f['county']

@@ -50,17 +50,17 @@ data/demographics/years/%.csv: data/demographics/raw/%.csv
 	cat data/demographics/raw/$*.csv | python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/tracts-00.csv       : Create tracts-00 demographics, convert with weights
-data/demographics/years/tracts-00.csv: census/00/tracts-weights.csv
+data/demographics/years/tracts-00.csv: data/demographics/raw/tracts-00.csv census/00/tracts-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/tracts-00.csv | \
 	python3 scripts/convert_00_geo.py tracts census/00/tracts-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
 
 ## data/demographics/years/block-groups-00.csv : Create block-groups-00 demographics, convert with weights
-data/demographics/years/block-groups-00.csv: census/00/block-groups-weights.csv
+data/demographics/years/block-groups-00.csv: data/demographics/raw/block-groups-00.csv census/00/block-groups-weights.csv
 	mkdir -p $(dir $@)
 	cat data/demographics/raw/block-groups-00.csv | \
-	python3 scripts/convert_00_geo.py block-groups $< | \
+	python3 scripts/convert_00_geo.py block-groups census/00/block-groups-weights.csv | \
 	python3 scripts/convert_census_vars.py > $@
 
 ### WEIGHTS

@@ -80,7 +80,7 @@ validation/median-household-income.csv: $(foreach f,$(geo_types), tmp/median-hou
 tmp/badboys/%.csv: validation/%.csv
 	mkdir -p $(dir $@)
 	echo "value" | csvjoin $< - | \
-	sed -r 's/([0-9]*),([0-9]*),([0-9]*),([0-9\.]*),/\1,\2,\3,\4,$*/g;' | \
+	sed -r 's/([0-9]*),([0-9]*),([0-9\.]*),/\1,\2,\3,$*/g;' | \
 	csvcut -c GEOID,year,value > $@
 
 conf/bad-values-list.csv: $(foreach c,$(all_cols), tmp/badboys/$(c).csv)
