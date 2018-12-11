@@ -44,7 +44,8 @@ deploy_logs:
 ## data/demographics/raw/%.csv                 : Create raw demographics data fetched from Census API
 data/demographics/raw/%.csv:
 	mkdir -p $(dir $@)
-	python3 scripts/fetch_raw_census_data.py $* > $@
+	python3 scripts/fetch_raw_census_data.py $* | \
+	python3 scripts/fix_duplicates.py > $@
 
 ## data/demographics/raw/block-groups-00.csv   : Create raw census data for block groups year 2000
 data/demographics/raw/block-groups-00.csv: census/00/block-groups.csv

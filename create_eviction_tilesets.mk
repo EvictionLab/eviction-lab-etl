@@ -24,6 +24,14 @@ block-groups_bytes = 300000
 
 census_opts = --detect-shared-borders --coalesce-smallest-as-needed
 
+# build ID to deploy to if not set
+BUILD_ID?=2018-11-28
+
+# For comma-delimited list
+null :=
+space := $(null) $(null)
+comma := ,
+
 # Assign layer properties based on minimum zoom
 $(foreach g, $(geo_types), $(eval $(g)_census_opts = --minimum-zoom=$($g_min_zoom) --maximum-tile-bytes=$($g_bytes) $(census_opts)))
 $(foreach g, $(geo_types), $(eval $(g)_centers_opts = -B$($g_min_zoom) --maximum-tile-bytes=1000000))
@@ -37,6 +45,14 @@ mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labels)
 
 output_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)
+
+all: $(output_tiles)
+
+## deploy                           : Create directories with .pbf file tiles, copy to S3
+deploy:
+	mkdir -p tilesets
+	for f in tiles/*.mbtiles; do tile-join --no-tile-size-limit --force -e ./tilesets/evictions-$$(basename "$${f%.*}") $$f; done
+	aws s3 cp ./tilesets s3://$(S3_TILESETS_BUCKET)/$(BUILD_ID) --recursive --acl=public-read --content-encoding=gzip --region=us-east-2 --cache-control max-age=2628000
 
 ### MERGE TILES
 

@@ -21,4 +21,5 @@ if __name__ == '__main__':
     if sys.argv[1] == 'drop':
         dupes = dupes.drop_duplicates(subset=['GEOID'])
 
-    dupes.to_csv(sys.stdout)
+    dupes.to_csv(sys.stdout, index=False)
+    

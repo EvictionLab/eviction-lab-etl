@@ -42,7 +42,8 @@ data/demographics/raw/%.csv:
 
 ## data/demographics/%.csv                     : Create crosswalked demographic data for geographies
 data/demographics/%.csv: $(foreach y, $(years), data/demographics/years/%-$(y).csv)
-	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* > $@
+	csvstack $^ | python3 scripts/convert_crosswalk_geo.py $* | \
+	python3 scripts/remove_bad_values.py conf/bad-values-list.csv > $@
 
 ## data/demographics/years/%.csv               : Create demographic data grouped by geography and year
 data/demographics/years/%.csv: data/demographics/raw/%.csv

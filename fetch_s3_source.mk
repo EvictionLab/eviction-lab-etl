@@ -1,5 +1,7 @@
 
 BUILD_ID?=2018-11-28
+mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
+
 
 .PHONY: help
 
