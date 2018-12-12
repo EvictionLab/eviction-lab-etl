@@ -7,6 +7,7 @@ mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labels)
 
 geo_types = states counties cities tracts block-groups
+census_geo_types = $(foreach g,$(geo_types),census/$(g).geojson)
 sub_eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
 eviction_cols = $(sub_eviction_cols),low-flag
 ts := $(shell date "+%H%M%S")
@@ -52,7 +53,7 @@ deploy_app_data: $(tool_data)
 	aws cloudfront create-invalidation --distribution-id $(CLOUDFRONT_ID_PROD) --paths "/*"
 
 ## deploy_public_data               : Create and deploy public data exports
-deploy_public_data: $(public_data)
+deploy_public_data: $(census_geo_types) $(public_data)
 	python3 scripts/create_data_public.py
 	aws s3 cp ./data/public s3://$(S3_DATA_DOWNLOADS_BUCKET) --recursive --acl=public-read
 	aws s3 cp ./data/non-imputed s3://$(S3_DATA_DOWNLOADS_BUCKET)/non-imputed --recursive --acl=public-read
