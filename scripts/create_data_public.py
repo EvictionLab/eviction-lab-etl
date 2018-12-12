@@ -4,6 +4,15 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from data_constants import INT_COLS
+from shapely import geometry
+
+upcast_dispatch = {geometry.Point: geometry.MultiPoint, 
+                   geometry.LineString: geometry.MultiLineString, 
+                   geometry.Polygon: geometry.MultiPolygon}
+
+def maybe_cast_to_multigeometry(geom):
+    caster = upcast_dispatch.get(type(geom), lambda x: x[0])
+    return caster([geom])
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PUBLIC_DATA_DIR = os.path.join(BASE_DIR, 'data', 'public')
@@ -87,6 +96,9 @@ if __name__ == '__main__':
         geo_df = geo_df.merge(attr_df, on='GEOID', how='left')
         geo_df.replace([np.inf, -np.inf, -1.0], np.nan, inplace=True)
         print('Writing United States GeoJSON file for {}'.format(k))
+        # Cast to multipolygon to avoid errors
+        # https://github.com/geopandas/geopandas/issues/834
+        geo_df.geometry.apply(maybe_cast_to_multigeometry)
         geo_df.to_file(
             os.path.join(PUBLIC_DATA_DIR, 'US', '{}.geojson'.format(k)),
             driver='GeoJSON')
