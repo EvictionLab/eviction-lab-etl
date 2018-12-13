@@ -98,7 +98,7 @@ if __name__ == '__main__':
         print('Writing United States GeoJSON file for {}'.format(k))
         # Cast to multipolygon to avoid errors
         # https://github.com/geopandas/geopandas/issues/834
-        geo_df.geometry.apply(maybe_cast_to_multigeometry)
+        geo_df['geometry'] = geo_df['geometry'].apply(maybe_cast_to_multigeometry)
         geo_df.to_file(
             os.path.join(PUBLIC_DATA_DIR, 'US', '{}.geojson'.format(k)),
             driver='GeoJSON')
