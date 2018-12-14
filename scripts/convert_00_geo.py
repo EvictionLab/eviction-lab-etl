@@ -71,7 +71,11 @@ if __name__ == '__main__':
         log_label, weight_df, data_df, left_on='GEOID00', right_on='GEOID', how='left')
 
     # create data frame with unique GEOID10 and associated name and parent-location
-    context_df = output_df[['GEOID10', 'name', 'parent-location']].copy()
+    context_df = output_df[['GEOID00', 'GEOID10', 'name', 'parent-location']].copy()
+    # drop rows where GEOID00 county != GEOID10 county
+    context_df.drop(
+        context_df[context_df['GEOID00'].str[:5] != context_df['GEOID10'].str[:5]].index, inplace=True)
+    context_df.drop(['GEOID00'], axis=1, inplace=True)
     context_df.drop_duplicates(subset=['GEOID10'], inplace=True)
 
     # multiply all count columns by the count weight
