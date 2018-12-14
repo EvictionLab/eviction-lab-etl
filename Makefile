@@ -34,7 +34,7 @@ crosswalked_demographics:
 
 ## eviction_lab_data          : Submit raw census demographics jobs to AWS Batch
 eviction_lab_data:
-	python3 utils/submit_jobs.py $(crosswalked_demographics)
+	python3 utils/submit_jobs.py $(eviction_lab_data)
 
 ## deploy_app_data            : Submit jobs to deploy data for the map and rankings
 deploy_app_data:
