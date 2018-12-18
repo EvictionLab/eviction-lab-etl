@@ -29,6 +29,15 @@ from utils_census import (create_tract_name, get_block_group_crosswalk_df,
                         get_tract_crosswalk_09_10_df)
 from data_constants import (COUNT_COLS, RATE_COLS)
 
+def changeACS09toCensus10(df, map_df, fromField, toField):
+    # get a map of columns `fromField` : `toField`
+    bg_dict = pd.Series(map_df[toField].values, index=map_df[fromField]).to_dict()
+
+    # loop through the map and update the data frame if needed
+    for fromBg, toBg in bg_dict.items():
+        df.loc[(df['GEOID'] == fromBg), 'GEOID'] = toBg
+    return df
+
 if __name__ == '__main__':
     # read output from `fetch_raw_census_data.py` into data frame
     data_df = pd.read_csv(
@@ -50,25 +59,32 @@ if __name__ == '__main__':
         acs_09_10_cw_df = get_block_group_crosswalk_df('changes_09acs_to_10cen.csv')
         acs_09_10_cw_df.drop(['county', 'cofips'], axis=1, inplace=True)
         acs_09_10_cw_df.rename(columns={
-            'bkg09': 'GEOID00',
+            'bkg09': 'GEOID09',
             'bkg10': 'GEOID10'
         }, inplace=True)
     if sys.argv[1] == 'tracts':
         acs_09_10_cw_df = get_tract_crosswalk_09_10_df()
         acs_09_10_cw_df.rename(columns={
-            'trt09': 'GEOID00',
+            'trt09': 'GEOID09',
             'trt10': 'GEOID10'
         }, inplace=True)
-    acs_09_10_cw_df['count_weight'] = 1
-    acs_09_10_cw_df['rate_weight'] = 1
-    weight_df = pd.concat([weight_df, acs_09_10_cw_df])
-    # Drop duplicates in case weight_df and acs_09_10_cw_df have the same entries
-    weight_df.drop_duplicates(subset=['GEOID00', 'GEOID10'], inplace=True)
-    
+
+    # remove the rows from ACS 2009 that are already in 2010 geography
+    # because they are not part of the crosswalk
+    entries = acs_09_10_cw_df['GEOID09'].tolist()
+    acs_10_entries_df = data_df[
+        data_df['GEOID'].isin(entries) & data_df['year'].isin([2005,2006,2007,2008,2009])].copy()
+    acs_10_entries_df.drop(['name', 'parent-location'], axis=1, inplace=True)
+    cw_df = data_df.drop(data_df[
+        data_df['GEOID'].isin(entries) & data_df['year'].isin([2005,2006,2007,2008,2009])].index)
+    del data_df
+
+
     # merge the census data with the weights for each GEOID
     log_label = sys.argv[1]+' weights <- data'
     output_df = merge_with_stats(
-        log_label, weight_df, data_df, left_on='GEOID00', right_on='GEOID', how='left')
+        log_label, weight_df, cw_df, left_on='GEOID00', right_on='GEOID', how='left')
+    del weight_df
 
     # create data frame with unique GEOID10 and associated name and parent-location
     context_df = output_df[['GEOID00', 'GEOID10', 'name', 'parent-location']].copy()
@@ -90,13 +106,18 @@ if __name__ == '__main__':
     output_df = pd.DataFrame(
         output_df.groupby(['GEOID10',
                            'year'])[COUNT_COLS + RATE_COLS].sum()).reset_index()
-    
-    # merge in the name and parent-location for all GEOIDs
-    output_df = output_df.merge(context_df, on='GEOID10', how='left')
-    output_df['year'] = output_df['year'].astype('int')
 
     # overwrite the 2000 GEOID to the 2010 GEOID
     output_df.rename(columns={'GEOID10': 'GEOID'}, inplace=True)
+
+    # apply ACS 2009 -> Census 2010 changes, then concat result to the data
+    acs_10_entries_df = changeACS09toCensus10(acs_10_entries_df, acs_09_10_cw_df, 'GEOID09', 'GEOID10')
+    output_df = pd.concat([acs_10_entries_df, output_df])
+
+    # merge in the name and parent-location for all GEOIDs
+    output_df = merge_with_stats(
+        'context', output_df, context_df, left_on='GEOID', right_on='GEOID10', how='left')
+    output_df['year'] = output_df['year'].astype('int')
 
     # create the name attribute for tracts and block groups
     if sys.argv[1] == 'tracts':
