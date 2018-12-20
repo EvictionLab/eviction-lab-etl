@@ -12,6 +12,7 @@ pandas = "==0.22.0"
 geopandas = "*"
 Rtree = "*"
 awscli = "*"
+csvdiff="*"
 
 [requires]
 python_version = "3.5"

@@ -33,12 +33,10 @@ CENSUS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'census')
 
 # List of suffixes to remove from place names
 REMOVE_CITY_SUFFIXES = [
-    'city (balance)', 'unified government (balance)',
-    'consolidated government (balance)', 'metro government (balance)',
-    'metropolitan government (balance)', ' town', ' city', 'CDP',
-    'municipality', ' borough', '(balance)', ' village',
-    'consolidated government', 'metro government', 'metropolitan government',
-    'unified governm', 'unified government',
+    ' town', ' city', ' CDP',
+    ' municipality', ' borough', ' village',
+    ' consolidated government', ' metro government', ' metropolitan government',
+    ' unified governm',
 ]
 
 # Cleanup functions for each geography level to ensure proper
@@ -84,16 +82,20 @@ DATA_CLEANUP_FUNCS = {
     }
 }
 
+def remove_suffix(v):
+    for s in REMOVE_CITY_SUFFIXES:
+        try:
+            cdpPos = v.index(s)
+            v = v[0:cdpPos]
+        except ValueError:
+            continue
+    return v
+
 # Perform some cleaning tasks on the data frame based on geography level
 def clean_data_df(df, geo_str):
     if geo_str == 'cities':
-        # remove unwanted city suffixes
-        for s in REMOVE_CITY_SUFFIXES:
-            df.loc[df['name'].str.endswith(s), 'name'] = (
-                df.loc[df['name'].str.endswith(s)]['name'].str.slice(
-                    0, -len(s))
-            )
-            df['name'] = df['name'].str.strip()
+        df['name'] = df['name'].apply(remove_suffix)
+        df['name'] = df['name'].str.strip()
     elif geo_str == 'tracts':
         # generate proper tract name
         df['name'] = df['tract'].apply(create_tract_name)

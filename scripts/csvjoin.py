@@ -15,7 +15,7 @@ if __name__ == '__main__':
     dem_df = pd.read_csv(sys.argv[2], dtype=dtypes)
 
     # dataframe containing names and parent locations
-    names_df = dem_df.drop_duplicates('GEOID')[['GEOID', 'name', 'parent-location']]
+    names_df = dem_df.drop_duplicates('GEOID', keep='last')[['GEOID', 'name', 'parent-location']]
     names_df.set_index('GEOID', inplace=True)
 
     # drop name / parent-location from demographics

@@ -77,6 +77,16 @@ validation/median-household-income.csv: $(foreach f,$(geo_types), tmp/median-hou
 	mkdir -p $(dir $@)
 	csvstack $^ > $@
 
+compare/%.csv:
+	mkdir -p $(dir $@)
+	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(firstword $(subst _, ,$*))/$(lastword $(subst _, ,$*)).csv.gz - | \
+	gunzip -c > $@
+
+.SECONDEXPANSION:
+compare/%.json: compare/%.csv compare/$(BUILD_ID)_$$(subst $$(firstword $$(subst _, ,$$*))_,,$$*).csv
+	mkdir -p $(dir $@)
+	csvdiff --style=pretty --output=$@ GEOID,year $^
+
 tmp/badboys/%.csv: validation/%.csv
 	mkdir -p $(dir $@)
 	echo "value" | csvjoin $< - | \
