@@ -1,3 +1,8 @@
+# 2018-12-18
+  - Modifications to the crosswalk procedure that will make variables more accurate at for the years 2000 - 2009 at the tract and block group level.
+  - Account for changes in geographic identifiers in ACS 2009 data
+  - Files impacted: all.csv, tracts.csv, block-groups.csv
+
 # 2018-09-21
   - Fixed an issue where the renter-occupied-households variable had been dropped
   - Files impacted: all.csv, counties.csv, cities,csv, tracts.csv, block-groups.csv
