@@ -160,7 +160,7 @@ data/full-evictions/%.csv:
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
 	mkdir -p $(dir $@)
-	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/evictions/$(notdir $@).gz - | \
+	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/evictions/$(notdir $@).gz - | \
 	gunzip -c | \
 	python3 scripts/convert_varnames.py | \
 	python3 scripts/convert_crosswalk_geo.py $* | \

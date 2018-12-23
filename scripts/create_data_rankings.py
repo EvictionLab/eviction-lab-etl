@@ -22,7 +22,9 @@ def area_type(pop):
         return 2
     if pop >= LOW_POP_CUTOFF and pop < MID_POP_CUTOFF:
         return 1
-    return 0
+    if pop >= MID_POP_CUTOFF:
+        return 0    
+    return -1
 
 
 if __name__ == '__main__':
@@ -58,6 +60,7 @@ if __name__ == '__main__':
     df[['lat', 'lon']] = df[['lat', 'lon']].round(4)
     if 'cities' in sys.argv[1]:
         df['area-type'] = df['population'].apply(area_type)
+        df.drop(df[df['area-type'] == -1].index, inplace=True)
     df.drop('population', axis=1, inplace=True)
 
     # Write CSV file
