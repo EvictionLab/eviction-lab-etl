@@ -75,42 +75,20 @@ CENSUS_10_VAR_MAP = {
 
 COUNT_COLS = [
     'population', 
-    'poverty-pop',
-    'total-poverty-pop',
-    'occupied-housing-units',
-    'renter-occupied-households', 
-    'hispanic-pop', 
-    'white-pop',
-    'af-am-pop', 
-    'am-ind-pop', 
-    'asian-pop', 
-    'nh-pi-pop', 
-    'other-pop',
-    'multiple-pop'
 ]
 
 RATE_COLS = [
-    'median-household-income',
-    'median-property-value', 
-    'rent-burden', 
-    'median-gross-rent'
+
 ]
 
 NUMERIC_COLS = COUNT_COLS + RATE_COLS
 
 OUTPUT_COLS = [
-    'GEOID', 'name', 'parent-location', 'year', 'population', 'poverty-rate',
-    'pct-renter-occupied', 'median-gross-rent', 'median-household-income',
-    'median-property-value', 'rent-burden', 'pct-white', 'pct-af-am',
-    'pct-hispanic', 'pct-am-ind', 'pct-asian', 'pct-nh-pi', 'pct-multiple',
-    'pct-other'
+    'GEOID', 'name', 'parent-location', 'year', 'population'
 ]
 
 NUMERIC_OUTPUT_COLS = [
-    'population', 'poverty-rate', 'pct-renter-occupied', 'median-gross-rent',
-    'median-household-income', 'median-property-value', 'rent-burden',
-    'pct-white', 'pct-af-am', 'pct-hispanic', 'pct-am-ind', 'pct-asian',
-    'pct-nh-pi', 'pct-multiple', 'pct-other'
+    'population'
 ]
 
 COLUMN_ORDER = [
@@ -119,28 +97,7 @@ COLUMN_ORDER = [
     'name',
     'parent-location',
     'population',
-    'poverty-rate',
-    'renter-occupied-households',
-    'pct-renter-occupied',
-    'median-gross-rent',
-    'median-household-income',
-    'median-property-value',
-    'rent-burden',
-    'pct-white',
-    'pct-af-am',
-    'pct-hispanic',
-    'pct-am-ind',
-    'pct-asian',
-    'pct-nh-pi',
-    'pct-multiple',
-    'pct-other',
-    'eviction-filings',
-    'evictions',
-    'eviction-rate',
-    'eviction-filing-rate',
-    'low-flag',
-    'imputed',
-    'subbed',
+
 ]
 
 INT_COLS = ['imputed', 'subbed', 'low-flag']
