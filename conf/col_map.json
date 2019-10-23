@@ -21,5 +21,13 @@
     "poverty-rate": "pr",
     "eviction-rate": "er",
     "eviction-filing-rate": "efr",
-    "low-flag": "lf"
+    "low-flag": "lf",
+    "eviction-rate-high": "erh",
+    "eviction-rate-low": "erl",
+    "evictions-high": "eh",
+    "evictions-low": "el",
+    "eviction-filings-high": "efh",
+    "eviction-filings-low": "efl",
+    "eviction-filing-rate-high": "efrh",
+    "eviction-filing-rate-low": "efrl"
 }

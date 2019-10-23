@@ -6,14 +6,16 @@
 mapshaper_cmd = node --max_old_space_size=4096 $$(which mapshaper)
 geojson_label_cmd = node --max_old_space_size=4096 $$(which geojson-polygon-labels)
 
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 census_geo_types = $(foreach g,$(geo_types),census/$(g).geojson)
 sub_eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
-eviction_cols = $(sub_eviction_cols),low-flag
+low_cols = evictions-low,eviction-filings-low,eviction-rate-low,eviction-filing-rate-low
+high_cols = evictions-high,eviction-filings-high,eviction-rate-high,eviction-filing-rate-high
+eviction_cols = $(sub_eviction_cols),$(low_cols),$(high_cols)
 ts := $(shell date "+%H%M%S")
 
 # build ID to use for source data
-BUILD_ID?=2018-11-28
+BUILD_ID?=2018-12-14
 
 output_files = $(foreach g,$(geo_types),data/$(g).csv)
 public_data = data/public/US/all.csv data/public/US/national.csv conf/DATA_DICTIONARY.txt $(foreach g, $(geo_types), grouped_public/$(g).csv data/non-imputed/$(g).csv) 
@@ -143,19 +145,30 @@ data/public/US/%.csv: data/demographics/%.csv data/full-evictions/%.csv
 
 ### DATA FETCHED FROM S3 SOURCE
 
+raw: $(foreach g,$(geo_types),data/raw/$(g).csv)
+full-evictions: $(foreach g,$(geo_types),data/full-evictions/$(g).csv)
+
+## data/full-evictions/cities.csv   : Override full-evictions data for cities/places
+data/raw/%.csv:
+	mkdir -p $(dir $@)
+	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/evictions/$(notdir $@).gz - | \
+	gunzip > $@
+
 ## data/full-evictions/cities.csv   : Override full-evictions data for cities/places
 data/full-evictions/cities.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/evictions/cities-unrounded.csv.gz - | \
 	gunzip -c | \
-	python3 scripts/convert_varnames.py > $@
+	python3 scripts/convert_varnames.py | \
+	python3 scripts/create_fake_data.py > $@
 
 ## data/full-evictions/%.csv        : Pull eviction data, including imputed/subbed
 data/full-evictions/%.csv:
 	mkdir -p $(dir $@)
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/evictions/$(notdir $@).gz - | \
 	gunzip -c | \
-	python3 scripts/convert_varnames.py > $@
+	python3 scripts/convert_varnames.py | \
+	python3 scripts/create_fake_data.py > $@
 
 ## data/evictions/%.csv             : Pull eviction data, get only necessary columns
 data/evictions/%.csv:
@@ -163,6 +176,7 @@ data/evictions/%.csv:
 	aws s3 cp s3://$(S3_SOURCE_DATA_BUCKET)/$(BUILD_ID)/evictions/$(notdir $@).gz - | \
 	gunzip -c | \
 	python3 scripts/convert_varnames.py | \
+	python3 scripts/create_fake_data.py | \
 	python3 scripts/convert_crosswalk_geo.py $* | \
 	python3 utils/subset_cols.py GEOID,year,$(eviction_cols) > $@
 
