@@ -1,7 +1,7 @@
 # Tasks to processes raw census data and map 2000 data to 2010 geography
 
 years = 00 10
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 output_files = $(foreach f, $(geo_types), data/demographics/$(f).csv)
 BUILD_ID?=2018-11-28

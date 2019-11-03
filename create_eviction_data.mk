@@ -28,6 +28,8 @@ tool_data = data/rankings/states-rankings.csv data/rankings/cities-rankings.csv 
 ## all                              : Create all output data
 all: $(output_files) $(tool_data) $(public_data)
 
+base_data: $(output_files)
+
 ## clean                            : Remove created files
 clean:
 	rm -f data/*.csv

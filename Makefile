@@ -1,7 +1,7 @@
 # Submits jobs to AWS batch
 
 years = 00 10
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 geojson_files = $(foreach f,$(geo_types), census/$(f).geojson)
 eviction_lab_tiles = $(foreach t, $(geo_years), tiles/$(t).mbtiles)

@@ -4,7 +4,7 @@ tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-o
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 years = 00 10
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 
 states_min_zoom = 2
