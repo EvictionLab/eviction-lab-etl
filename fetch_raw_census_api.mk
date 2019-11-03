@@ -1,7 +1,7 @@
 # Fetches raw data from the Census API
 
 years = 00 10
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
 county_fips = $(shell cat conf/fips_codes.txt)
 census_cols = 'af-am-pop,am-ind-pop,asian-pop,block group,county,hispanic-pop,median-gross-rent,median-household-income,median-property-value,multiple-pop,name,nh-pi-pop,occupied-housing-units,other-pop,population,poverty-pop,rent-burden,renter-occupied-households,state,total-poverty-pop,tract,white-pop,year,GEOID'

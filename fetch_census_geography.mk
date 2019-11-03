@@ -13,7 +13,7 @@ cities-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.
 counties-geoid = "this.properties.GEOID = this.properties.STATE + this.properties.COUNTY"
 states-geoid =  "this.properties.GEOID = this.properties.STATE"
 
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 GENERATED_FILES = $(foreach t, $(geo_types), census/$(t).geojson)
 
 # build ID to use for source data

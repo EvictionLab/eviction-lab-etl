@@ -16,7 +16,6 @@ EVICTION_COLS = [
     'eviction-filing-rate',
     'imputed',
     'subbed',
-    'low-flag',
 ]
 
 NATIONAL_COLS = [

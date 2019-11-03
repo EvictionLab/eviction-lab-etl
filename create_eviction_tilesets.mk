@@ -4,11 +4,8 @@ tippecanoe_opts = --attribute-type=GEOID:string --simplification=10 --simplify-o
 tile_join_opts = --no-tile-size-limit --force --no-tile-stats
 
 years = 00 10
-geo_types = states counties cities tracts block-groups
+geo_types = states counties cities tracts
 geo_years = $(foreach y,$(years),$(foreach g,$(geo_types),$g-$y))
-
-sub_eviction_cols = evictions,eviction-filings,eviction-rate,eviction-filing-rate
-eviction_cols = $(sub_eviction_cols),low-flag
 
 states_min_zoom = 2
 counties_min_zoom = 2
@@ -25,7 +22,7 @@ block-groups_bytes = 300000
 census_opts = --detect-shared-borders --coalesce-smallest-as-needed
 
 # build ID to deploy to if not set
-BUILD_ID?=2018-11-28
+BUILD_ID?=2018-12-14
 
 # For comma-delimited list
 null :=
