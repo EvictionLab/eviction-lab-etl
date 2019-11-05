@@ -16,3 +16,5 @@ fixtures
 .vscode
 __pycache__
 .DS_Store
+.env.backup
+.env.production
