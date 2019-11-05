@@ -17,6 +17,7 @@ all: $(output_files)
 help: process_demographics_server.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
+## clean                                       : Remove created demographics files
 clean:
 	rm -rf data/demographics
 	rm -f log/*.txt
