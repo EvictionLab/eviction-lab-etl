@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     # rename tracts that changed from 00 -> 09
 
-    with open(str(os.path.join(conf_dir, 'changes_09acs_to_00cen_tract_server.csv'))) as rename_file:
+    with open(str(os.path.join(conf_dir, 'changes_09acs_to_00cen_tract.csv'))) as rename_file:
         reader = csv.reader(rename_file)
         rename_dict = {rows[1]:rows[2] for rows in reader}
     # map values using rename dict. fill non mapped values w/ original value

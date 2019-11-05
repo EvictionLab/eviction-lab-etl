@@ -14,7 +14,7 @@ all: $(output_files)
 
 # Based on https://swcarpentry.github.io/make-novice/08-self-doc/
 # help                                        : Print help
-help: process_demographics_server.mk
+help: process_demographics.mk
 	perl -ne '/^## / && s/^## //g && print' $<
 
 ## clean                                       : Remove created demographics files
