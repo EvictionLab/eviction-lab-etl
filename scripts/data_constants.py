@@ -21,7 +21,8 @@ ACS_VAR_MAP = {
     'B03002_006E': 'asian-pop',
     'B03002_007E': 'nh-pi-pop',
     'B03002_008E': 'other-pop',
-    'B03002_009E': 'multiple-pop'
+    'B03002_009E': 'multiple-pop',
+    'B11012_001E': 'htot'
 }
 
 ACS_12_VAR_MAP = {
@@ -30,7 +31,30 @@ ACS_12_VAR_MAP = {
     'B25064_001E': 'median-gross-rent',
     'B19013_001E': 'median-household-income',
     'B25077_001E': 'median-property-value',
-    'B25071_001E': 'rent-burden'
+    'B25071_001E': 'rent-burden',
+    'B11011_001E': 'htot'
+}
+
+ACS_15_VAR_MAP = {
+  'NAME': 'name',
+  'B01003_001E': 'population',
+  'B17010_001E': 'total-poverty-pop',
+  'B17010_002E': 'poverty-pop',
+  'B25064_001E': 'median-gross-rent',
+  'B25003_001E': 'occupied-housing-units',
+  'B25003_003E': 'renter-occupied-households',
+  'B19013_001E': 'median-household-income',
+  'B25077_001E': 'median-property-value',
+  'B25071_001E': 'rent-burden',
+  'B03002_012E': 'hispanic-pop',
+  'B03002_003E': 'white-pop',
+  'B03002_004E': 'af-am-pop',
+  'B03002_005E': 'am-ind-pop',
+  'B03002_006E': 'asian-pop',
+  'B03002_007E': 'nh-pi-pop',
+  'B03002_008E': 'other-pop',
+  'B03002_009E': 'multiple-pop',
+  'B11011_001E': 'htot'
 }
 
 CENSUS_00_SF1_VAR_MAP = {
@@ -45,7 +69,8 @@ CENSUS_00_SF1_VAR_MAP = {
     'P008006': 'asian-pop',
     'P008007': 'nh-pi-pop',
     'P008008': 'other-pop',
-    'P008009': 'multiple-pop'
+    'P008009': 'multiple-pop',
+    'P018001': 'htot'
 }
 
 CENSUS_00_SF3_VAR_MAP = {
@@ -70,7 +95,8 @@ CENSUS_10_VAR_MAP = {
     'P005006': 'asian-pop',
     'P005007': 'nh-pi-pop',
     'P005008': 'other-pop',
-    'P005009': 'multiple-pop'
+    'P005009': 'multiple-pop',
+    'P019001': 'htot'
 }
 
 COUNT_COLS = [
