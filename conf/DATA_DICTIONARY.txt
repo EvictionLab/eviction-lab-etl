@@ -24,10 +24,10 @@ Variables:
     - 2011-2016 uses 2015 5-year ACS B01003_001E
 - htot
     - household size
-    - 2000 use 2000 Census SF1 P018001
+    - 2000-2004 use 2000 Census SF1 P018001
     - 2005-2009 use 2009 5-year ACS B11012_001E
-    - 2010 uses 2010 Census P019001
-    - 2011-2016 uses 2015 5-year ACS B11011_001E
+    - 2010-2014 uses 2010 Census P019001
+    - 2015-2016 uses 2015 5-year ACS B11011_001E
 - poverty-rate
     - % of the population with income in the past 12 months below the poverty level
     - 2000-2004 divides P087002 by P087001 in the 2000 Census summary file 3

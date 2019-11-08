@@ -354,7 +354,7 @@ class CensusDataStore:
         logger.debug('starting fetch for all state level data for 2010-current')
         census_df = self.fetchStates('sf1', CENSUS_10_VARS, 2010)
         acs_12_df = self.fetchStates('acs5', ACS_12_VARS, 2012)
-        acs_df = self.fetchStates('acs5', ACS_VARS, 2015)
+        acs_df = self.fetchStates('acs5', ACS_15_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'states')
 
     # Fetch data for all counties in the US
@@ -375,7 +375,7 @@ class CensusDataStore:
         logger.debug('starting fetch for all county level data for 2010-current')
         census_df = self.fetchCounties('sf1', CENSUS_10_VARS, 2010)
         acs_12_df = self.fetchCounties('acs5', ACS_12_VARS, 2012)
-        acs_df = self.fetchCounties('acs5', ACS_VARS, 2015)
+        acs_df = self.fetchCounties('acs5', ACS_15_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'counties')
 
     # Fetch data for all cities in the US
@@ -398,7 +398,7 @@ class CensusDataStore:
         logger.debug('starting fetch for all city level data for 2010-current')
         census_df = self.fetchCities('sf1', CENSUS_10_VARS, 2010)
         acs_12_df = self.fetchCities('acs5', ACS_12_VARS, 2012)
-        acs_df = self.fetchCities('acs5', ACS_VARS, 2015)
+        acs_df = self.fetchCities('acs5', ACS_15_VARS, 2015)
         # Handle ACS var difference
         acs_df['NAME'] = acs_df['NAME'].apply(
             lambda x: ','.join(x.split(',')[:-1]).strip()
@@ -432,7 +432,7 @@ class CensusDataStore:
         logger.debug('starting fetch for all tract level data for 2010-current')
         census_df = self.fetchTracts('sf1', CENSUS_10_VARS, 2010)
         acs_12_df = self.fetchTracts('acs5', ACS_12_VARS, 2012)
-        acs_df = self.fetchTracts('acs5', ACS_VARS, 2015)
+        acs_df = self.fetchTracts('acs5', ACS_15_VARS, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'tracts')
 
     # Fetch data for block groups within a given tract
@@ -469,5 +469,5 @@ class CensusDataStore:
         logger.debug('starting fetch block group level data for 2010-current')
         census_df = self.fetchBlockGroupsByCounty('sf1', CENSUS_10_VARS, county, 2010)
         acs_12_df = self.fetchBlockGroupsByCounty('acs5', ACS_12_VARS, county, 2012)
-        acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_VARS, county, 2015)
+        acs_df = self.fetchBlockGroupsByCounty('acs5', ACS_15_VARS, county, 2015)
         return postProcessData2010(census_df, acs_12_df, acs_df, 'block-groups')
